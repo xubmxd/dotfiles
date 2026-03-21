@@ -1,114 +1,104 @@
 @import "/home/xubm/.cache/wal/colors-waybar.css";
 
-/* ===== GLOBAL ===== */
+/* ===== RESET ===== */
 * {
-    font-family:
-        "JetBrainsMono Nerd Font", "Material Symbols Rounded", sans-serif;
-    font-size: 12px;
-    font-weight: 600;
     border: none;
     border-radius: 0;
     min-height: 0;
+    margin: 0;
+    padding: 0;
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 /* ===== BAR ===== */
 window#waybar {
-    background: alpha(@background, 0.7);
-    color: @foreground;
-
-    border-radius: 14px;
-    padding: 4px 12px;
-
-    border: 1px solid alpha(@color8, 0.35);
+    background: transparent;
 }
 
-/* ===== MODULE BASE (NOW POPS) ===== */
-#workspaces,
+window#waybar > box {
+    background: alpha(@background, 0.6);
+    border-radius: 12px;
+    padding: 2px 6px;
+}
+
+/* ===== SHARED MODULE STYLE ===== */
+#workspaces button,
 #clock,
 #pulseaudio,
 #network,
-#battery {
-    padding: 3px 12px;
-    margin: 4px;
-
+#battery,
+#custom-cava {
+    padding: 2px 10px;
+    margin: 2px;
     border-radius: 10px;
-
-    background: alpha(@color0, 0.6); /* darker than bar = contrast */
+    background: transparent;
     color: @foreground;
-
-    border: 1px solid alpha(@color8, 0.25);
-
+    border: 1px solid alpha(@color4, 0.25);
     transition: all 0.2s ease;
 }
 
-/* ✨ Hover = slight lift, not flash */
 #clock:hover,
 #pulseaudio:hover,
 #network:hover,
-#battery:hover {
-    background: alpha(@color8, 0.25);
-    border: 1px solid alpha(@color6, 0.4);
+#battery:hover,
+#custom-cava:hover,
+#workspaces button:hover {
+    border: 1px solid @color4;
 }
 
-/* ===== WORKSPACES (DOT - POP EDITION) ===== */
-
+/* ===== WORKSPACES ===== */
 #workspaces {
-    padding: 2px 6px;
-    background: transparent;
-    border: none;
+    margin: 2px 6px;
 }
 
 #workspaces button {
-    padding: 0 6px;
-    margin: 0 3px;
-
-    font-size: 10px;
-
-    color: alpha(@foreground, 0.25);
-
-    background: transparent;
-    box-shadow: none;
-
-    transition: none;
+    padding: 0 8px;
+    min-width: 18px;
+    background: alpha(@color0, 0.4);
+    color: @color8;
 }
 
-/* 🔥 Active pops HARD */
 #workspaces button.active {
-    color: @color6;
-    font-size: 13px;
+    background: alpha(@color4, 0.6);
+    color: @foreground;
+    border: 1px solid @color4;
 }
 
-/* 🚫 no hover */
-#workspaces button:hover,
-#workspaces button:focus,
-#workspaces button:active {
-    background: transparent;
-    box-shadow: none;
-    color: alpha(@foreground, 0.25);
+#workspaces button.empty {
+    color: alpha(@color8, 0.4);
 }
 
-/* ===== MODULE COLORS (MORE VIBRANT) ===== */
+#workspaces button.urgent {
+    background: alpha(@color1, 0.6);
+    color: @foreground;
+}
 
-/* 🕒 CLOCK → strong accent */
+/* ===== CLOCK ===== */
 #clock {
+    font-weight: 700;
+}
+
+/* ===== AUDIO ===== */
+#pulseaudio.muted {
+    color: alpha(@color8, 0.5);
+}
+
+/* ===== NETWORK ===== */
+#network.disconnected {
+    color: alpha(@color8, 0.4);
+}
+
+#network.wifi {
     color: @color6;
 }
 
-/* 🔊 AUDIO → richer tone */
-#pulseaudio {
+#network.ethernet {
     color: @color5;
 }
 
-/* 🌐 NETWORK → warmer contrast */
-#network {
-    color: @color4;
-}
-
-/* 🔋 BATTERY → strong readable states */
-#battery {
-    color: @color2;
-}
-
+/* ===== BATTERY ===== */
 #battery.charging {
     color: @color6;
 }
@@ -118,15 +108,16 @@ window#waybar {
 }
 
 #battery.critical {
-    color: @color3;
+    color: @color1;
 }
 
-#network {
-    min-width: 20px;
-    padding-left: 11px;
-    padding-right: 11px;
-}
-
+/* ===== CAVA ===== */
 #custom-cava {
+    font-family: monospace;
+    letter-spacing: 1px;
     color: @color6;
+}
+
+#custom-cava.silent {
+    color: alpha(@color8, 0.4);
 }
