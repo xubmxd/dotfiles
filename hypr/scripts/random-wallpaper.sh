@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Getting wallpaper
+wall=$(find /home/xubm/Pictures/wallpapers/images/dark -type f -iname "*.jpg" -o -iname "*.jpeg" | shuf -n 1)
+
+# Copying Selected wallpaper to .cache as current wallpaper
+cp "$wall" ~/.cache/current_wallpaper
+
+# Generating colors
+wal -i $wall
+
+# setting wallpaper
+swww img $wall
+
+# ------Spotify--------
+
+# Getting theme name
+theme=$(spicetify config current_theme)
+pywal-spicetify $theme

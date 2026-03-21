@@ -1,0 +1,132 @@
+@import "/home/xubm/.cache/wal/colors-waybar.css";
+
+/* ===== GLOBAL ===== */
+* {
+    font-family:
+        "JetBrainsMono Nerd Font", "Material Symbols Rounded", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+}
+
+/* ===== BAR ===== */
+window#waybar {
+    background: alpha(@background, 0.7);
+    color: @foreground;
+
+    border-radius: 14px;
+    padding: 4px 12px;
+
+    border: 1px solid alpha(@color8, 0.35);
+}
+
+/* ===== MODULE BASE (NOW POPS) ===== */
+#workspaces,
+#clock,
+#pulseaudio,
+#network,
+#battery {
+    padding: 3px 12px;
+    margin: 4px;
+
+    border-radius: 10px;
+
+    background: alpha(@color0, 0.6); /* darker than bar = contrast */
+    color: @foreground;
+
+    border: 1px solid alpha(@color8, 0.25);
+
+    transition: all 0.2s ease;
+}
+
+/* ✨ Hover = slight lift, not flash */
+#clock:hover,
+#pulseaudio:hover,
+#network:hover,
+#battery:hover {
+    background: alpha(@color8, 0.25);
+    border: 1px solid alpha(@color6, 0.4);
+}
+
+/* ===== WORKSPACES (DOT - POP EDITION) ===== */
+
+#workspaces {
+    padding: 2px 6px;
+    background: transparent;
+    border: none;
+}
+
+#workspaces button {
+    padding: 0 6px;
+    margin: 0 3px;
+
+    font-size: 10px;
+
+    color: alpha(@foreground, 0.25);
+
+    background: transparent;
+    box-shadow: none;
+
+    transition: none;
+}
+
+/* 🔥 Active pops HARD */
+#workspaces button.active {
+    color: @color6;
+    font-size: 13px;
+}
+
+/* 🚫 no hover */
+#workspaces button:hover,
+#workspaces button:focus,
+#workspaces button:active {
+    background: transparent;
+    box-shadow: none;
+    color: alpha(@foreground, 0.25);
+}
+
+/* ===== MODULE COLORS (MORE VIBRANT) ===== */
+
+/* 🕒 CLOCK → strong accent */
+#clock {
+    color: @color6;
+}
+
+/* 🔊 AUDIO → richer tone */
+#pulseaudio {
+    color: @color5;
+}
+
+/* 🌐 NETWORK → warmer contrast */
+#network {
+    color: @color4;
+}
+
+/* 🔋 BATTERY → strong readable states */
+#battery {
+    color: @color2;
+}
+
+#battery.charging {
+    color: @color6;
+}
+
+#battery.warning {
+    color: @color3;
+}
+
+#battery.critical {
+    color: @color3;
+}
+
+#network {
+    min-width: 20px;
+    padding-left: 11px;
+    padding-right: 11px;
+}
+
+#custom-cava {
+    color: @color6;
+}

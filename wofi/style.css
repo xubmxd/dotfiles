@@ -1,0 +1,59 @@
+@import "/home/xubm/.cache/wal/colors.css";
+
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 15px;
+}
+
+window {
+    margin: 0px;
+    padding: 15px;
+    border-radius: 12px;
+
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 2px solid @color4;
+}
+
+#input {
+    margin-bottom: 12px;
+    padding: 10px;
+
+    border-radius: 8px;
+    border: none;
+
+    background-color: rgba(0, 0, 0, 0.5);
+    color: @foreground;
+}
+
+#inner-box {
+    margin: 5px;
+}
+
+#outer-box {
+    margin: 5px;
+}
+
+#scroll {
+    margin: 0px;
+}
+
+#entry {
+    padding: 10px;
+    margin: 4px;
+    border-radius: 8px;
+
+    background-color: transparent;
+}
+
+#entry:selected {
+    background-color: @color4;
+    color: @background;
+}
+
+#text {
+    color: @foreground;
+}
+
+#img {
+    margin-right: 10px;
+}
