@@ -5,7 +5,7 @@ wall=$(nsxiv -t -o ~/Pictures/wallpapers/images/dark)
 [ -z "$wall" ] && exit
 
 # Generating colors using pywal
-wal -i "$wall"
+wal -i "$wall" -o ~/.local/src/pywalium/generate.sh
 
 # setting wallpaper
 swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
