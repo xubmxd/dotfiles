@@ -74,7 +74,7 @@ window#waybar > box {
     min-width: 12px;
     border-radius: 6px;
     background-color: alpha(@color0, 0.4);
-    color: @foreground_variant;
+    color: @foreground;
     font-size: 12px;
     border: 1px solid alpha(@color4, 0.2);
     transition: all 0.2s ease-in-out;
@@ -102,18 +102,6 @@ window#waybar > box {
     font-weight: 700;
     border: 1px solid @color4;
 }
-
-#workspaces button:hover {
-    background-color: @color0;
-    color: @foreground;
-    border: 1px solid @color4;
-}
-
-#workspaces button.active:hover {
-    background-color: alpha(@color4_container, 0.8);
-    border: 1px solid @color4;
-}
-
 #workspaces button.urgent {
     background-color: alpha(@color1_container, 0.6);
     color: @foreground;
