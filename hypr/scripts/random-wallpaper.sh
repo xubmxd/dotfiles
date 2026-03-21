@@ -10,7 +10,7 @@ cp "$wall" ~/.cache/current_wallpaper
 wal -i $wall
 
 # setting wallpaper
-swww img $wall --transition-step 255 --transition-fps 255
+swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
 
 # ------Spotify--------
 
