@@ -9,6 +9,9 @@ cp "$wall" ~/.cache/current_wallpaper
 # Generating colors
 wal -i $wall -o ~/.local/src/pywalium/generate.sh
 
+# Color for gtk using matugen
+matugen image $wall
+
 # setting wallpaper
 swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
 
