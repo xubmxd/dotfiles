@@ -4,14 +4,14 @@
 wall=$(nsxiv -t -o ~/Pictures/wallpapers/images/dark)
 [ -z "$wall" ] && exit
 
+# setting wallpaper
+swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
+
 # Generating colors using pywal
 wal -i "$wall" -o ~/.local/src/pywalium/generate.sh
 
 # Color for gtk using matugen
-matugen image $wall --source-color-index 0
-
-# setting wallpaper
-swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
+matugen image $wall --source-color-index 0 --type  scheme-vibrant
 
 
 # saving current wallpaper to cache

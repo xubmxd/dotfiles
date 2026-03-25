@@ -1,4 +1,4 @@
-@import "/home/xubm/.cache/wal/colors.css";
+@import "colors.css";
 
 * {
     font-family: "JetBrainsMono Nerd Font";
@@ -10,8 +10,8 @@ window {
     padding: 15px;
     border-radius: 12px;
 
-    background-color: rgba(0, 0, 0, 0.4);
-    border: 2px solid @color4;
+    background-color: alpha(surface, 1);
+    border: 2px solid primary;
 }
 
 #input {
@@ -21,8 +21,8 @@ window {
     border-radius: 8px;
     border: none;
 
-    background-color: rgba(0, 0, 0, 0.5);
-    color: @foreground;
+    background-color: alpha(surface_container, 1);
+    color: on_surface;
 }
 
 #inner-box {
@@ -46,12 +46,12 @@ window {
 }
 
 #entry:selected {
-    background-color: @color4;
-    color: @background;
+    background-color: primary;
+    color: on_primary;
 }
 
 #text {
-    color: @foreground;
+    color: on_surface;
 }
 
 #img {
