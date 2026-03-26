@@ -6,11 +6,11 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  "modules-left": ["hyprland/workspaces", "custom/cava"],
+  "modules-left": ["custom/notification", "hyprland/workspaces", "custom/cava"],
 
-  "modules-center": ["clock"],
+  "modules-center": ["custom/launcher"],
 
-  "modules-right": ["pulseaudio", "network", "battery"],
+  "modules-right": ["backlight", "pulseaudio", "network", "clock", "battery"],
 
   "hyprland/workspaces": {
     "disable-scroll": true,
@@ -35,15 +35,27 @@
     "tooltip-format": "{:%A, %d %B %Y}",
   },
 
+  "backlight": {
+    "device": "intel_backlight",
+    "format": "{icon}  {percent}%",
+    "format-icons": ["", "", "", "", "", "", ""],
+    "on-scroll-up": "brightnessctl set +5%",
+    "on-scroll-down": "brightnessctl set 5%-",
+  },
+
   "pulseaudio": {
     "format": "{icon}  {volume}%",
     "format-muted": "  muted",
     "format-icons": ["", "", ""],
   },
   "network": {
-    "format-wifi": "󰖩",
-    "format-ethernet": "󰈀",
-    "format-disconnected": "󰖪",
+    "format-wifi": "{icon} {essid}",
+    "format-ethernet": "󰈀 {ifname}",
+    "format-disconnected": "󰖪 Disconnected",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "max-length": 25,
+    "tooltip-format": "{essid} ({signaldBm}dBm) ",
+    "on-click": "nm-connection-editor",
   },
 
   "battery": {
@@ -54,5 +66,30 @@
   "custom/cava": {
     "format": "{}",
     "exec": "$HOME/.config/waybar/scripts/cava.sh",
+  },
+  "custom/launcher": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "rofi -show drun",
+  },
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "<span foreground='red'><sup></sup></span>",
+      "none": "",
+      "dnd-notification": "<span foreground='red'><sup></sup></span>",
+      "dnd-none": "",
+      "inhibited-notification": "<span foreground='red'><sup></sup></span>",
+      "inhibited-none": "",
+      "dnd-inhibited-notification": "<span foreground='red'><sup></sup></span>",
+      "dnd-inhibited-none": "",
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
   },
 }
