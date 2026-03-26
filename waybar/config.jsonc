@@ -52,7 +52,7 @@
     "format-wifi": "{icon} {essid}",
     "format-ethernet": "󰈀 {ifname}",
     "format-disconnected": "󰖪 Disconnected",
-    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
     "max-length": 25,
     "tooltip-format": "{essid} ({signaldBm}dBm) ",
     "on-click": "nm-connection-editor",

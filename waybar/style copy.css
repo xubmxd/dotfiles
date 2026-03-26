@@ -1,0 +1,365 @@
+@import "/home/xubm/.cache/wal/colors-waybar.css";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESET & FOUNDATIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+* {
+    border-radius: 10px;
+    border: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+window#waybar {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+#custom-notification,
+#workspaces button,
+#custom-cava,
+#custom-launcher,
+#backlight,
+#clock,
+#pulseaudio,
+#network,
+#battery {
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BAR CONTAINER
+   ───────────────────────────────────────────────────────────────────────────── */
+
+window#waybar > box {
+    background-color: alpha(@background, 0.6);
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 3px 0;
+    transition: all 0.3s ease;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CLOCK
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#clock {
+    padding: 0px 5px 0px 5px;
+    margin: 1px 2px;
+    border-radius: 10px;
+    background-color: transparent;
+    color: @foreground;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+#clock:hover {
+    padding: 0px 5px 0px 5px;
+    border: 1px solid @color4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+    Notification
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-notification {
+    padding: 0px 12px 0px 9px;
+    margin: 1px 2px;
+    border-radius: 10px;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease;
+}
+
+#custom-notification:hover {
+    border: 1px solid @color4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   WORKSPACES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#workspaces {
+    padding: 0px 0px 0px 0px;
+    margin: 1px 6px;
+    background-color: transparent;
+    border: none;
+}
+
+#workspaces button {
+    padding: 0px 8px 0px 8px;
+    margin: 1px 2px;
+    min-width: 12px;
+    border-radius: 6px;
+    background-color: alpha(@color0, 0.4);
+    color: @foreground;
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+#workspaces button.empty {
+    padding: 0 6px;
+    min-width: 20px;
+    background-color: alpha(@color0, 0.2);
+    color: alpha(@foreground_variant, 0.4);
+    border: 1px solid alpha(@color4, 0.2);
+}
+
+#workspaces button.visible {
+    background-color: alpha(@color0, 0.6);
+    color: @foreground;
+    border: 1px solid alpha(@color4, 0.2);
+}
+
+#workspaces button.active {
+    padding: 0px 1px 0px 1px;
+    min-width: 28px;
+    background-color: alpha(@color4_container, 0.6);
+    color: @foreground;
+    font-weight: 700;
+    border: 1px solid @color4;
+}
+#workspaces button.urgent {
+    background-color: alpha(@color1_container, 0.6);
+    color: @foreground;
+    border: 1px solid @color1;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NETWORK & CUSTOM SPEED
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-net-speed {
+    padding: 0px 12px 0px 8px;
+    margin: 1px 8px;
+    border-radius: 10px;
+    background-color: transparent;
+    color: @foreground;
+    font-size: 10px;
+    border: 1px solid alpha(@foreground, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-net-speed:hover {
+    border: 1px solid @color4;
+}
+
+#network {
+    padding: 1px 14px 0px 9px;
+    margin: 1px 2px;
+    border-radius: 10px;
+    background-color: transparent;
+    color: @foreground;
+    font-size: 14px;
+    border: 1px solid alpha(@foreground, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+#network:hover {
+    border: 1px solid @color4;
+}
+
+#network.disconnected {
+    padding: 1px 14px 0px 9px;
+    color: alpha(@foreground_variant, 0.4);
+}
+
+#network.linked,
+#network.ethernet {
+    padding: 1px 13px 0px 9px;
+    color: @color6;
+}
+
+#network.wifi {
+    color: @foreground;
+    padding: 1px 14px 0px 9px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Backlight
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#backlight {
+    padding: 0px 12px 0px 9px;
+    margin: 1px 2px;
+    border-radius: 10px;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease;
+}
+
+#backlight:hover {
+    border: 1px solid @color4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PULSEAUDIO OUTPUT
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#pulseaudio {
+    padding: 0px 12px 0px 9px;
+    margin: 1px 2px;
+    border-radius: 10px;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease;
+}
+
+#pulseaudio:hover {
+    border: 1px solid @color4;
+}
+
+#pulseaudio.muted {
+    color: alpha(@color8, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BATTERY
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#battery {
+    padding: 0px 5px 0px 5px;
+    margin: 1px 6px;
+    border-radius: 10px;
+    font-size: 12px;
+    background-color: transparent;
+    color: @foreground;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+#battery:hover {
+    border: 1px solid @color4;
+}
+
+#battery.good {
+    color: @color6;
+}
+
+#battery.charging,
+#battery.plugged,
+#battery.full {
+    color: @color6;
+    background-color: alpha(@color6, 0.25);
+    border: 1px solid alpha(@color6, 0.15);
+}
+
+#battery.warning:not(.charging) {
+    color: @color4_fixed;
+    background-color: alpha(@color4_container, 0.3);
+    border: 1px solid alpha(@color4, 0.2);
+}
+
+#battery.critical:not(.charging) {
+    color: @foreground;
+    background-image: linear-gradient(
+        135deg,
+        @color1_container 0%,
+        @color1 100%
+    );
+    animation: critical-blink 1s ease-in-out infinite;
+    box-shadow: 0 2px 8px alpha(@color1, 0.4);
+}
+
+@keyframes critical-blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CAVA
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-cava {
+    padding: 0px 12px 0px 9px;
+    margin: 1px 2px;
+    border-radius: 10px;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 12px;
+    border: 1px solid alpha(@color4, 0.2);
+    transition: all 0.2s ease;
+}
+
+#custom-cava:hover {
+    border: 1px solid @color4;
+}
+
+#custom-cava.silent {
+    color: alpha(@color8, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+    Launcher
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-launcher {
+    min-height: 24px;
+    min-width: 24px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 10px;
+    background: transparent;
+    color: @foreground;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+#custom-notification,
+#custom-cava,
+#custom-launcher,
+#backlight,
+#clock,
+#pulseaudio,
+#network,
+#battery {
+    margin-left: 6px;
+    margin-right: 6px;
+}
