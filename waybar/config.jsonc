@@ -6,15 +6,19 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  "modules-left": ["custom/notification", "hyprland/workspaces", "custom/cava"],
+  // Add the placeholder module to the layout on the left
+  "modules-left": [ "custom/notification", "hyprland/workspaces", "mpris"],
 
-  "modules-center": ["custom/launcher"],
+  "modules-center": ["custom/cava"],
 
-  "modules-right": ["backlight", "pulseaudio", "network", "clock", "battery"],
+  "modules-right": ["backlight", "pulseaudio", "network", "clock", "battery", "custom/launcher"],
 
   "hyprland/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
+    "persistent-workspaces": {
+      "*": [ 1, 2, 3, 4, 5 ]
+    },
     "format": "{icon}",
     "format-icons": {
       "1": "1",
@@ -25,14 +29,14 @@
       "6": "6",
       "7": "7",
       "8": "8",
-      "9": "9",
+      "9": "9"
     },
-    "on-click": "activate",
+    "on-click": "activate"
   },
 
   "clock": {
     "format": "  {:%H:%M}",
-    "tooltip-format": "{:%A, %d %B %Y}",
+    "tooltip-format": "{:%A, %d %B %Y}"
   },
 
   "backlight": {
@@ -40,13 +44,13 @@
     "format": "{icon}  {percent}%",
     "format-icons": ["", "", "", "", "", "", ""],
     "on-scroll-up": "brightnessctl set +5%",
-    "on-scroll-down": "brightnessctl set 5%-",
+    "on-scroll-down": "brightnessctl set 5%-"
   },
 
   "pulseaudio": {
     "format": "{icon}  {volume}%",
     "format-muted": "  muted",
-    "format-icons": ["", "", ""],
+    "format-icons": ["", "", ""]
   },
   "network": {
     "format-wifi": "{icon} {essid}",
@@ -55,22 +59,22 @@
     "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
     "max-length": 25,
     "tooltip-format": "{essid} ({signaldBm}dBm) ",
-    "on-click": "nm-connection-editor",
+    "on-click": "nm-connection-editor"
   },
 
   "battery": {
     "format": "{icon}  {capacity}%",
     "format-charging": "  {capacity}%",
-    "format-icons": ["", "", "", "", ""],
+    "format-icons": ["", "", "", "", ""]
   },
   "custom/cava": {
     "format": "{}",
-    "exec": "$HOME/.config/waybar/scripts/cava.sh",
+    "exec": "$HOME/.config/waybar/scripts/cava.sh"
   },
   "custom/launcher": {
     "format": "",
     "tooltip": false,
-    "on-click": "rofi -show drun",
+    "on-click": "rofi -show drun"
   },
   "custom/notification": {
     "tooltip": false,
@@ -83,13 +87,30 @@
       "inhibited-notification": "<span foreground='red'><sup></sup></span>",
       "inhibited-none": "",
       "dnd-inhibited-notification": "<span foreground='red'><sup></sup></span>",
-      "dnd-inhibited-none": "",
+      "dnd-inhibited-none": ""
     },
     "return-type": "json",
     "exec-if": "which swaync-client",
     "exec": "swaync-client -swb",
     "on-click": "swaync-client -t -sw",
     "on-click-right": "swaync-client -d -sw",
-    "escape": true,
+    "escape": true
   },
+  "mpris": {
+    "format": "{player_icon} {dynamic}",
+    "format-paused": "{status_icon} <i>{dynamic}</i>",
+    "max-length": 40,
+    "player-icons": {
+      "default": "",
+      "spotify": "",
+      "firefox": "",
+      "chromium": "",
+      "mpv": ""
+    },
+    "status-icons": {
+      "paused": ""
+    }
+  },
+
+  
 }

@@ -1,11 +1,11 @@
-@import "/home/xubm/.cache/wal/colors-waybar.css";
+@import url("/home/xubm/.cache/wal/colors-waybar.css");
 
 /* ─────────────────────────────────────────────────────────────────────────────
    RESET & FOUNDATIONS
    ───────────────────────────────────────────────────────────────────────────── */
 
 * {
-    border-radius: 10px;
+    border-radius: 15px;
     border: none;
     min-height: 0;
     margin: 0;
@@ -26,9 +26,10 @@ window#waybar > box {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   SHARED MODULE STYLES (Cleaned & Consolidated)
+   SHARED MODULE STYLES (Fixed Spacing & Visibility)
    ───────────────────────────────────────────────────────────────────────────── */
 
+/* Add #custom-launcher and #custom-mpris-placeholder here to style them as boxes */
 #clock,
 #custom-notification,
 #custom-cava,
@@ -36,7 +37,10 @@ window#waybar > box {
 #pulseaudio,
 #network,
 #battery,
-#custom-net-speed {
+#custom-net-speed,
+#custom-launcher,
+#custom-mpris-placeholder,
+#mpris {
     margin: 1px 6px;
     padding: 0 10px;
     border-radius: 10px;
@@ -54,7 +58,10 @@ window#waybar > box {
 #pulseaudio:hover,
 #network:hover,
 #battery:hover,
-#custom-net-speed:hover {
+#custom-net-speed:hover,
+#custom-launcher:hover,
+#custom-mpris-placeholder:hover,
+#mpris:hover {
     border: 1px solid @color4;
 }
 
@@ -73,10 +80,10 @@ window#waybar > box {
     font-weight: 700;
 }
 
+/* Specific styling for the launcher within its new box */
 #custom-launcher {
     min-height: 24px;
     min-width: 24px;
-    margin: 0 10px;
     font-size: 16px;
     color: @foreground;
     transition: all 0.2s ease;
@@ -84,10 +91,6 @@ window#waybar > box {
 
 #custom-net-speed {
     font-size: 10px;
-    border-color: alpha(@foreground, 0.2);
-}
-
-#network {
     border-color: alpha(@foreground, 0.2);
 }
 
@@ -144,6 +147,10 @@ window#waybar > box {
     animation: pulse 1.5s ease-in-out infinite;
 }
 
+#custom-cava {
+    color: @color4;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    STATE INDICATORS
    ───────────────────────────────────────────────────────────────────────────── */
@@ -180,6 +187,11 @@ window#waybar > box {
     box-shadow: 0 2px 8px alpha(@color1, 0.4);
 }
 
+#mpris.paused {
+    color: alpha(@foreground, 0.5);
+    min-width: 10px;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
    ───────────────────────────────────────────────────────────────────────────── */
@@ -207,3 +219,4 @@ window#waybar > box {
         opacity: 1;
     }
 }
+
