@@ -4,17 +4,16 @@
 wall=$(find /home/xubm/Pictures/wallpapers/images/dark -type f -iname "*.jpg" -o -iname "*.jpeg" | shuf -n 1)
 
 # setting wallpaper
-swww img $wall --transition-type fade --transition-step 90 --transition-fps 60
+awww img $wall --transition-type fade --transition-step 90 --transition-fps 60
 
 # Copying Selected wallpaper to .cache as current wallpaper
-cp "$wall" ~/.cache/current_wallpaper
+cp "$wall" ~/.cache/current_wallpaper.jpg
 
 # Generating colors
 wal -i $wall -o ~/.local/src/pywalium/generate.sh
 
 # Color for gtk using matugen
 matugen image $wall --source-color-index 0 --type  scheme-vibrant
-
 
 # ------Spotify--------
 

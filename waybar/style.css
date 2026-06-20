@@ -26,21 +26,22 @@ window#waybar > box {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   SHARED MODULE STYLES (Fixed Spacing & Visibility)
+   SHARED MODULE STYLES (Added #bluetooth here)
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Add #custom-launcher and #custom-mpris-placeholder here to style them as boxes */
 #clock,
 #custom-notification,
 #custom-cava,
 #backlight,
 #pulseaudio,
 #network,
+#bluetooth,
 #battery,
 #custom-net-speed,
 #custom-launcher,
 #custom-mpris-placeholder,
-#mpris {
+#mpris,
+#custom-spotify-cat {
     margin: 1px 6px;
     padding: 0 10px;
     border-radius: 10px;
@@ -57,22 +58,37 @@ window#waybar > box {
 #backlight:hover,
 #pulseaudio:hover,
 #network:hover,
+#bluetooth:hover,
 #battery:hover,
 #custom-net-speed:hover,
 #custom-launcher:hover,
 #custom-mpris-placeholder:hover,
-#mpris:hover {
+#mpris:hover,
+#custom-spotify-cat:hover {
     border: 1px solid @color4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LEFT MODULES OVERRIDE (Reduced Gaps)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-notification,
+#mpris,
+#custom-spotify-cat {
+    margin: 1px 2px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MODULE OVERRIDES & ALIGNMENT FIXES
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Fix: Centering the notification icon */
 #custom-notification {
     padding: 0;
-    min-width: 40px; /* Provides a stable center point for the icon + dot */
+    min-width: 40px; 
+}
+
+#custom-spotify-cat {
+    font-size: 15px;
 }
 
 #clock {
@@ -80,7 +96,6 @@ window#waybar > box {
     font-weight: 700;
 }
 
-/* Specific styling for the launcher within its new box */
 #custom-launcher {
     min-height: 24px;
     min-width: 24px;
@@ -94,12 +109,14 @@ window#waybar > box {
     border-color: alpha(@foreground, 0.2);
 }
 
-#network.disconnected {
-    color: alpha(@foreground_variant, 0.4);
+#network.disconnected,
+#bluetooth.disabled {
+    color: @foreground;
 }
 
 #network.linked,
-#network.ethernet {
+#network.ethernet,
+#bluetooth.connected{
     color: @color6;
 }
 
@@ -108,7 +125,7 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 #workspaces {
-    margin: 1px 6px;
+    margin: 1px 2px;
 }
 
 #workspaces button {
@@ -197,26 +214,27 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 @keyframes pulse {
-    0% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-    100% {
-        opacity: 1;
-    }
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }
 
 @keyframes critical-blink {
-    0% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.8;
-    }
-    100% {
-        opacity: 1;
-    }
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   RIGHT MODULES (Remove Spaces)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#backlight,
+#pulseaudio,
+#network,
+#bluetooth,
+#clock,
+#battery {
+    margin-left: 4px;
+    margin-right: 4px;
+}

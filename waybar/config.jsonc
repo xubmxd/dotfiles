@@ -6,18 +6,16 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  // Add the placeholder module to the layout on the left
-  "modules-left": [ "custom/notification", "hyprland/workspaces", "mpris"],
-
+  "modules-left": [ "custom/notification", "hyprland/workspaces"],
   "modules-center": ["custom/cava"],
-
-  "modules-right": ["backlight", "pulseaudio", "network", "clock", "battery", "custom/launcher"],
+  // Added bluetooth here
+  "modules-right": ["backlight", "pulseaudio", "network", "bluetooth", "clock", "battery"],
 
   "hyprland/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
     "persistent-workspaces": {
-      "*": [ 1, 2, 3, 4, 5 ]
+      "*": [ 1, 2, 3 ]
     },
     "format": "{icon}",
     "format-icons": {
@@ -32,6 +30,16 @@
       "9": "9"
     },
     "on-click": "activate"
+  },
+
+  "bluetooth": {
+    "format": " {status}",
+    "format-disabled": "󰂲 Off",
+    "format-connected": " {device_alias} {device_battery_percentage}%",
+    "tooltip-format": "{controller_alias}\t{controller_address}",
+    "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "on-click": "blueman-manager"
   },
 
   "clock": {
@@ -52,6 +60,7 @@
     "format-muted": "  muted",
     "format-icons": ["", "", ""]
   },
+
   "network": {
     "format-wifi": "{icon} {essid}",
     "format-ethernet": "󰈀 {ifname}",
@@ -67,15 +76,18 @@
     "format-charging": "  {capacity}%",
     "format-icons": ["", "", "", "", ""]
   },
+
   "custom/cava": {
     "format": "{}",
     "exec": "$HOME/.config/waybar/scripts/cava.sh"
   },
+
   "custom/launcher": {
-    "format": "",
+    "format": "󰣇",
     "tooltip": false,
     "on-click": "rofi -show drun"
   },
+
   "custom/notification": {
     "tooltip": false,
     "format": "{icon}",
@@ -96,6 +108,7 @@
     "on-click-right": "swaync-client -d -sw",
     "escape": true
   },
+
   "mpris": {
     "format": "{player_icon} {dynamic}",
     "format-paused": "{status_icon} <i>{dynamic}</i>",
@@ -112,5 +125,10 @@
     }
   },
 
-  
+  "custom/spotify-cat": {
+    "exec": "~/.config/waybar/scripts/spotify-cat.sh",
+    "return-type": "json",
+    "format": "{}",
+    "tooltip": false
+  }
 }
