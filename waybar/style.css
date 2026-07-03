@@ -41,6 +41,7 @@ window#waybar > box {
 #custom-launcher,
 #custom-mpris-placeholder,
 #mpris,
+#custom-lyrics,
 #custom-spotify-cat {
     margin: 1px 6px;
     padding: 0 10px;
@@ -209,6 +210,38 @@ window#waybar > box {
     min-width: 10px;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   LYRICS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+#custom-lyrics {
+    color: @color6;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 12px;
+    min-width: 180px;
+    transition:
+        color 0.3s ease,
+        border-color 0.3s ease,
+        background-color 0.3s ease;
+}
+
+#custom-lyrics:hover {
+    color: @foreground;
+}
+
+#custom-lyrics.paused {
+    color: alpha(@foreground, 0.45);
+}
+
+#custom-lyrics.no-lyrics {
+    color: alpha(@foreground, 0.35);
+    font-style: italic;
+}
+
+#custom-lyrics.playing {
+    color: @color6;
+}
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
    ───────────────────────────────────────────────────────────────────────────── */

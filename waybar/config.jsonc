@@ -6,8 +6,8 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  "modules-left": [ "custom/notification", "hyprland/workspaces"],
-  "modules-center": ["custom/cava"],
+  "modules-left": [ "custom/notification", "hyprland/workspaces", "custom/lyrics"],
+  "modules-center": [""],
   // Added bluetooth here
   "modules-right": ["backlight", "pulseaudio", "network", "bluetooth", "clock", "battery"],
 
@@ -130,5 +130,11 @@
     "return-type": "json",
     "format": "{}",
     "tooltip": false
-  }
+  },
+  "custom/lyrics": {
+    "exec": "~/.config/waybar/scripts/spotify_lyrics.py",
+    "interval": 1,
+    "return-type": "text",
+    "tooltip": false
+}
 }

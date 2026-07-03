@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+
+import os
+import re
+import subprocess
+import syncedlyrics
+
+CACHE_DIR = os.path.expanduser("~/.cache/waybar-lyrics")
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def run(cmd):
+    return subprocess.check_output(
+        cmd,
+        text=True,
+        stderr=subprocess.STDOUT
+    ).strip()
+
+
+def get_metadata():
+    try:
+        title = run(["playerctl", "-p", "spotify", "metadata", "title"])
+        artist = run(["playerctl", "-p", "spotify", "metadata", "artist"])
+        return artist, title
+    except Exception:
+        return None, None
+
+
+def get_status():
+    try:
+        out = run([
+            "gdbus", "call",
+            "--session",
+            "--dest", "org.mpris.MediaPlayer2.spotify",
+            "--object-path", "/org/mpris/MediaPlayer2",
+            "--method", "org.freedesktop.DBus.Properties.Get",
+            "org.mpris.MediaPlayer2.Player",
+            "PlaybackStatus"
+        ])
+
+        # Works with both <'Playing'> and <"Playing">
+        m = re.search(r"[\"'](Playing|Paused|Stopped)[\"']", out)
+        return m.group(1) if m else None
+
+    except Exception:
+        return None
+
+def get_position():
+    out = run([
+        "gdbus", "call",
+        "--session",
+        "--dest", "org.mpris.MediaPlayer2.spotify",
+        "--object-path", "/org/mpris/MediaPlayer2",
+        "--method", "org.freedesktop.DBus.Properties.Get",
+        "org.mpris.MediaPlayer2.Player",
+        "Position"
+    ])
+
+    us = int(re.search(r'int64 (\d+)', out).group(1))
+    return us / 1_000_000
+
+
+artist, title = get_metadata()
+
+if not artist or not title:
+    print("")
+    exit()
+
+status = get_status()
+
+if status != "Playing":
+    print("⏸ Paused")
+    exit()
+
+position = get_position()
+
+song = f"{artist} - {title}"
+cache_file = os.path.join(
+    CACHE_DIR,
+    re.sub(r'[^a-zA-Z0-9]', "_", song) + ".lrc"
+)
+
+if not os.path.exists(cache_file):
+    lyrics = syncedlyrics.search(song)
+    if lyrics:
+        with open(cache_file, "w", encoding="utf-8") as f:
+            f.write(lyrics)
+
+if not os.path.exists(cache_file):
+    print("♪ No synced lyrics")
+    exit()
+
+current = ""
+
+with open(cache_file, encoding="utf-8") as f:
+    for line in f:
+        m = re.match(r"\[(\d+):(\d+(?:\.\d+)?)\](.*)", line)
+        if not m:
+            continue
+
+        t = int(m.group(1)) * 60 + float(m.group(2))
+
+        if t <= position:
+            lyric = m.group(3).strip()
+            if lyric:
+                current = lyric
+        else:
+            break
+
+print("  " + current)
+
