@@ -132,9 +132,8 @@
     "tooltip": false
   },
   "custom/lyrics": {
-    "exec": "~/.config/waybar/scripts/spotify_lyrics.py",
-    "interval": 1,
-    "return-type": "text",
-    "tooltip": false
-}
+    "exec": "~/.cargo/bin/lumi",
+    "format": "{}"
+  }
+
 }
