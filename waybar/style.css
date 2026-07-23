@@ -42,7 +42,8 @@ window#waybar > box {
 #custom-mpris-placeholder,
 #mpris,
 #custom-lyrics,
-#custom-spotify-cat {
+#custom-spotify-cat,
+#tray{
     margin: 1px 6px;
     padding: 0 10px;
     border-radius: 10px;
@@ -65,7 +66,8 @@ window#waybar > box {
 #custom-launcher:hover,
 #custom-mpris-placeholder:hover,
 #mpris:hover,
-#custom-spotify-cat:hover {
+#custom-spotify-cat:hover,
+#tray:hover{
     border: 1px solid @color4;
 }
 

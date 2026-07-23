@@ -7,7 +7,7 @@
   "margin-right": 20,
 
   "modules-left": [ "custom/notification", "hyprland/workspaces", "custom/lyrics"],
-  "modules-center": [""],
+  "modules-center": ["tray"],
   // Added bluetooth here
   "modules-right": ["backlight", "pulseaudio", "network", "bluetooth", "clock", "battery"],
 
@@ -15,7 +15,7 @@
     "disable-scroll": true,
     "all-outputs": true,
     "persistent-workspaces": {
-      "*": [ 1, 2, 3 ]
+      "*": [ 1, 2, 3, 4]
     },
     "format": "{icon}",
     "format-icons": {
@@ -134,6 +134,10 @@
   "custom/lyrics": {
     "exec": "~/.cargo/bin/lumi",
     "format": "{}"
-  }
+  },
+  "tray": {
+    "icon-size": 18,
+    "spacing": 8
+}
 
 }
