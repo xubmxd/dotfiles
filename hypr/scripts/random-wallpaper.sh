@@ -7,7 +7,8 @@ wall=$(find /home/xubm/Pictures/wallpapers/images/dark -type f -iname "*.jpg" -o
 awww img $wall --transition-type fade --transition-step 90 --transition-fps 60
 
 # Copying Selected wallpaper to .cache as current wallpaper
-cp "$wall" ~/.cache/current_wallpaper.jpg
+cp "$wall" ~/.cache/current_wallpaper
+cp "$wall" ~/.cache/current_wallpaper.png
 
 # Generating colors
 wal -i $wall -o ~/.local/src/pywalium/generate.sh

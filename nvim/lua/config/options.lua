@@ -11,6 +11,6 @@ vim.opt.wrap = true
 vim.opt.linebreak = true
 vim.opt.breakindent = true
 
-vim.opt.guicursor = "n-v-i-c:block-Cursor"
+vim.opt.guicursor = "a:hor20"
 
 vim.cmd("source ~/.cache/wal/colors-wal.vim")
