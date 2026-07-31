@@ -74,7 +74,7 @@ entry {
 
 listview {
     columns: 3;
-    lines: 1;
+    lines: 2;
 
     spacing: 42px;
 
@@ -84,14 +84,21 @@ listview {
 }
 
 element {
+    orientation: horizontal;
+
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+
+    background-color: transparent;
+
     padding: 16px;
+
     border-radius: 12px;
 }
 
 element-text {
     font: \"JetBrainsMono Nerd Font Bold 18\";
     text-color: @fg-col;
-    horizontal-align: 0.5;
 }
 
 element selected.normal {
@@ -143,11 +150,13 @@ inputbar {
 }
 
 prompt {
-    background-color: transparent;
+    background-color: @selected-col;
 
-    text-color: @fg-col;
+    text-color: ${color0};
 
-    padding: 10px 12px;
+    border-radius: 10px;
+
+    padding: 8px 16px;
 
     font: \"JetBrainsMono Nerd Font Bold 12\";
 }
