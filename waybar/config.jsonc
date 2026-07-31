@@ -6,8 +6,8 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  "modules-left": [ "hyprland/workspaces", "custom/lyrics"],
-  "modules-center": ["tray"],
+  "modules-left": [ "hyprland/workspaces", "tray" ],
+  "modules-center": ["custom/cava"],
   // Added bluetooth here
   "modules-right": ["backlight", "pulseaudio", "network", "bluetooth", "clock", "battery"],
 
@@ -76,11 +76,11 @@
     "format-charging": "  {capacity}%",
     "format-icons": ["", "", "", "", ""]
   },
-
   "custom/cava": {
-    "format": "{}",
-    "exec": "$HOME/.config/waybar/scripts/cava.sh"
-  },
+    "format":"{}",
+    "exec": "~/.config/waybar/scripts/cava.sh",
+},
+
 
   "custom/launcher": {
     "format": "󰣇",
