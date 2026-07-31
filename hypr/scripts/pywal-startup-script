@@ -1,0 +1,3 @@
+wal -i /home/xubm/.cache/current_wallpaper
+
+hyprctl reload

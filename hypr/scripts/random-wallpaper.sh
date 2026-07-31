@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Getting wallpaper
-wall=$(find /home/xubm/Pictures/wallpapers/images/dark -type f -iname "*.jpg" -o -iname "*.jpeg" | shuf -n 1)
+wall=$(find /home/xubm/Pictures/wallpapers/images/scenic -type f -iname "*.jpg" -o -iname "*.jpeg" | shuf -n 1)
 
 # setting wallpaper
 awww img $wall --transition-type fade --transition-step 90 --transition-fps 60

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# ensure clipboard tool exists
+if ! command -v xclip >/dev/null; then
+    notify-send "Emoji Picker" "xclip is not installed"
+    exit 1
+fi
+
+# launch rofi emoji mode
+rofi -show emoji
