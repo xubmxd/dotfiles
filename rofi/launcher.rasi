@@ -1,0 +1,175 @@
+@import "~/.cache/wal/colors.rasi"
+
+configuration {
+    modi: "drun";
+    show-icons: true;
+
+    display-drun: "Apps";
+    drun-display-format: "{name}";
+
+    matching: "fuzzy";
+    sorting-method: "normal";
+
+    cycle: true;
+    hover-select: false;
+    sidebar-mode: false;
+    disable-history: false;
+}
+
+* {
+    font: "JetBrainsMono Nerd Font 13";
+
+    /* Dynamic Colors from Pywal */
+    fg:             @foreground;
+    
+    /* Universal semi-transparent dark base for the frosted glass effect */
+    bg:             rgba(0, 0, 0, 0.50); 
+    bg-alt:         rgba(255, 255, 255, 0.08); 
+
+    /* Mapping Pywal's color palette */
+    accent:         @color4;    /* Mauve */
+    accent-light:   @color5;    /* Pink */
+    border:         @color2;    /* Indigo */
+
+    text-color:     @fg;
+    background-color: transparent;
+}
+
+window {
+    width: 500px;
+
+    background-color: @bg;
+
+    border: 2px;
+    border-color: @border;
+
+    border-radius: 24px;
+
+    padding: 30px;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+    spacing: 24px;
+}
+
+inputbar {
+    background-color: @bg-alt;
+
+    border-radius: 18px;
+
+    padding: 14px;
+
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: @accent;
+
+    /* Uses the deep background color for sharp contrast against the accent */
+    text-color: @background; 
+
+    border-radius: 12px;
+
+    padding: 10px 18px;
+
+    expand: false;
+
+    font: "JetBrainsMono Nerd Font Bold 12";
+}
+
+entry {
+    expand: true;
+
+    background-color: transparent;
+
+    text-color: @fg;
+
+    placeholder: "Search applications...";
+    
+    /* Uses color8 for a perfectly subdued placeholder text */
+    placeholder-color: @color8; 
+
+    padding: 10px;
+
+    font: "JetBrainsMono Nerd Font 13";
+}
+
+listview {
+    columns: 1;
+    lines: 8;
+
+    spacing: 10px;
+
+    dynamic: true;
+    fixed-height: false;
+    cycle: true;
+
+    scrollbar: false;
+
+    layout: vertical;
+}
+
+element {
+    orientation: horizontal;
+
+    spacing: 18px;
+
+    padding: 12px;
+
+    border-radius: 14px;
+
+    background-color: transparent;
+}
+
+element-icon {
+    size: 28px;
+
+    vertical-align: 0.5;
+
+    background-color: transparent;
+}
+
+element-text {
+    vertical-align: 0.5;
+
+    text-color: @fg;
+
+    font: "JetBrainsMono Nerd Font 13";
+}
+
+element normal.normal {
+    background-color: transparent;
+}
+
+element alternate.normal {
+    background-color: transparent;
+}
+
+element selected.normal {
+    background-color: @bg-alt;
+
+    border: 2px;
+    border-color: @accent;
+
+    border-radius: 14px;
+}
+
+element selected.active {
+    background-color: @bg-alt;
+
+    border: 2px;
+    border-color: @accent-light;
+}
+
+element selected.normal element-text {
+    text-color: @fg;
+}
+
+element selected.normal element-icon {
+    text-color: @fg;
+}
+
+scrollbar {
+    enabled: false;
+}
