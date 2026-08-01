@@ -16,13 +16,13 @@ CACHE_FILE="$HOME/.cache/current_wallpaper"
 # ------------------------------------------------------------
 
 if [ -f "$HOME/.cache/wal/colors.sh" ]; then
-    source "$HOME/.cache/wal/colors.sh"
+	source "$HOME/.cache/wal/colors.sh"
 else
-    color0="#11111b"
-    color4="#89b4fa"
-    color6="#cba6f7"
-    color7="#ffffff"
-    foreground="#cdd6f4"
+	color0="#11111b"
+	color4="#89b4fa"
+	color6="#cba6f7"
+	color7="#ffffff"
+	foreground="#cdd6f4"
 fi
 
 # ------------------------------------------------------------
@@ -246,19 +246,19 @@ element selected.normal {
 # ------------------------------------------------------------
 
 display_name() {
-    case "$1" in
-        anime)      echo "󰑈  Anime" ;;
-        scenic)     echo "󰉔  Scenic" ;;
-        dark)       echo "󰌪  Dark" ;;
-        space)      echo "󰠱  Space" ;;
-        gaming)     echo "󰊗  Gaming" ;;
-        city)       echo "󰣇  City" ;;
-        cars)       echo "󰭮  Cars" ;;
-        abstract)   echo "󰝤  Abstract" ;;
-        minimal)    echo "󰈔  Minimal" ;;
-        nature)     echo "󰔉  Nature" ;;
-        *)          echo "󰉋  ${1^}" ;;
-    esac
+	case "$1" in
+	anime) echo "󰑈  Anime" ;;
+	scenic) echo "󰉔  Scenic" ;;
+	dark) echo "󰌪  Dark" ;;
+	space) echo "󰠱  Space" ;;
+	gaming) echo "󰊗  Gaming" ;;
+	city) echo "󰣇  City" ;;
+	cars) echo "󰭮  Cars" ;;
+	abstract) echo "󰝤  Abstract" ;;
+	minimal) echo "󰈔  Minimal" ;;
+	nature) echo "󰔉  Nature" ;;
+	*) echo "󰉋  ${1^}" ;;
+	esac
 }
 
 # ------------------------------------------------------------
@@ -269,61 +269,94 @@ declare -A CATEGORY_MAP
 CATEGORY_LIST=""
 
 while IFS= read -r dir; do
-    folder=$(basename "$dir")
-    display=$(display_name "$folder")
+	folder=$(basename "$dir")
+	display=$(display_name "$folder")
 
-    CATEGORY_MAP["$display"]="$folder"
-    CATEGORY_LIST+="$display"$'\n'
+	CATEGORY_MAP["$display"]="$folder"
+	CATEGORY_LIST+="$display"$'\n'
 
 done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
 
 while true; do
 
-    # ------------------------------------------------------------
-    # Category Selection
-    # ------------------------------------------------------------
+	# ------------------------------------------------------------
+	# Category Selection
+	# ------------------------------------------------------------
 
-    SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
-        rofi \
-            -dmenu \
-            -i \
-            -p "󰉋 Collection" \
-            -theme-str "$CATEGORY_THEME")
+	SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
+		rofi \
+			-dmenu \
+			-i \
+			-p "󰉋 Collection" \
+			-theme-str "$CATEGORY_THEME")
 
-    [ -z "$SELECTED_DISPLAY" ] && exit
+	[ -z "$SELECTED_DISPLAY" ] && exit
 
-    CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
-    WALL_DIR="$WALL_ROOT/$CATEGORY"
+	CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
+	WALL_DIR="$WALL_ROOT/$CATEGORY"
 
-    # ------------------------------------------------------------
-    # Wallpaper Selection
-    # ------------------------------------------------------------
+	# ------------------------------------------------------------
+	# Wallpaper Selection
+	# ------------------------------------------------------------
 
-    SELECTED_NAME=$(
-    find "$WALL_DIR" -type f \
-        \( \
-        -iname "*.jpg" -o \
-        -iname "*.jpeg" -o \
-        -iname "*.png" -o \
-        -iname "*.gif" \
-        \) |
-    sort |
-    while read -r file; do
-        printf "%s\0icon\x1f%s\n" "$(basename "$file")" "$file"
-    done |
-    rofi \
-        -dmenu \
-        -i \
-        -p "󰸉 Wallpapers" \
-        -theme-str "$ROFI_THEME"
-    )
+	SELECTED_NAME=$(
+		find "$WALL_DIR" -type f \
+			\( \
+			-iname "*.jpg" -o \
+			-iname "*.jpeg" -o \
+			-iname "*.png" -o \
+			-iname "*.gif" \
+			\) |
+			sort |
+			while read -r file; do
+				printf "%s\0icon\x1f%s\n" "$(basename "$file")" "$file"
+			done |
+			rofi \
+				-dmenu \
+				-i \
+				-kb-delete-entry "" \
+				-kb-custom-1 Shift+Delete \
+				-p "󰸉 Wallpapers" \
+				-theme-str "$ROFI_THEME"
+	)
 
-    # Escape in wallpaper menu -> go back
-    [ -z "$SELECTED_NAME" ] && continue
+	ROFI_EXIT=$?
 
-    WALL="$WALL_DIR/$SELECTED_NAME"
+	# Escape in wallpaper menu -> go back
+	case "$ROFI_EXIT" in
+	1)
+		# Escape
+		continue
+		;;
 
-    break
+	10)
+		# Shift+Delete
+
+		[ -z "$SELECTED_NAME" ] && continue
+
+		WALL="$WALL_DIR/$SELECTED_NAME"
+
+		CONFIRM=$(
+			printf "󰜺 Cancel\n󰆴 Delete" |
+				rofi \
+					-dmenu \
+					-p "Delete \"$(basename "$WALL")\"?" \
+					-theme-str "$CATEGORY_THEME"
+		)
+
+		if [[ "$CONFIRM" == *Delete ]]; then
+			rm -f "$WALL"
+		fi
+
+		continue
+		;;
+	esac
+
+	[ -z "$SELECTED_NAME" ] && continue
+
+	WALL="$WALL_DIR/$SELECTED_NAME"
+
+	break
 
 done
 
@@ -332,15 +365,15 @@ done
 # ------------------------------------------------------------
 
 awww img "$WALL" \
-    --transition-type fade \
-    --transition-step 90 \
-    --transition-fps 60
+	--transition-type fade \
+	--transition-step 90 \
+	--transition-fps 60
 
 wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
 
 matugen image "$WALL" \
-    --source-color-index 0 \
-    --type scheme-vibrant
+	--source-color-index 0 \
+	--type scheme-vibrant
 
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
