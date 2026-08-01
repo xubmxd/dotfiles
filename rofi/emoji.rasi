@@ -120,7 +120,7 @@ element-text {
     text-color: @fg;
 
     /* Increased font size so the emojis are big and readable */
-    font: "JetBrainsMono Nerd Font 22"; 
+    font: "JetBrainsMono Nerd Font 15"; 
 }
 
 /* Explicitly defined base states to prevent default theme bleed-through */
