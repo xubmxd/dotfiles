@@ -1,139 +1,142 @@
-@import "/home/xubm/.cache/wal/colors-rofi-dark.rasi"
+@import "~/.cache/wal/colors.rasi"
 
+configuration {
+    /* Changed modi to 'emoji' */
+    modi: "emoji";
+    show-icons: false; /* Emojis are text characters, not icons */
 
-#window {
-    background-color: @background;
-    width: 1000;
-    height: 500;
-    padding: 15;
-    border: 2;
+    display-emoji: "Emoji";
+
+    matching: "normal";
+    sorting-method: "normal";
+
+    cycle: true;
+    hover-select: false;
+    disable-history: false;
 }
 
-#mainbox {
-    spacing: 10;
+* {
+    font: "JetBrainsMono Nerd Font 13";
+
+    /* Dynamic Colors from Pywal */
+    fg:             @foreground;
+    
+    /* Safely formatted universal dark overlay */
+    bg:             rgba(0, 0, 0, 0.75); 
+    bg-alt:         rgba(255, 255, 255, 0.08); 
+
+    /* Mapping Pywal's color palette */
+    accent:         @color4;    
+    accent-alt:     @color5;    
+
+    text-color:     @fg;
+    background-color: transparent;
 }
 
-#message {
-    border: 2px 0px 0px;
-    border-color: @border-color;
-    padding: 1px;
+window {
+    /* Made the window slightly narrower for a tighter emoji grid */
+    width: 650px; 
+    
+    background-color: @bg;
+
+    border: 2px;
+    border-color: @accent;
+
+    border-radius: 24px;
+    padding: 30px;
 }
 
-#textbox {
-    text-color: @foreground;
+mainbox {
+    children: [ inputbar, listview ];
+    spacing: 24px;
 }
 
-#inputbar {
-    children:   [ prompt,textbox-prompt-colon,entry,case-indicator ];
+inputbar {
+    background-color: @bg-alt;
+
+    border-radius: 18px;
+    padding: 14px;
+
+    children: [ prompt, entry ];
 }
 
-#textbox-prompt-colon {
+prompt {
+    background-color: @accent;
+    
+    /* Dark text for sharp contrast */
+    text-color: @background; 
+
+    border-radius: 12px;
+    padding: 10px 18px;
     expand: false;
-    str: ":";
-    margin: 0px 0.3em 0em 0em;
-    text-color: @normal-foreground;
+
+    font: "JetBrainsMono Nerd Font Bold 12";
 }
 
-#listview {
-    lines: 8;
-    spacing: 6;
+entry {
+    expand: true;
+    background-color: transparent;
+    text-color: @fg;
+
+    placeholder: "Search emojis...";
+    placeholder-color: @color8;
+
+    padding: 10px;
+    font: "JetBrainsMono Nerd Font 13";
 }
 
-#element {
-    padding: 8;
-    border-radius: 8;
+listview {
+    /* Transformed into a grid layout! */
+    columns: 6; 
+    lines: 5;
+
+    spacing: 12px;
+
+    dynamic: true;
+    fixed-height: false; /* Allows the window to shrink */
+    cycle: true;
+
+    scrollbar: false;
+    layout: vertical;
 }
 
+element {
+    /* Stacked vertically to center the emoji */
+    orientation: vertical; 
 
-#element-text, element-icon {
-    background-color: inherit;
-    text-color:       inherit;
+    padding: 12px 0px;
+    border-radius: 14px;
+    background-color: transparent;
+
+    border: 2px;
+    border-color: transparent;
 }
 
-#element.normal.normal {
-    background-color: @normal-background;
-    text-color: @normal-foreground;
+element-text {
+    /* Centered alignments for a clean grid look */
+    vertical-align: 0.5;
+    horizontal-align: 0.5;
+
+    text-color: @fg;
+
+    /* Increased font size so the emojis are big and readable */
+    font: "JetBrainsMono Nerd Font 22"; 
 }
 
-#element.normal.urgent {
-    background-color: @urgent-background;
-    text-color: @urgent-foreground;
+/* Explicitly defined base states to prevent default theme bleed-through */
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
 }
 
-#element.normal.active {
-    background-color: @active-background;
-    text-color: @active-foreground;
+element selected.normal {
+    background-color: @bg-alt;
+    border-color: @accent;
 }
 
-#element.selected.normal {
-    background-color: @selected-normal-background;
-    text-color: @selected-normal-foreground;
+element selected.active {
+    background-color: @bg-alt;
+    border-color: @accent-alt;
 }
 
-#element.selected.urgent {
-    background-color: @selected-urgent-background;
-    text-color: @selected-urgent-foreground;
-}
-
-#element.selected.active {
-    background-color: @selected-active-background;
-    text-color: @selected-active-foreground;
-}
-
-#element.alternate.normal {
-    background-color: @alternate-normal-background;
-    text-color: @alternate-normal-foreground;
-}
-
-#element.alternate.urgent {
-    background-color: @alternate-urgent-background;
-    text-color: @alternate-urgent-foreground;
-}
-
-#element.alternate.active {
-    background-color: @alternate-active-background;
-    text-color: @alternate-active-foreground;
-}
-
-#scrollbar {
-    width: 4px;
-    border: 0;
-    handle-width: 8px;
-    padding: 0;
-}
-
-#sidebar {
-    border: 2px 0px 0px;
-    border-color: @border-color;
-}
-
-#button {
-    text-color: @normal-foreground;
-}
-
-#button.selected {
-    background-color: @selected-normal-background;
-    text-color: @selected-normal-foreground;
-}
-
-#inputbar {
-    spacing: 0;
-    text-color: @normal-foreground;
-    padding: 8;
-    border-radius: 10;
-}
-
-#case-indicator {
-    spacing: 0;
-    text-color: @normal-foreground;
-}
-
-#entry {
-    spacing: 0;
-    text-color: @normal-foreground;
-}
-
-#prompt {
-    spacing: 0;
-    text-color: @normal-foreground;
-}
+/* Removed element-icon since emojis render as text */
