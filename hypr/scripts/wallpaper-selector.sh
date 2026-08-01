@@ -76,7 +76,7 @@ listview {
     columns: 3;
     lines: 2;
 
-    spacing: 42px;
+    spacing: 30px;
 
     cycle: true;
     dynamic: true;
@@ -277,48 +277,55 @@ while IFS= read -r dir; do
 
 done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
 
-# ------------------------------------------------------------
-# Category Selection
-# ------------------------------------------------------------
+while true; do
 
-SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
+    # ------------------------------------------------------------
+    # Category Selection
+    # ------------------------------------------------------------
+
+    SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
+        rofi \
+            -dmenu \
+            -i \
+            -p "󰉋 Collection" \
+            -theme-str "$CATEGORY_THEME")
+
+    [ -z "$SELECTED_DISPLAY" ] && exit
+
+    CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
+    WALL_DIR="$WALL_ROOT/$CATEGORY"
+
+    # ------------------------------------------------------------
+    # Wallpaper Selection
+    # ------------------------------------------------------------
+
+    SELECTED_NAME=$(
+    find "$WALL_DIR" -type f \
+        \( \
+        -iname "*.jpg" -o \
+        -iname "*.jpeg" -o \
+        -iname "*.png" -o \
+        -iname "*.gif" \
+        \) |
+    sort |
+    while read -r file; do
+        printf "%s\0icon\x1f%s\n" "$(basename "$file")" "$file"
+    done |
     rofi \
         -dmenu \
         -i \
-        -p "󰉋 Collection" \
-        -theme-str "$CATEGORY_THEME")
+        -p "󰸉 Wallpapers" \
+        -theme-str "$ROFI_THEME"
+    )
 
-[ -z "$SELECTED_DISPLAY" ] && exit
+    # Escape in wallpaper menu -> go back
+    [ -z "$SELECTED_NAME" ] && continue
 
-CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
-WALL_DIR="$WALL_ROOT/$CATEGORY"
+    WALL="$WALL_DIR/$SELECTED_NAME"
 
-# ------------------------------------------------------------
-# Wallpaper Selection
-# ------------------------------------------------------------
+    break
 
-SELECTED_NAME=$(
-find "$WALL_DIR" -type f \
-    \( \
-    -iname "*.jpg" -o \
-    -iname "*.jpeg" -o \
-    -iname "*.png" -o \
-    -iname "*.gif" \
-    \) |
-sort |
-while read -r file; do
-    printf "%s\0icon\x1f%s\n" "$(basename "$file")" "$file"
-done |
-rofi \
-    -dmenu \
-    -i \
-    -p "󰸉 Wallpapers" \
-    -theme-str "$ROFI_THEME"
-)
-
-[ -z "$SELECTED_NAME" ] && exit
-
-WALL="$WALL_DIR/$SELECTED_NAME"
+done
 
 # ------------------------------------------------------------
 # Apply Wallpaper
