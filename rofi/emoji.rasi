@@ -22,7 +22,7 @@ configuration {
     fg:             @foreground;
     
     /* Safely formatted universal dark overlay */
-    bg:             rgba(0, 0, 0, 0.75); 
+    bg:             rgba(0, 0, 0, 0.5); 
     bg-alt:         rgba(255, 255, 255, 0.08); 
 
     /* Mapping Pywal's color palette */
@@ -35,7 +35,7 @@ configuration {
 
 window {
     /* Made the window slightly narrower for a tighter emoji grid */
-    width: 650px; 
+    width: 550px; 
     
     background-color: @bg;
 
@@ -88,7 +88,7 @@ entry {
 listview {
     /* Transformed into a grid layout! */
     columns: 6; 
-    lines: 5;
+    lines: 4;
 
     spacing: 12px;
 
