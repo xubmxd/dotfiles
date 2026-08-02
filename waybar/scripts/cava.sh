@@ -36,8 +36,8 @@ validate_bars() {
     }
 }
 
-spotify_playing() {
-    playerctl --player=spotify status 2>/dev/null | grep -qx "Playing"
+mewsic_running() {
+    hyprctl clients | grep -q "title: mewsic-tui-app"
 }
 
 ################################################################################
@@ -73,12 +73,37 @@ while [[ $# -gt 0 ]]; do
 done
 
 ################################################################################
-# Hide module if Spotify isn't playing
+# Glyphs
+################################################################################
+
+case ${CAVA_GLYPHS:-unicode} in
+    unicode)
+        glyphs=(
+            ▁ ▂ ▃ ▄ ▅ ▆ ▇ █
+        )
+        ;;
+    ascii)
+        glyphs=(
+            . : - = + '*' '#' @
+        )
+        ;;
+    *)
+        echo "Unknown glyph set: ${CAVA_GLYPHS}" >&2
+        exit 1
+        ;;
+esac
+
+################################################################################
+# Main loop
 ################################################################################
 
 while true; do
 
-    if ! spotify_playing; then
+    ############################################################################
+    # Hide module if Mewsic isn't running
+    ############################################################################
+
+    if ! mewsic_running; then
         if (( vert )); then
             echo '{"text":""}'
         else
@@ -88,26 +113,6 @@ while true; do
         sleep 1
         continue
     fi
-
-    ############################################################################
-    # Glyphs
-    ############################################################################
-
-    case ${CAVA_GLYPHS:-unicode} in
-        unicode)
-            glyphs=(
-                ▁ ▂ ▃ ▄ ▅ ▆ ▇ █
-            )
-            ;;
-        ascii)
-            glyphs=(
-                . : - = + '*' '#' @
-            )
-            ;;
-        *)
-            exit 1
-            ;;
-    esac
 
     config=$(cat <<EOF
 [general]
@@ -134,49 +139,67 @@ EOF
         -v c5="${glyphs[5]}" \
         -v c6="${glyphs[6]}" \
         -v c7="${glyphs[7]}" '
-
 BEGIN{
-c[0]=c0;c[1]=c1;c[2]=c2;c[3]=c3
-c[4]=c4;c[5]=c5;c[6]=c6;c[7]=c7
+    c[0]=c0
+    c[1]=c1
+    c[2]=c2
+    c[3]=c3
+    c[4]=c4
+    c[5]=c5
+    c[6]=c6
+    c[7]=c7
 }
 
 {
-    split($0,a,";")
+    n = split($0, a, ";")
 
-    out=""
-    idle=1
+    out = ""
+    idle = 1
 
-    for(i=1;i<=length(a);i++){
+    for (i = 1; i <= n; i++) {
 
-        v=a[i]+0
+        actual = a[i] + 0
 
-        if(v<0)v=0
-        if(v>7)v=7
+        if (actual < 0)
+            actual = 0
+        else if (actual > 7)
+            actual = 7
 
-        if(v>0)idle=0
+        decayed = prev[i] - 2
+        displayed = (actual > decayed) ? actual : decayed
 
-        out=out c[v]
+        if (displayed < 0)
+            displayed = 0
+
+        prev[i] = displayed
+
+        if (displayed > 0)
+            idle = 0
+
+        if (i > 1)
+            out = out " "
+
+        out = out c[displayed]
     }
 
-    if(clean && idle){
+    if (clean && idle) {
         count++
-        if(count>=threshold){
-            if(vert)
+        if (count >= threshold) {
+            if (vert)
                 print "{\"text\":\"\"}"
             else
                 print ""
             fflush()
             next
         }
-    }else{
-        count=0
+    } else {
+        count = 0
     }
 
-    if(vert){
+    if (vert)
         print "{\"text\":\"" out "\"}"
-    }else{
+    else
         print out
-    }
 
     fflush()
 }

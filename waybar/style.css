@@ -5,24 +5,24 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 * {
-    border-radius: 15px;
-    border: none;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
-    font-weight: 600;
-    font-size: 15px;
+  border-radius: 15px;
+  border: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+  font-weight: 600;
+  font-size: 17px;
 }
 
 window#waybar {
-    background: transparent;
+  background: transparent;
 }
 
 window#waybar > box {
-    background-color: alpha(@background, 0.6);
-    padding: 3px 0;
-    transition: all 0.3s ease;
+  background-color: alpha(@background, 0.6);
+  padding: 3px 0;
+  transition: all 0.3s ease;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -44,15 +44,15 @@ window#waybar > box {
 #custom-lyrics,
 #custom-spotify-cat,
 #tray,
-#custom-spotify{
-    margin: 1px 6px;
-    padding: 0 10px;
-    border-radius: 10px;
-    background: transparent;
-    color: @foreground;
-    font-size: 12px;
-    border: 1px solid alpha(@color4, 0.2);
-    transition: all 0.2s ease-in-out;
+#custom-spotify {
+  margin: 1px 6px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: @foreground;
+  font-size: 14px;
+  border: 1px solid alpha(@color4, 0.2);
+  transition: all 0.2s ease-in-out;
 }
 
 #clock:hover,
@@ -69,8 +69,8 @@ window#waybar > box {
 #mpris:hover,
 #custom-spotify-cat:hover,
 #tray:hover,
-#custom-spotify:hover{
-    border: 1px solid @color4;
+#custom-spotify:hover {
+  border: 1px solid @color4;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ window#waybar > box {
 #custom-notification,
 #mpris,
 #custom-spotify-cat {
-    margin: 1px 2px;
+  margin: 1px 2px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -88,41 +88,41 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 #custom-notification {
-    padding: 0;
-    min-width: 40px; 
+  padding: 0;
+  min-width: 40px;
 }
 
 #custom-spotify-cat {
-    font-size: 15px;
+  font-size: 15px;
 }
 
 #clock {
-    padding: 0 5px;
-    font-weight: 700;
+  padding: 0 5px;
+  font-weight: 700;
 }
 
 #custom-launcher {
-    min-height: 24px;
-    min-width: 24px;
-    font-size: 16px;
-    color: @foreground;
-    transition: all 0.2s ease;
+  min-height: 24px;
+  min-width: 24px;
+  font-size: 16px;
+  color: @foreground;
+  transition: all 0.2s ease;
 }
 
 #custom-net-speed {
-    font-size: 10px;
-    border-color: alpha(@foreground, 0.2);
+  font-size: 10px;
+  border-color: alpha(@foreground, 0.2);
 }
 
 #network.disconnected,
 #bluetooth.disabled {
-    color: @foreground;
+  color: @foreground;
 }
 
 #network.linked,
 #network.ethernet,
-#bluetooth.connected{
-    color: @color6;
+#bluetooth.connected {
+  color: @color6;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -130,47 +130,47 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 #workspaces {
-    margin: 1px 2px;
+  margin: 1px 2px;
 }
 
 #workspaces button {
-    padding: 0 8px;
-    margin: 1px 2px;
-    min-width: 12px;
-    border-radius: 6px;
-    background-color: alpha(@color0, 0.4);
-    color: @foreground;
-    font-size: 12px;
-    border: 1px solid alpha(@color4, 0.2);
-    transition: all 0.2s ease-in-out;
+  padding: 0 8px;
+  margin: 1px 2px;
+  min-width: 12px;
+  border-radius: 6px;
+  background-color: alpha(@color0, 0.4);
+  color: @foreground;
+  font-size: 12px;
+  border: 1px solid alpha(@color4, 0.2);
+  transition: all 0.2s ease-in-out;
 }
 
 #workspaces button.empty {
-    min-width: 20px;
-    background-color: alpha(@color0, 0.2);
-    color: alpha(@foreground_variant, 0.4);
+  min-width: 20px;
+  background-color: alpha(@color0, 0.2);
+  color: alpha(@foreground_variant, 0.4);
 }
 
 #workspaces button.visible {
-    background-color: alpha(@color0, 0.6);
+  background-color: alpha(@color0, 0.6);
 }
 
 #workspaces button.active {
-    min-width: 28px;
-    padding: 0 1px;
-    background-color: alpha(@color4_container, 0.6);
-    font-weight: 700;
-    border: 1px solid @color4;
+  min-width: 28px;
+  padding: 0 1px;
+  background-color: alpha(@color4_container, 0.6);
+  font-weight: 700;
+  border: 1px solid @color4;
 }
 
 #workspaces button.urgent {
-    background-color: alpha(@color1_container, 0.6);
-    border: 1px solid @color1;
-    animation: pulse 1.5s ease-in-out infinite;
+  background-color: alpha(@color1_container, 0.6);
+  border: 1px solid @color1;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 #custom-cava {
-    color: @color4;
+  color: @color4;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -179,39 +179,35 @@ window#waybar > box {
 
 #pulseaudio.muted,
 #custom-cava.silent {
-    color: alpha(@color8, 0.4);
+  color: alpha(@color8, 0.4);
 }
 
 #battery.good {
-    color: @color6;
+  color: @color6;
 }
 
 #battery.charging,
 #battery.plugged,
 #battery.full {
-    color: @color6;
-    background-color: alpha(@color4, 0.25);
-    border: 1px solid alpha(@color4, 0.15);
+  color: @color6;
+  background-color: alpha(@color4, 0.25);
+  border: 1px solid alpha(@color4, 0.15);
 }
 
 #battery.warning:not(.charging) {
-    color: @color4_fixed;
-    background-color: alpha(@color4_container, 0.3);
+  color: @color4_fixed;
+  background-color: alpha(@color4_container, 0.3);
 }
 
 #battery.critical:not(.charging) {
-    background-image: linear-gradient(
-        135deg,
-        @color1_container 0%,
-        @color1 100%
-    );
-    animation: critical-blink 1s ease-in-out infinite;
-    box-shadow: 0 2px 8px alpha(@color1, 0.4);
+  background-image: linear-gradient(135deg, @color1_container 0%, @color1 100%);
+  animation: critical-blink 1s ease-in-out infinite;
+  box-shadow: 0 2px 8px alpha(@color1, 0.4);
 }
 
 #mpris.paused {
-    color: alpha(@foreground, 0.5);
-    min-width: 10px;
+  color: alpha(@foreground, 0.5);
+  min-width: 10px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -219,47 +215,64 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 #custom-lyrics {
-    color: @color6;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 0 12px;
-    min-width: 180px;
-    transition:
-        color 0.3s ease,
-        border-color 0.3s ease,
-        background-color 0.3s ease;
+  color: @color6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 12px;
+  min-width: 180px;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 }
 
 #custom-lyrics:hover {
-    color: @foreground;
+  color: @foreground;
 }
 
 #custom-lyrics.paused {
-    color: alpha(@foreground, 0.45);
+  color: alpha(@foreground, 0.45);
 }
 
 #custom-lyrics.no-lyrics {
-    color: alpha(@foreground, 0.35);
-    font-style: italic;
+  color: alpha(@foreground, 0.35);
+  font-style: italic;
 }
 
 #custom-lyrics.playing {
-    color: @color6;
+  color: @color6;
 }
+
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
    ───────────────────────────────────────────────────────────────────────────── */
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes critical-blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -272,6 +285,6 @@ window#waybar > box {
 #bluetooth,
 #clock,
 #battery {
-    margin-left: 4px;
-    margin-right: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
 }

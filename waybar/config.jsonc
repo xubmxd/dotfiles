@@ -6,16 +6,23 @@
   "margin-left": 20,
   "margin-right": 20,
 
-  "modules-left": [ "hyprland/workspaces", "tray" ],
+  "modules-left": ["tray", "hyprland/workspaces"],
   "modules-center": ["custom/cava"],
   // Added bluetooth here
-  "modules-right": ["backlight", "pulseaudio", "network", "bluetooth", "clock", "battery"],
+  "modules-right": [
+    "backlight",
+    "pulseaudio",
+    "network",
+    "bluetooth",
+    "clock",
+    "battery",
+  ],
 
   "hyprland/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
     "persistent-workspaces": {
-      "*": [ 1, 2, 3, 4]
+      "*": [1, 2, 3, 4],
     },
     "format": "{icon}",
     "format-icons": {
@@ -27,9 +34,9 @@
       "6": "6",
       "7": "7",
       "8": "8",
-      "9": "9"
+      "9": "9",
     },
-    "on-click": "activate"
+    "on-click": "activate",
   },
 
   "bluetooth": {
@@ -39,12 +46,12 @@
     "tooltip-format": "{controller_alias}\t{controller_address}",
     "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
-    "on-click": "blueman-manager"
+    "on-click": "blueman-manager",
   },
 
   "clock": {
     "format": "  {:%H:%M}",
-    "tooltip-format": "{:%A, %d %B %Y}"
+    "tooltip-format": "{:%A, %d %B %Y}",
   },
 
   "backlight": {
@@ -52,13 +59,13 @@
     "format": "{icon}  {percent}%",
     "format-icons": ["", "", "", "", "", "", ""],
     "on-scroll-up": "brightnessctl set +5%",
-    "on-scroll-down": "brightnessctl set 5%-"
+    "on-scroll-down": "brightnessctl set 5%-",
   },
 
   "pulseaudio": {
     "format": "{icon}  {volume}%",
     "format-muted": "  muted",
-    "format-icons": ["", "", ""]
+    "format-icons": ["", "", ""],
   },
 
   "network": {
@@ -68,24 +75,23 @@
     "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
     "max-length": 25,
     "tooltip-format": "{essid} ({signaldBm}dBm) ",
-    "on-click": "nm-connection-editor"
+    "on-click": "nm-connection-editor",
   },
 
   "battery": {
     "format": "{icon}  {capacity}%",
     "format-charging": "  {capacity}%",
-    "format-icons": ["", "", "", "", ""]
+    "format-icons": ["", "", "", "", ""],
   },
   "custom/cava": {
-    "format":"{}",
+    "format": "{}",
     "exec": "~/.config/waybar/scripts/cava.sh",
-},
-
+  },
 
   "custom/launcher": {
     "format": "󰣇",
     "tooltip": false,
-    "on-click": "rofi -show drun"
+    "on-click": "rofi -show drun",
   },
 
   "custom/notification": {
@@ -99,14 +105,14 @@
       "inhibited-notification": "<span foreground='red'><sup></sup></span>",
       "inhibited-none": "",
       "dnd-inhibited-notification": "<span foreground='red'><sup></sup></span>",
-      "dnd-inhibited-none": ""
+      "dnd-inhibited-none": "",
     },
     "return-type": "json",
     "exec-if": "which swaync-client",
     "exec": "swaync-client -swb",
     "on-click": "swaync-client -t -sw",
     "on-click-right": "swaync-client -d -sw",
-    "escape": true
+    "escape": true,
   },
 
   "mpris": {
@@ -118,27 +124,26 @@
       "spotify": "",
       "firefox": "",
       "chromium": "",
-      "mpv": ""
+      "mpv": "",
     },
     "status-icons": {
-      "paused": ""
-    }
+      "paused": "",
+    },
   },
 
   "custom/spotify-cat": {
     "exec": "~/.config/waybar/scripts/spotify-cat.sh",
     "return-type": "json",
     "format": "{}",
-    "tooltip": false
+    "tooltip": false,
   },
   "custom/lyrics": {
     "exec": "~/.cargo/bin/lumi",
-    "format": "{}"
+    "format": "{}",
   },
   "tray": {
     "icon-size": 18,
     "spacing": 8,
-    "show-passive-items":true
-}
-
+    "show-passive-items": true,
+  },
 }
