@@ -1,0 +1,31 @@
+QMainWindow, QDialog {
+    background-color: {background};
+}
+
+QWidget {
+    color: {foreground};
+}
+
+QLineEdit, QTextEdit, QAbstractItemView {
+    background-color: {color0};
+    color: {foreground};
+    selection-background-color: {color4};
+    selection-color: {background};
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+    background-color: {color4};
+    color: {background};
+}
+
+QPushButton {
+    background-color: {color2};
+    color: {background};
+    border-radius: 2px;
+    padding: 4px;
+}
+
+QTabBar::tab:selected {
+    background-color: {color4};
+    color: {background};
+}

@@ -1,0 +1,43 @@
+/**
+ * @name Fallout 4 Terminal (Pywal)
+ * @author Bates + Pywal
+ * @version 4.0.0
+ * @description Fallout 4 Terminal theme powered by pywal.
+*/
+
+@import url('https://B4T3S.github.io/Fallout4TerminalTheme/mainRewrite.css');
+/* ^ This is the main Import ^ DO NOT TOUCH. Without this, the theme won't load!!! */
+
+@import url('https://B4T3S.github.io/Fallout4TerminalTheme/css/crtEffect.css');
+/* ^ This is the CRT effect. Remove this line if you don't want it. */
+
+/* CUSTOMIZE COLORS IN HERE! */
+:root,
+.visual-refresh,
+.visual-refresh.theme-dark {
+  /* Pywal colors */
+  --rgb-highlight: {color4.rgb};
+  --rgb-background: {background.rgb};
+  --rgb-text: {foreground.rgb};
+  --rgb-close-button: {color1.rgb};
+  --rgb-online-color: {color2.rgb};
+  --rgb-afk-color: {color3.rgb};
+  --rgb-dnd-color: {color1.rgb};
+  --rgb-streaming-color: {color5.rgb};
+
+  --transition-time: .3s;
+
+  --background-image: unset;
+  --background-position: center;
+  --background-size: cover;
+  --background-blur: 5px;
+  --background-brightness: 100%;
+
+  --show-original-title: 0;
+  --show-custom-title: 1;
+  --custom-title-text: "ROBCO Industries (tm)";
+  --custom-title-font-size: 16px;
+  --custom-title-font-weight: bold;
+  --custom-title-margin-top: 0px;
+  --custom-title-margin-left: 0px;
+}

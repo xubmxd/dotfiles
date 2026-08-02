@@ -1,0 +1,28 @@
+/* Custom Jellyfin Pywal Template */
+:root {
+    --background-default-color: {background};
+    --background-primary-color: {background};
+    --background-secondary-color: {color0};
+    --background-tertiary-color: {color1};
+
+    --theme-primary-color: {color4};
+    --theme-primary-color-hover: {color5};
+
+    --theme-text-color: {foreground};
+    --theme-text-color-rgba: {foreground};
+
+    --line-background-color: {color3};
+    --border-color: {color1};
+
+    --button-background: {color2};
+    --button-background-hover: {color3};
+}
+
+/* Ensure headers and cards respect the color scheme */
+.skinHeader, .appfooter {
+    background-color: {background} !important;
+}
+
+.cardBox, .paperList, .visualCardBox {
+    background-color: {color0} !important;
+}

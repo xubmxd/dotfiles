@@ -1,0 +1,4 @@
+{
+  "~/.config/wal/templates/brave_ntp.html": "~/.cache/wal/brave_ntp.html",
+  "~/.config/wal/templates/vesktop.css": "~/.config/vesktop/themes/pywal.css"
+}
