@@ -37,9 +37,8 @@ validate_bars() {
 }
 
 mewsic_running() {
-    hyprctl clients | grep -q "title: mewsic-tui-app"
+    pgrep -f "mewsic.py" >/dev/null
 }
-
 ################################################################################
 # Parse arguments
 ################################################################################
