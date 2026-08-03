@@ -12,21 +12,27 @@ BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 
 # ------------------------------------------------------------
-# Re-index Function (Download time sort, prefix based on folder name, .png format)
+# Re-index & Convert Function (Runs on startup & deletion)
 # ------------------------------------------------------------
 
 reindex_wallpapers() {
     local dir="$1"
     cd "$dir" || return
 
+    # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
+    for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF}; do
+        [ -e "$f" ] || continue
+        local ext="${f##*.}"
+        ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
+    done
+
+    # 2. Re-index and sequence all png files by modification time
     local prefix=$(basename "$dir")
     local count=1
 
-    # Read files sorted by modification time (oldest first) into an array safely
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
         
-        # Format new filename (e.g., anime01.png, anime02.png)
         local new_name=$(printf "%s%02d.png" "$prefix" "$count")
 
         if [ "$file" != "$new_name" ]; then
@@ -36,6 +42,11 @@ reindex_wallpapers() {
         ((count++))
     done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
 }
+
+# Run re-index on all category folders automatically when launcher starts
+for category_dir in "$WALL_ROOT"/*/; do
+    [ -d "$category_dir" ] && reindex_wallpapers "$category_dir"
+done
 
 # ------------------------------------------------------------
 # Load Pywal Colors
