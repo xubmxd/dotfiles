@@ -12,6 +12,32 @@ BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 
 # ------------------------------------------------------------
+# Re-index Function (Download time sort, prefix based on folder name, .png format)
+# ------------------------------------------------------------
+
+reindex_wallpapers() {
+    local dir="$1"
+    cd "$dir" || return
+
+    local prefix=$(basename "$dir")
+    local count=1
+
+    # Read files sorted by modification time (oldest first) into an array safely
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+        
+        # Format new filename (e.g., anime01.png, anime02.png)
+        local new_name=$(printf "%s%02d.png" "$prefix" "$count")
+
+        if [ "$file" != "$new_name" ]; then
+            mv -- "$file" "$new_name"
+        fi
+
+        ((count++))
+    done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
+}
+
+# ------------------------------------------------------------
 # Load Pywal Colors
 # ------------------------------------------------------------
 
@@ -300,16 +326,12 @@ while true; do
 	# ------------------------------------------------------------
 
 	SELECTED_NAME=$(
-		find "$WALL_DIR" -type f \
-			\( \
-			-iname "*.jpg" -o \
-			-iname "*.jpeg" -o \
-			-iname "*.png" -o \
-			-iname "*.gif" \
-			\) |
-			sort |
+		find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n' |
+			sort -n |
+			cut -d' ' -f2- |
 			while read -r file; do
-				printf "%s\0icon\x1f%s\n" "$(basename "$file")" "$file"
+				[ -z "$file" ] && continue
+				printf "%s\0icon\x1f%s\n" "$file" "$WALL_DIR/$file"
 			done |
 			rofi \
 				-dmenu \
@@ -346,6 +368,7 @@ while true; do
 
 		if [[ "$CONFIRM" == *Delete ]]; then
 			rm -f "$WALL"
+			reindex_wallpapers "$WALL_DIR"
 		fi
 
 		continue
