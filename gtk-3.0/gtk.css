@@ -3,19 +3,19 @@
 * Generated with Matugen
 */
 
-@define-color accent_color #ffb4aa;
-@define-color accent_fg_color #410001;
-@define-color accent_bg_color #ffb4aa;
+@define-color accent_color #ffb4ac;
+@define-color accent_fg_color #410003;
+@define-color accent_bg_color #ffb4ac;
 @define-color window_bg_color #1e100e;
-@define-color window_fg_color #f9dcd8;
+@define-color window_fg_color #f9dcd9;
 @define-color headerbar_bg_color #1e100e;
-@define-color headerbar_fg_color #f9dcd8;
+@define-color headerbar_fg_color #f9dcd9;
 @define-color popover_bg_color #1e100e;
-@define-color popover_fg_color #f9dcd8;
+@define-color popover_fg_color #f9dcd9;
 @define-color view_bg_color #1e100e;
-@define-color view_fg_color #f9dcd8;
+@define-color view_fg_color #f9dcd9;
 @define-color card_bg_color #1e100e;
-@define-color card_fg_color #f9dcd8;
+@define-color card_fg_color #f9dcd9;
 @define-color sidebar_bg_color @window_bg_color;
 @define-color sidebar_fg_color @window_fg_color;
 @define-color sidebar_border_color @window_bg_color;

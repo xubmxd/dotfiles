@@ -12,13 +12,18 @@ SCRIPT_PATH="/home/xubm/.dev/mewsic/mewsic.py"
 [ -x "$PYTHON_VENV" ] || PYTHON_VENV="python"
 
 # ---------------------------------------------------------
-# Check if a window running mewsic already exists
+# Check if ANY mewsic instance is running (by class OR title)
 # ---------------------------------------------------------
-if hyprctl clients | grep -q "title: python mewsic.py"; then
-    # Move the existing window to the special workspace
-    hyprctl dispatch movetoworkspacesilent "special:music,title:^python mewsic\.py$"
+# grep -E allows us to check for either condition simultaneously
+if hyprctl clients | grep -qE "class: ${APP_ID}|title: python mewsic\.py"; then
+    
+    # Try moving it by class (catches script-launched instances)
+    hyprctl dispatch movetoworkspacesilent "special:music,class:^${APP_ID}$" 2>/dev/null
+    
+    # Try moving it by title (catches manually-launched instances)
+    hyprctl dispatch movetoworkspacesilent "special:music,title:^python mewsic\.py$" 2>/dev/null
 
-    # Toggle the workspace
+    # Toggle the workspace on and off
     hyprctl dispatch togglespecialworkspace music
     exit 0
 fi
