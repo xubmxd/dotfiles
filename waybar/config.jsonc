@@ -3,17 +3,17 @@
   "position": "top",
   "height": 34,
   "margin-top": 5,
-  "margin-left": 20,
-  "margin-right": 20,
+  "margin-left": 90,
+  "margin-right": 90,
+  "margin-bottom": 5,
 
   "modules-left": ["tray", "hyprland/workspaces"],
   "modules-center": ["custom/cava"],
-  // Added bluetooth here
   "modules-right": [
     "backlight",
     "pulseaudio",
     "network",
-    "bluetooth",
+    // "bluetooth",
     "clock",
     "battery",
   ],

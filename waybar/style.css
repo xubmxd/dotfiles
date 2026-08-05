@@ -50,7 +50,7 @@ window#waybar > box {
   border-radius: 10px;
   background: transparent;
   color: @foreground;
-  font-size: 14px;
+  font-size: 12px;
   border: 1px solid alpha(@color4, 0.2);
   transition: all 0.2s ease-in-out;
 }
@@ -131,6 +131,7 @@ window#waybar > box {
 
 #workspaces {
   margin: 1px 2px;
+  margin-left: 10px;
 }
 
 #workspaces button {
@@ -287,4 +288,7 @@ window#waybar > box {
 #battery {
   margin-left: 4px;
   margin-right: 4px;
+}
+#battery{
+    margin-right: 10px;
 }
