@@ -113,14 +113,12 @@ element {
 }
 
 element-text {
-    /* Centered alignments for a clean grid look */
     vertical-align: 0.5;
     horizontal-align: 0.5;
 
     text-color: @fg;
 
-    /* Increased font size so the emojis are big and readable */
-    font: "JetBrainsMono Nerd Font 15"; 
+    font: "JetBrainsMono Nerd Font 15, icomoon 15"; 
 }
 
 /* Explicitly defined base states to prevent default theme bleed-through */

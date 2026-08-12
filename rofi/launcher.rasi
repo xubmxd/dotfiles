@@ -19,10 +19,8 @@ configuration {
 * {
     font: "JetBrainsMono Nerd Font 13";
 
-    /* Dynamic Colors from Pywal */
     fg:             @foreground;
     
-    /* Universal semi-transparent dark base for the frosted glass effect */
     bg:             rgba(0, 0, 0, 0.50); 
     bg-alt:         rgba(255, 255, 255, 0.08); 
 
@@ -36,7 +34,7 @@ configuration {
 }
 
 window {
-    width: 500px;
+    width: 400px;
 
     background-color: @bg;
 
@@ -50,7 +48,7 @@ window {
 
 mainbox {
     children: [ inputbar, listview ];
-    spacing: 24px;
+    spacing: 20px;
 }
 
 inputbar {
@@ -66,7 +64,6 @@ inputbar {
 prompt {
     background-color: @accent;
 
-    /* Uses the deep background color for sharp contrast against the accent */
     text-color: @background; 
 
     border-radius: 12px;
@@ -75,7 +72,7 @@ prompt {
 
     expand: false;
 
-    font: "JetBrainsMono Nerd Font Bold 12";
+    font: "JetBrainsMono Nerd Font Bold 10";
 }
 
 entry {
@@ -87,7 +84,6 @@ entry {
 
     placeholder: "Search applications...";
     
-    /* Uses color8 for a perfectly subdued placeholder text */
     placeholder-color: @color8; 
 
     padding: 10px;
@@ -97,9 +93,9 @@ entry {
 
 listview {
     columns: 1;
-    lines: 8;
+    lines: 5;
 
-    spacing: 10px;
+    spacing: 5px;
 
     dynamic: true;
     fixed-height: false;
