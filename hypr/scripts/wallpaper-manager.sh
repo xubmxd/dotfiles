@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Base directory for your wallpapers
-WALLPAPER_DIR="/home/xubm/Pictures/wallpapers/images"
+# Updated Base directory
+WALLPAPER_DIR="/home/xubm/Pictures/wallpapers"
 
 # Check if base directory exists
 if [ ! -d "$WALLPAPER_DIR" ]; then
@@ -9,17 +9,16 @@ if [ ! -d "$WALLPAPER_DIR" ]; then
     exit 1
 fi
 
-# Function to re-index wallpapers in a given category directory
+# Function to re-index wallpapers
 reindex_wallpapers() {
     local dir="$1"
     cd "$dir" || return
 
     local count=1
-    local prefix=$(basename "$dir")
+    # Create prefix and replace spaces with underscores (e.g., '2d scenic' -> '2d_scenic')
+    local prefix=$(basename "$dir" | tr ' ' '_')
 
-    # Special adjustment if you want 'rice_wals' to format as 'rice_wal' or similar, 
-    # otherwise it uses the folder name directly.
-    # Find all png files, sort by modification time (oldest first)
+    # Find all png files, sort by modification time
     find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | while read -r timestamp filename; do
         local new_name=$(printf "%s%02d.png" "$prefix" "$count")
 
@@ -31,7 +30,7 @@ reindex_wallpapers() {
     done
 }
 
-# Function to apply wallpaper (Change 'swww img' to your wallpaper setter if different, e.g., hyprpaper, feh)
+# Function to apply wallpaper
 apply_wallpaper() {
     local img_path="$1"
     if command -v swww &> /dev/null; then
@@ -43,21 +42,17 @@ apply_wallpaper() {
     fi
 }
 
-# 1. Select Category
-category=$(ls -p "$WALLPAPER_DIR" | grep / | tr -d '/' | rofi -dmenu -p "Collection")
+# 1. Select Category (Excludes the 'gifs' directory)
+category=$(ls -p "$WALLPAPER_DIR" | grep / | tr -d '/' | grep -v '^gifs$' | rofi -dmenu -p "Collection")
 [ -z "$category" ] && exit 0
 
 TARGET_DIR="$WALLPAPER_DIR/$category"
 
 while true; do
-    # 2. List wallpapers in the selected category, sorted by modification time (oldest first)
-    # We display just the filename in rofi
+    # 2. List wallpapers in the selected category
     selected_file=$(find "$TARGET_DIR" -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2- | rofi -dmenu -p "Wallpapers" -kb-custom-1 "Shift+Delete")
 
-    # Rofi exit code check or empty selection
-    # In rofi, custom keybind 1 returns exit code 10
     rofi_exit_code=$?
-
     [ -z "$selected_file" ] && exit 0
 
     full_path="$TARGET_DIR/$selected_file"
@@ -69,7 +64,6 @@ while true; do
             reindex_wallpapers "$TARGET_DIR"
             notify-send "Wallpaper Manager" "Deleted and re-indexed $category"
         fi
-        # Loop back to show updated list
         continue
     else
         # Regular selection applies the wallpaper

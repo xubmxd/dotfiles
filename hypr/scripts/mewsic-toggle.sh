@@ -5,23 +5,22 @@ TERMINAL="foot"
 APP_ID="mewsic"
 WINDOW_TITLE="mewsic"
 
-PYTHON_VENV="/home/xubm/.dev/mewsic/venv/bin/python"
-SCRIPT_PATH="/home/xubm/.dev/mewsic/mewsic.py"
+# Path to your compiled Rust binary (Release build recommended)
+MEWSIC_BIN="/home/xubm/.cargo/bin/mewsic_rs"
 
-# Fallback to system python
-[ -x "$PYTHON_VENV" ] || PYTHON_VENV="python"
+# Fallback to the debug binary if the release one doesn't exist yet
+[ -x "$MEWSIC_BIN" ] || MEWSIC_BIN="/home/xubm/.dev/rs/mewsic_rs/target/debug/mewsic_rs"
 
 # ---------------------------------------------------------
 # Check if ANY mewsic instance is running (by class OR title)
 # ---------------------------------------------------------
-# grep -E allows us to check for either condition simultaneously
-if hyprctl clients | grep -qE "class: ${APP_ID}|title: python mewsic\.py"; then
+if hyprctl clients | grep -qE "class: ${APP_ID}|title: ${WINDOW_TITLE}"; then
     
     # Try moving it by class (catches script-launched instances)
     hyprctl dispatch movetoworkspacesilent "special:music,class:^${APP_ID}$" 2>/dev/null
     
-    # Try moving it by title (catches manually-launched instances)
-    hyprctl dispatch movetoworkspacesilent "special:music,title:^python mewsic\.py$" 2>/dev/null
+    # Try moving it by title (catches manually-launched instances in other terminals)
+    hyprctl dispatch movetoworkspacesilent "special:music,title:^${WINDOW_TITLE}$" 2>/dev/null
 
     # Toggle the workspace on and off
     hyprctl dispatch togglespecialworkspace music
@@ -34,7 +33,7 @@ fi
 "$TERMINAL" \
     --app-id "$APP_ID" \
     --title "$WINDOW_TITLE" \
-    "$PYTHON_VENV" "$SCRIPT_PATH" &
+    "$MEWSIC_BIN" &
 
 # Wait for the window to appear
 for _ in {1..50}; do

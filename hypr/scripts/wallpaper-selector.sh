@@ -5,7 +5,7 @@
 # ------------------------------------------------------------
 
 # Root wallpaper directory
-WALL_ROOT="$HOME/Pictures/wallpapers/images"
+WALL_ROOT="$HOME/Pictures/wallpapers"
 
 # Cache
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
@@ -19,33 +19,52 @@ reindex_wallpapers() {
     local dir="$1"
     cd "$dir" || return
 
-    # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
-    for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF}; do
-        [ -e "$f" ] || continue
-        local ext="${f##*.}"
-        ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
-    done
-
-    # 2. Re-index and sequence all png files by modification time
-    local prefix=$(basename "$dir")
+    local folder_name=$(basename "$dir")
+    local prefix=$(echo "$folder_name" | tr ' ' '_')
     local count=1
 
-    while IFS= read -r file; do
-        [[ -z "$file" ]] && continue
-        
-        local new_name=$(printf "%s%02d.png" "$prefix" "$count")
+    if [ "$folder_name" = "gifs" ]; then
+        # === GIF FOLDER LOGIC ===
+        # Do NOT convert. Just sequence .gif files chronologically.
+        while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            
+            local new_name=$(printf "%s%02d.gif" "$prefix" "$count")
 
-        if [ "$file" != "$new_name" ]; then
-            mv -- "$file" "$new_name"
-        fi
+            if [ "$file" != "$new_name" ]; then
+                mv -- "$file" "$new_name"
+            fi
 
-        ((count++))
-    done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
+            ((count++))
+        done < <(find . -maxdepth 1 -type f -iname "*.gif" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
+    else
+        # === STANDARD FOLDER LOGIC ===
+        # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
+        for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do
+            [ -e "$f" ] || continue
+            local ext="${f##*.}"
+            ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
+        done
+
+        # 2. Re-index and sequence all png files chronologically
+        while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            
+            local new_name=$(printf "%s%02d.png" "$prefix" "$count")
+
+            if [ "$file" != "$new_name" ]; then
+                mv -- "$file" "$new_name"
+            fi
+
+            ((count++))
+        done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
+    fi
 }
 
 # Run re-index on all category folders automatically when launcher starts
 for category_dir in "$WALL_ROOT"/*/; do
-    [ -d "$category_dir" ] && reindex_wallpapers "$category_dir"
+    [ -d "$category_dir" ] || continue
+    reindex_wallpapers "$category_dir"
 done
 
 # ------------------------------------------------------------
@@ -53,13 +72,13 @@ done
 # ------------------------------------------------------------
 
 if [ -f "$HOME/.cache/wal/colors.sh" ]; then
-	source "$HOME/.cache/wal/colors.sh"
+    source "$HOME/.cache/wal/colors.sh"
 else
-	color0="#11111b"
-	color4="#89b4fa"
-	color6="#cba6f7"
-	color7="#ffffff"
-	foreground="#cdd6f4"
+    color0="#11111b"
+    color4="#89b4fa"
+    color6="#cba6f7"
+    color7="#ffffff"
+    foreground="#cdd6f4"
 fi
 
 # ------------------------------------------------------------
@@ -283,19 +302,21 @@ element selected.normal {
 # ------------------------------------------------------------
 
 display_name() {
-	case "$1" in
-	anime) echo "󰑈  Anime" ;;
-	scenic) echo "󰉔  Scenic" ;;
-	dark) echo "󰌪  Dark" ;;
-	space) echo "󰠱  Space" ;;
-	gaming) echo "󰊗  Gaming" ;;
-	city) echo "󰣇  City" ;;
-	cars) echo "󰭮  Cars" ;;
-	abstract) echo "󰝤  Abstract" ;;
-	minimal) echo "󰈔  Minimal" ;;
-	nature) echo "󰔉  Nature" ;;
-	*) echo "󰉋  ${1^}" ;;
-	esac
+    case "$1" in
+    anime) echo "󰑈  Anime" ;;
+    scenic) echo "󰉔  Scenic" ;;
+    "2d scenic") echo "󰉔  2d Scenic" ;;
+    gifs) echo "󰵸  GIFs" ;;
+    dark) echo "󰌪  Dark" ;;
+    space) echo "󰠱  Space" ;;
+    gaming) echo "󰊗  Gaming" ;;
+    rice) echo "󰣇 Rice" ;;
+    cars) echo "󰭮  Cars" ;;
+    pixel) echo "󰝤 Pixel" ;;
+    minimal) echo "󰈔  Minimal" ;;
+    nature) echo "󰔉  Nature" ;;
+    *) echo "󰉋  ${1^}" ;;
+    esac
 }
 
 # ------------------------------------------------------------
@@ -306,91 +327,98 @@ declare -A CATEGORY_MAP
 CATEGORY_LIST=""
 
 while IFS= read -r dir; do
-	folder=$(basename "$dir")
-	display=$(display_name "$folder")
+    folder=$(basename "$dir")
+    display=$(display_name "$folder")
 
-	CATEGORY_MAP["$display"]="$folder"
-	CATEGORY_LIST+="$display"$'\n'
+    CATEGORY_MAP["$display"]="$folder"
+    CATEGORY_LIST+="$display"$'\n'
 
 done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
 
 while true; do
 
-	# ------------------------------------------------------------
-	# Category Selection
-	# ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # Category Selection
+    # ------------------------------------------------------------
 
-	SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
-		rofi \
-			-dmenu \
-			-i \
-			-p "󰉋 Collection" \
-			-theme-str "$CATEGORY_THEME")
+    SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
+        rofi \
+            -dmenu \
+            -i \
+            -p "󰉋 Collection" \
+            -theme-str "$CATEGORY_THEME")
 
-	[ -z "$SELECTED_DISPLAY" ] && exit
+    [ -z "$SELECTED_DISPLAY" ] && exit
 
-	CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
-	WALL_DIR="$WALL_ROOT/$CATEGORY"
+    CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
+    WALL_DIR="$WALL_ROOT/$CATEGORY"
 
-	# ------------------------------------------------------------
-	# Wallpaper Selection
-	# ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # Wallpaper Selection
+    # ------------------------------------------------------------
 
-	SELECTED_NAME=$(
-		find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n' |
-			sort -n |
-			cut -d' ' -f2- |
-			while read -r file; do
-				[ -z "$file" ] && continue
-				printf "%s\0icon\x1f%s\n" "$file" "$WALL_DIR/$file"
-			done |
-			rofi \
-				-dmenu \
-				-i \
-				-kb-delete-entry "" \
-				-kb-custom-1 Shift+Delete \
-				-p "󰸉 Wallpapers" \
-				-theme-str "$ROFI_THEME"
-	)
+    SELECTED_NAME=$(
+        (
+            # Smart file finding: look for .gif in the gifs folder, .png elsewhere
+            if [ "$CATEGORY" = "gifs" ]; then
+                find "$WALL_DIR" -type f -name "*.gif" -printf '%T@ %P\n'
+            else
+                find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n'
+            fi
+        ) |
+            sort -n |
+            cut -d' ' -f2- |
+            while read -r file; do
+                [ -z "$file" ] && continue
+                printf "%s\0icon\x1f%s\n" "$file" "$WALL_DIR/$file"
+            done |
+            rofi \
+                -dmenu \
+                -i \
+                -kb-delete-entry "" \
+                -kb-custom-1 Shift+Delete \
+                -p "󰸉 Wallpapers" \
+                -theme-str "$ROFI_THEME"
+    )
 
-	ROFI_EXIT=$?
+    ROFI_EXIT=$?
 
-	# Escape in wallpaper menu -> go back
-	case "$ROFI_EXIT" in
-	1)
-		# Escape
-		continue
-		;;
+    # Escape in wallpaper menu -> go back
+    case "$ROFI_EXIT" in
+    1)
+        # Escape
+        continue
+        ;;
 
-	10)
-		# Shift+Delete
+    10)
+        # Shift+Delete
 
-		[ -z "$SELECTED_NAME" ] && continue
+        [ -z "$SELECTED_NAME" ] && continue
 
-		WALL="$WALL_DIR/$SELECTED_NAME"
+        WALL="$WALL_DIR/$SELECTED_NAME"
 
-		CONFIRM=$(
-			printf "󰜺 Cancel\n󰆴 Delete" |
-				rofi \
-					-dmenu \
-					-p "Delete \"$(basename "$WALL")\"?" \
-					-theme-str "$CATEGORY_THEME"
-		)
+        CONFIRM=$(
+            printf "󰜺 Cancel\n󰆴 Delete" |
+                rofi \
+                    -dmenu \
+                    -p "Delete \"$(basename "$WALL")\"?" \
+                    -theme-str "$CATEGORY_THEME"
+        )
 
-		if [[ "$CONFIRM" == *Delete ]]; then
-			rm -f "$WALL"
-			reindex_wallpapers "$WALL_DIR"
-		fi
+        if [[ "$CONFIRM" == *Delete ]]; then
+            rm -f "$WALL"
+            reindex_wallpapers "$WALL_DIR"
+        fi
 
-		continue
-		;;
-	esac
+        continue
+        ;;
+    esac
 
-	[ -z "$SELECTED_NAME" ] && continue
+    [ -z "$SELECTED_NAME" ] && continue
 
-	WALL="$WALL_DIR/$SELECTED_NAME"
+    WALL="$WALL_DIR/$SELECTED_NAME"
 
-	break
+    break
 
 done
 
@@ -399,15 +427,15 @@ done
 # ------------------------------------------------------------
 
 awww img "$WALL" \
-	--transition-type fade \
-	--transition-step 90 \
-	--transition-fps 60
+    --transition-type any\
+    --transition-step 90 \
+    --transition-fps 60
 
 wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
 
 matugen image "$WALL" \
-	--source-color-index 0 \
-	--type scheme-vibrant
+    --source-color-index 0 \
+    --type scheme-vibrant
 
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
