@@ -23,42 +23,25 @@ reindex_wallpapers() {
     local prefix=$(echo "$folder_name" | tr ' ' '_')
     local count=1
 
-    if [ "$folder_name" = "gifs" ]; then
-        # === GIF FOLDER LOGIC ===
-        # Do NOT convert. Just sequence .gif files chronologically.
-        while IFS= read -r file; do
-            [[ -z "$file" ]] && continue
-            
-            local new_name=$(printf "%s%02d.gif" "$prefix" "$count")
+    # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
+    for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do
+        [ -e "$f" ] || continue
+        local ext="${f##*.}"
+        ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
+    done
 
-            if [ "$file" != "$new_name" ]; then
-                mv -- "$file" "$new_name"
-            fi
+    # 2. Re-index and sequence all png files chronologically
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+        
+        local new_name=$(printf "%s%02d.png" "$prefix" "$count")
 
-            ((count++))
-        done < <(find . -maxdepth 1 -type f -iname "*.gif" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
-    else
-        # === STANDARD FOLDER LOGIC ===
-        # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
-        for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do
-            [ -e "$f" ] || continue
-            local ext="${f##*.}"
-            ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
-        done
+        if [ "$file" != "$new_name" ]; then
+            mv -- "$file" "$new_name"
+        fi
 
-        # 2. Re-index and sequence all png files chronologically
-        while IFS= read -r file; do
-            [[ -z "$file" ]] && continue
-            
-            local new_name=$(printf "%s%02d.png" "$prefix" "$count")
-
-            if [ "$file" != "$new_name" ]; then
-                mv -- "$file" "$new_name"
-            fi
-
-            ((count++))
-        done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
-    fi
+        ((count++))
+    done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
 }
 
 # Run re-index on all category folders automatically when launcher starts
@@ -306,7 +289,6 @@ display_name() {
     anime) echo "󰑈  Anime" ;;
     scenic) echo "󰉔  Scenic" ;;
     "2d scenic") echo "󰉔  2d Scenic" ;;
-    gifs) echo "󰵸  GIFs" ;;
     dark) echo "󰌪  Dark" ;;
     space) echo "󰠱  Space" ;;
     gaming) echo "󰊗  Gaming" ;;
@@ -358,14 +340,7 @@ while true; do
     # ------------------------------------------------------------
 
     SELECTED_NAME=$(
-        (
-            # Smart file finding: look for .gif in the gifs folder, .png elsewhere
-            if [ "$CATEGORY" = "gifs" ]; then
-                find "$WALL_DIR" -type f -name "*.gif" -printf '%T@ %P\n'
-            else
-                find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n'
-            fi
-        ) |
+        find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n' |
             sort -n |
             cut -d' ' -f2- |
             while read -r file; do

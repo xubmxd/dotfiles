@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # ------------------------------------------------------------
-# Random Wallpaper Picker (Across All Categories & GIFs)
+# Random Wallpaper Picker (Across All Categories)
 # ------------------------------------------------------------
 
 WALL_ROOT="/home/xubm/Pictures/wallpapers/"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 
-# Find a random .png or .gif file from any subcategory directory
-wall=$(find "$WALL_ROOT" -mindepth 2 -type f \( -name "*.png" -o -name "*.gif" \) | shuf -n 1)
+# Find a random .png file from any subcategory directory
+wall=$(find "$WALL_ROOT" -mindepth 2 -type f -name "*.png" | shuf -n 1)
 
 # Ensure a wallpaper was found before proceeding
 if [ -z "$wall" ]; then
-    notify-send "Random Wallpaper" "No PNG or GIF wallpapers found in $WALL_ROOT"
+    notify-send "Random Wallpaper" "No PNG wallpapers found in $WALL_ROOT"
     exit 1
 fi
 
