@@ -28,8 +28,13 @@ if hyprctl clients | grep -qE "class: ${APP_ID}|title: ${WINDOW_TITLE}"; then
 fi
 
 # ---------------------------------------------------------
-# Launch a new dedicated Foot instance
+# Launch a new dedicated Foot instance & Eww Visualizer
 # ---------------------------------------------------------
+
+# 1. Start the visualizer in the background using an absolute path to be safe
+eww -c "$HOME/.config/eww/visualizer" open cava_visualizer
+
+# 2. Launch Foot cleanly without the messy bash trap
 "$TERMINAL" \
     --app-id "$APP_ID" \
     --title "$WINDOW_TITLE" \
@@ -48,3 +53,21 @@ hyprctl dispatch movetoworkspacesilent "special:music,class:^${APP_ID}$"
 
 # Show the workspace
 hyprctl dispatch togglespecialworkspace music
+
+# ---------------------------------------------------------
+# The Background Watcher
+# ---------------------------------------------------------
+(
+    # Give the window a second to fully register in Hyprland
+    sleep 2
+    
+    # Continuously check if the Mewsic window exists in Hyprland
+    while hyprctl clients | grep -q "class: ${APP_ID}"; do
+        # Check every 1 second
+        sleep 1
+    done
+    
+    # Once the loop breaks (meaning the window is closed), trigger cleanup
+    eww -c "$HOME/.config/eww/visualizer" close cava_visualizer
+    killall cava
+) &

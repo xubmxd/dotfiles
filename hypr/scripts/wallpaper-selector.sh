@@ -417,3 +417,10 @@ cp "$WALL" "$BRAVE_FILE"
 
 THEME=$(spicetify config current_theme)
 pywal-spicetify "$THEME"
+
+# ------------------------------------------------------------
+# Reload Eww (if running)
+# ------------------------------------------------------------
+if pgrep -x "eww" > /dev/null; then
+    eww -c "$HOME/.config/eww/visualizer" reload
+fi

@@ -35,3 +35,10 @@ matugen image "$wall" --source-color-index 0 --type scheme-vibrant
 # Getting theme name
 theme=$(spicetify config current_theme)
 pywal-spicetify "$theme"
+
+# ------------------------------------------------------------
+# Reload Eww (if running)
+# ------------------------------------------------------------
+if pgrep -x "eww" > /dev/null; then
+    eww -c "$HOME/.config/eww/visualizer" reload
+fi
