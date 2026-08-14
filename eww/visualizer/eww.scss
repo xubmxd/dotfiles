@@ -1,6 +1,5 @@
 @import "/home/xubm/.cache/wal/colors.scss";
 
-// This explicitly removes the default GTK background from the Eww window
 window {
     background-color: transparent;
 }
@@ -10,8 +9,9 @@ window {
 }
 
 .cava-bar {
-    background-color: $color4; 
-    border-radius: 4px;
+    background-image: linear-gradient(to top, $color4, $color6); 
+    
+    border-radius: 6px; 
     min-height: 3px; 
-    transition: 40ms linear height; 
+    transition: 40ms linear min-height; 
 }
