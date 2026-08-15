@@ -398,6 +398,23 @@ while true; do
 done
 
 # ------------------------------------------------------------
+# Generate Colors
+# ------------------------------------------------------------
+
+wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
+
+matugen image "$WALL" \
+    --source-color-index 0 \
+    --type scheme-vibrant
+
+# ------------------------------------------------------------
+# Reload Eww (if running)
+# ------------------------------------------------------------
+if pgrep -x "eww" > /dev/null; then
+    eww -c "$HOME/.config/eww/visualizer" reload
+fi
+
+# ------------------------------------------------------------
 # Apply Wallpaper
 # ------------------------------------------------------------
 
@@ -406,21 +423,12 @@ awww img "$WALL" \
     --transition-step 90 \
     --transition-fps 60
 
-wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
-
-matugen image "$WALL" \
-    --source-color-index 0 \
-    --type scheme-vibrant
+# ------------------------------------------------------------
+# Do the remaining process
+# ------------------------------------------------------------
 
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
 
 THEME=$(spicetify config current_theme)
 pywal-spicetify "$THEME"
-
-# ------------------------------------------------------------
-# Reload Eww (if running)
-# ------------------------------------------------------------
-if pgrep -x "eww" > /dev/null; then
-    eww -c "$HOME/.config/eww/visualizer" reload
-fi

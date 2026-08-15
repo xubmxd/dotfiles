@@ -17,24 +17,11 @@ if [ -z "$wall" ]; then
     exit 1
 fi
 
-# Setting wallpaper
-awww img "$wall" --transition-type any --transition-step 90 --transition-fps 60
-
-# Copying Selected wallpaper to .cache as current wallpaper
-cp "$wall" "$CACHE_FILE"
-cp "$wall" "$BRAVE_FILE"
-
 # Generating colors
 wal -n -i "$wall" -o ~/.local/src/pywalium/generate.sh
 
 # Color for gtk using matugen
 matugen image "$wall" --source-color-index 0 --type scheme-vibrant
-
-# ------Spotify--------
-
-# Getting theme name
-theme=$(spicetify config current_theme)
-pywal-spicetify "$theme"
 
 # ------------------------------------------------------------
 # Reload Eww (if running)
@@ -42,3 +29,17 @@ pywal-spicetify "$theme"
 if pgrep -x "eww" > /dev/null; then
     eww -c "$HOME/.config/eww/visualizer" reload
 fi
+
+# Setting wallpaper
+awww img "$wall" --transition-type any --transition-step 90 --transition-fps 60
+
+# Copying Selected wallpaper to .cache as current wallpaper
+cp "$wall" "$CACHE_FILE"
+cp "$wall" "$BRAVE_FILE"
+
+# ------Spotify--------
+
+# Getting theme name
+theme=$(spicetify config current_theme)
+pywal-spicetify "$theme"
+
