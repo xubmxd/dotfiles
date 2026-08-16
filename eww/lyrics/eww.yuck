@@ -4,7 +4,7 @@
     :monitor 0
     :geometry (geometry :x "0px"
                         :y "160px"
-                        :width "500px"
+                        :width "1920px"
                         :height "40px"
                         :anchor "bottom center")
     :stacking "bg"
@@ -22,5 +22,5 @@
              :halign "center"
             (label :class "lyrics-text"
                    :text "${lyrics_data.text}"
-                   :wrap true
+                   :wrap false
                    :justify "center"))))
