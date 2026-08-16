@@ -2,21 +2,25 @@
 
 (defwindow mewsic_lyrics
     :monitor 0
-    :geometry (geometry :x "20px"
-                        :y "20px"
+    :geometry (geometry :x "0px"
+                        :y "160px"
                         :width "500px"
-                        :height "100px"
-                        :anchor "top right")
+                        :height "40px"
+                        :anchor "bottom center")
     :stacking "bg"
     :exclusive false
     (lyrics_widget))
 
 (defwidget lyrics_widget []
-    (box :class "lyrics-container"
+    (box :class "lyrics-wrapper"
          :orientation "v"
          :valign "center"
          :halign "center"
-        (label :class "lyrics-text"
-               :text "${lyrics_data.text}"
-               :wrap true
-               :justify "center")))
+        (box :class "lyrics-container"
+             :orientation "v"
+             :valign "center"
+             :halign "center"
+            (label :class "lyrics-text"
+                   :text "${lyrics_data.text}"
+                   :wrap true
+                   :justify "center"))))
