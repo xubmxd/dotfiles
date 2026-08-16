@@ -1,0 +1,23 @@
+@import '~/.cache/wal/colors.scss';
+
+* {
+    all: unset;
+}
+
+.lyrics-container {
+    background-color: rgba($background, 0.85);
+    border: 2px solid $color2;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.lyrics-scroll {
+    border-radius: 8px;
+}
+
+.lyrics-text {
+    color: $foreground;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}

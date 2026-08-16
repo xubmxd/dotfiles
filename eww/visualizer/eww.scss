@@ -2,7 +2,7 @@
 
 window {
     background-color: transparent;
-    background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+    background-image: linear-gradient(to top, rgba(0, 0, 0, 1), transparent);
 }
 
 .cava-container {
@@ -10,7 +10,11 @@ window {
 }
 
 .cava-bar {
-    background-image: linear-gradient(to top, $color4, $color6); 
+  
+    background-color: transparent;  
+    background-image: linear-gradient(to top, $color3, $color13); 
     min-height: 3px;
     transition: 40ms linear min-height; 
+    // border-radius: 10px;
 }
+

@@ -1,3 +1,4 @@
+(include "./lyrics.yuck")
 ;; Listen to the bash script output continuously
 (deflisten cava_json :initial "[]"
   "bash ~/.config/eww/visualizer/run_cava.sh")

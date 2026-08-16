@@ -1,0 +1,22 @@
+(deflisten lyrics_data "../scripts/lyrics.py")
+
+(defwindow mewsic_lyrics
+    :monitor 0
+    :geometry (geometry :x "20px"
+                        :y "20px"
+                        :width "500px"
+                        :height "100px"
+                        :anchor "top right")
+    :stacking "bg"
+    :exclusive false
+    (lyrics_widget))
+
+(defwidget lyrics_widget []
+    (box :class "lyrics-container"
+         :orientation "v"
+         :valign "center"
+         :halign "center"
+        (label :class "lyrics-text"
+               :text "${lyrics_data.text}"
+               :wrap true
+               :justify "center")))
