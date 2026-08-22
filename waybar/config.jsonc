@@ -3,19 +3,19 @@
   "position": "top",
   "height": 34,
   "margin-top": 5,
-  "margin-left": 90,
-  "margin-right": 90,
-  "margin-bottom": 5,
+  "margin-left": 300,
+  "margin-right": 300,
+  // "margin-bottom": 5,
 
   "modules-left": ["tray", "hyprland/workspaces"],
-  "modules-center": ["custom/cava"],
+  // "modules-center": ["custom/cava"],
   "modules-right": [
     "backlight",
     "pulseaudio",
     "network",
     // "bluetooth",
+    // "battery",
     "clock",
-    "battery",
   ],
 
   "hyprland/workspaces": {
@@ -26,15 +26,15 @@
     },
     "format": "{icon}",
     "format-icons": {
-      "1": "1",
-      "2": "2",
-      "3": "3",
-      "4": "4",
-      "5": "5",
-      "6": "6",
-      "7": "7",
-      "8": "8",
-      "9": "9",
+        "1": "一",
+        "2": "二",
+        "3": "三",
+        "4": "四",
+        "5": "五",
+        "6": "六",
+        "7": "七",
+        "8": "八",
+        "9": "九",
     },
     "on-click": "activate",
   },
@@ -50,7 +50,7 @@
   },
 
   "clock": {
-    "format": "  {:%H:%M}",
+    "format": "  {:%H:%M }",
     "tooltip-format": "{:%A, %d %B %Y}",
   },
 
