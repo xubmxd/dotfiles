@@ -1,0 +1,722 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ghost Glaze — PYWAL EDITION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import url("/home/xubm/.cache/wal/colors-waybar.css");
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TRANSLUCENCY CONTROLS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@define-color glass_bar
+    alpha(@background, 0.55);
+
+@define-color glass_module
+    alpha(@color0, 0.55);
+
+@define-color glass_module_dark
+    alpha(@color0, 0.55);
+
+@define-color glass_hover
+    alpha(@color8, 0.60);
+
+@define-color glass_tooltip
+    alpha(@background, 0.55);
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESET & FOUNDATIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+* {
+    border: none;
+    border-radius: 0;
+
+    font-family:
+        "JetBrainsMono Nerd Font",
+        "Symbols Nerd Font",
+        sans-serif;
+
+    font-weight: 600;
+    font-size: 11px;
+
+    min-height: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   WAYBAR CONTAINER
+   ───────────────────────────────────────────────────────────────────────────── */
+
+window#waybar {
+    background: transparent;
+}
+
+window#waybar > box {
+    background-color: @glass_bar;
+
+    border: 1px solid alpha(@foreground, 0.15);
+
+    border-radius: 18px;
+
+    margin: 1px 6px;
+
+    padding: 2px 4px;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   APP LAUNCHER
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#custom-launcher {
+    background:
+        linear-gradient(
+            135deg,
+            @color4,
+            @color6
+        );
+
+    color: @background;
+
+    padding: 0 10px 0 8px;
+
+    margin: 4px 8px 4px 4px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 300;
+}
+
+#custom-launcher label,
+#custom-power label {
+    padding: 0;
+    margin: 1px;
+
+    font-weight: 300;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   WORKSPACES — GHOST STYLE
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#workspaces {
+    background: alpha(@foreground, 0.05);
+
+    margin: 4px;
+
+    border-radius: 20px;
+
+    border: 1px solid alpha(@foreground, 0.10);
+
+    padding: 2px 6px;
+
+    border-bottom: 2px solid alpha(@color4, 0.30);
+}
+
+
+#workspaces button {
+    padding: 0 5px;
+
+    margin: 1px;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out,
+        border-color 0.3s ease-in-out;
+
+    border-radius: 12px;
+}
+
+
+/* Empty workspaces */
+
+#workspaces button.empty {
+    color: alpha(@color5, 0.30);
+}
+
+
+/* Occupied workspaces */
+
+#workspaces button:not(.empty) {
+    color: @foreground;
+
+    text-shadow:
+        0 0 10px alpha(@color4, 0.70);
+}
+
+
+/* Active workspace */
+
+window#waybar #workspaces button.active {
+    color: @color4;
+
+    background: alpha(@color4, 0.20);
+
+    min-width: 30px;
+
+    text-shadow:
+        0 0 10px @color4,
+        0 0 18px @color4;
+
+    border: 1px solid @color4;
+}
+
+
+/* Urgent */
+
+#workspaces button.urgent {
+    color: @foreground;
+
+    background: @color1;
+
+    border: 1px solid @color1;
+}
+
+
+/* Workspace hover */
+
+#workspaces button:hover {
+    background: alpha(@color4, 0.12);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   CENTER MODULES — GLASS PODS
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#custom-notification,
+#clock,
+#custom-updates,
+#custom-updates-trigger {
+
+    background: @glass_module;
+
+    padding: 0 12px;
+
+    margin: 4px 3px;
+
+    border-radius: 10px;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out,
+        border-color 0.3s ease-in-out;
+}
+
+
+/* Updates */
+
+#custom-updates,
+#custom-updates-trigger {
+
+    color: @color6;
+
+    border-bottom: 2px solid alpha(@color6, 0.40);
+}
+
+
+/* Clock */
+
+#clock {
+
+    color: @color4;
+
+    border-bottom: 2px solid alpha(@color4, 0.40);
+
+    font-weight: 800;
+}
+
+
+/* Notifications */
+
+#custom-notification {
+
+    color: @color6;
+
+    border-bottom: 2px solid alpha(@color6, 0.40);
+}
+
+
+/* Notification active */
+
+#custom-notification.notification {
+
+    color: @color4;
+
+    border-bottom: 2px solid @color4;
+
+    text-shadow:
+        0 0 8px alpha(@color4, 0.60);
+}
+
+
+/* Hover */
+
+#custom-notification:hover,
+#clock:hover,
+#custom-updates:hover,
+#custom-updates-trigger:hover {
+
+    background: @glass_hover;
+
+    text-shadow:
+        0 0 8px alpha(@foreground, 0.30);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   NETWORK / AUDIO / BACKLIGHT
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#network,
+#custom-net-speed,
+#pulseaudio,
+#backlight {
+
+    padding: 0 12px;
+
+    margin: 4px 2px;
+
+    border-radius: 10px;
+
+    background: @glass_module;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out;
+}
+
+
+/* Network */
+
+#network,
+#custom-net-speed {
+
+    color: @color6;
+
+    padding: 0 12px 2px 8px;
+
+    margin: 4px 2px;
+
+    border-radius: 10px;
+
+    font-size: 16px;
+
+    border-bottom:
+        2px solid alpha(@color6, 0.20);
+}
+
+
+#custom-net-speed {
+
+    font-size: 13px;
+
+    padding: 0 8px 2px 8px;
+}
+
+
+/* Network disconnected */
+
+#network.disconnected {
+
+    color: @color1;
+
+    border-bottom:
+        2px solid alpha(@color1, 0.20);
+}
+
+
+/* Pulseaudio */
+
+#pulseaudio {
+
+    color: @color4;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+/* Muted */
+
+#pulseaudio.muted {
+
+    color: alpha(@foreground, 0.40);
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+/* Backlight */
+
+#backlight {
+
+    color: @color6;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+/* Hover */
+
+#network:hover,
+#custom-net-speed:hover,
+#pulseaudio:hover,
+#backlight:hover {
+
+    background: @glass_hover;
+
+    box-shadow:
+        inset 0 0 10px alpha(@foreground, 0.05);
+}
+
+
+/* Hover glows */
+
+#backlight:hover {
+    text-shadow:
+        0 0 8px alpha(@color6, 0.60);
+}
+
+#pulseaudio:hover {
+    text-shadow:
+        0 0 8px alpha(@color4, 0.60);
+}
+
+#network:hover,
+#custom-net-speed:hover {
+    text-shadow:
+        0 0 8px alpha(@color5, 0.60);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   CPU & MEMORY
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#cpu,
+#memory {
+
+    padding: 0 10px;
+
+    margin: 4px 2px;
+
+    border-radius: 10px;
+
+    background: @glass_module;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out;
+}
+
+
+#cpu {
+
+    color: @color4;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+#memory {
+
+    color: @color6;
+
+    border-bottom:
+        2px solid alpha(@color6, 0.20);
+}
+
+
+/* Hover */
+
+#cpu:hover,
+#memory:hover {
+
+    background: @glass_hover;
+}
+
+
+/* Warning */
+
+#cpu.warning,
+#memory.warning {
+
+    color: @color3;
+
+    background: alpha(@color3, 0.25);
+
+    border-bottom:
+        2px solid alpha(@color3, 0.50);
+}
+
+
+/* Critical */
+
+#cpu.critical,
+#memory.critical {
+
+    color: @foreground;
+
+    background: alpha(@color1, 0.60);
+
+    border-bottom:
+        2px solid alpha(@color1, 0.70);
+
+    animation:
+        cpu-pulse 1s ease-in-out infinite alternate;
+}
+
+
+@keyframes cpu-pulse {
+
+    from {
+        box-shadow:
+            0 0 2px alpha(@color1, 0.20);
+
+        background:
+            alpha(@color1, 0.40);
+    }
+
+    to {
+        box-shadow:
+            0 0 12px alpha(@color1, 0.60);
+
+        background:
+            alpha(@color1, 0.80);
+    }
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   BATTERY & TRAY
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#battery,
+#tray {
+
+    padding: 0 10px;
+
+    margin: 4px 2px;
+
+    border-radius: 10px;
+
+    background: @glass_module;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out;
+}
+
+
+#battery {
+
+    color: @color4;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+#battery:hover {
+
+    background: @glass_hover;
+
+    color: @color4;
+}
+
+
+/* Charging */
+
+#battery.charging,
+#battery.plugged {
+
+    color: @color4;
+
+    padding: 0 10px;
+
+    margin: 4px 2px;
+
+    border-radius: 10px;
+
+    background: @glass_module;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+/* Critical */
+
+#battery.critical:not(.charging) {
+
+    background: alpha(@color1, 0.60);
+
+    color: @foreground;
+
+    border-bottom:
+        2px solid alpha(@color1, 0.30);
+
+    animation:
+        blink 1s infinite alternate;
+}
+
+
+/* Tray */
+
+#tray {
+
+    color: @color4;
+
+    border-bottom:
+        2px solid alpha(@color4, 0.20);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   POWER DRAWER
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+#custom-inhibit-suspend {
+
+    background: @glass_module_dark;
+
+    padding: 0 12px;
+
+    margin: 6px 2px;
+
+    border-radius: 10px;
+
+    transition:
+        background-color 0.3s ease-in-out,
+        color 0.3s ease-in-out;
+
+    color: @color1;
+
+    border-bottom:
+        2px solid alpha(@color1, 0.40);
+}
+
+
+#custom-inhibit-suspend.activated {
+
+    color: @color1;
+
+    border-bottom:
+        2px solid @color1;
+
+    text-shadow:
+        0 0 8px alpha(@color1, 0.60);
+
+    background:
+        alpha(@color1, 0.10);
+}
+
+
+#custom-inhibit-suspend:hover {
+
+    background: @glass_hover;
+
+    text-shadow:
+        0 0 8px alpha(@foreground, 0.30);
+}
+
+
+/* Power button */
+
+#custom-power {
+
+    background:
+        linear-gradient(
+            135deg,
+            @color4,
+            @color6
+        );
+
+    color: @background;
+
+    padding: 0 10px 0 8px;
+
+    margin: 4px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+
+    font-weight: 300;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   TOOLTIPS
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+tooltip decoration {
+
+    background-color: transparent;
+
+    border: none;
+
+    box-shadow: none;
+}
+
+
+tooltip,
+tooltip.background,
+.tooltip {
+
+    background-color:
+        alpha(@color0, 0.57);
+
+    background:
+        linear-gradient(
+            135deg,
+            alpha(@color0, 0.57),
+            alpha(@color8, 0.57)
+        );
+
+    border:
+        1px solid alpha(@color4, 0.50);
+
+    border-radius: 12px;
+
+    box-shadow: none;
+}
+
+
+tooltip label,
+.tooltip label {
+
+    color: @foreground;
+
+    padding: 8px 12px;
+
+    font-family:
+        "JetBrainsMono Nerd Font Propo",
+        "JetBrainsMono Nerd Font",
+        monospace;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes blink {
+
+    to {
+        background-color: @color1;
+        color: @background;
+    }
+}
