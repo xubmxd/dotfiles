@@ -1,0 +1,156 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "margin-top": 5,
+  "margin-left": 300,
+  "margin-right": 300,
+
+  "modules-left": ["tray", "hyprland/workspaces"],
+  "modules-right": [
+    "backlight",
+    "pulseaudio",
+    "network",
+    "clock",
+  ],
+
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4],
+    },
+    "format": "{icon}",
+    "format-icons": {
+        //
+        // "1": "1",
+        // "2": "2",
+        // "3": "3",
+        // "4": "4",
+        // "5": "5",
+        // "6": "6",
+        // "7": "7",
+        // "8": "8",
+        // "9": "9",
+        //
+        "1": "一",
+        "2": "二",
+        "3": "三",
+        "4": "四",
+        "5": "五",
+        "6": "六",
+        "7": "七",
+        "8": "八",
+        "9": "九",
+    },
+    "on-click": "activate",
+  },
+
+  "bluetooth": {
+    "format": " {status}",
+    "format-disabled": "󰂲 Off",
+    "format-connected": " {device_alias} {device_battery_percentage}%",
+    "tooltip-format": "{controller_alias}\t{controller_address}",
+    "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "on-click": "blueman-manager",
+  },
+
+  "clock": {
+    "format": "  {:%H:%M }",
+    "tooltip-format": "{:%A, %d %B %Y}",
+  },
+
+  "backlight": {
+    "device": "intel_backlight",
+    "format": "{icon}  {percent}%",
+    "format-icons": ["", "", "", "", "", "", ""],
+    "on-scroll-up": "brightnessctl set +5%",
+    "on-scroll-down": "brightnessctl set 5%-",
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "  muted",
+    "format-icons": ["", "", ""],
+  },
+
+  "network": {
+    "format-wifi": "{icon} {essid}",
+    "format-ethernet": "󰈀 {ifname}",
+    "format-disconnected": "󰖪 Disconnected",
+    "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
+    "max-length": 25,
+    "tooltip-format": "{essid} ({signaldBm}dBm) ",
+    "on-click": "nm-connection-editor",
+  },
+
+  "battery": {
+    "format": "{icon}  {capacity}%",
+    "format-charging": "  {capacity}%",
+    "format-icons": ["", "", "", "", ""],
+  },
+  "custom/cava": {
+    "format": "{}",
+    "exec": "~/.config/waybar/scripts/cava.sh",
+  },
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "rofi -show drun",
+  },
+
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "<span foreground='red'><sup></sup></span>",
+      "none": "",
+      "dnd-notification": "<span foreground='red'><sup></sup></span>",
+      "dnd-none": "",
+      "inhibited-notification": "<span foreground='red'><sup></sup></span>",
+      "inhibited-none": "",
+      "dnd-inhibited-notification": "<span foreground='red'><sup></sup></span>",
+      "dnd-inhibited-none": "",
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true,
+  },
+
+  "mpris": {
+    "format": "{player_icon} {dynamic}",
+    "format-paused": "{status_icon} <i>{dynamic}</i>",
+    "max-length": 40,
+    "player-icons": {
+      "default": "",
+      "spotify": "",
+      "firefox": "",
+      "chromium": "",
+      "mpv": "",
+    },
+    "status-icons": {
+      "paused": "",
+    },
+  },
+
+  "custom/spotify-cat": {
+    "exec": "~/.config/waybar/scripts/spotify-cat.sh",
+    "return-type": "json",
+    "format": "{}",
+    "tooltip": false,
+  },
+  "custom/lyrics": {
+    "exec": "~/.cargo/bin/lumi",
+    "format": "{}",
+  },
+  "tray": {
+    "icon-size": 18,
+    "spacing": 8,
+    "show-passive-items": true,
+  },
+}

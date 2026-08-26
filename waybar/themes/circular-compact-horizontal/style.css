@@ -1,0 +1,614 @@
+@import url("/home/xubm/.cache/wal/colors-waybar.css");
+
+@define-color glass_bar transparent;
+@define-color glass_module alpha(@color0, 0.60);
+@define-color glass_module_dark alpha(@color0, 0.60);
+@define-color glass_hover alpha(@color8, 0.55);
+@define-color glass_tooltip alpha(@background, 0.55);
+@define-color glass_mpris alpha(@color6, 0.25);
+
+@define-color glass_border alpha(@color4, 0.25);
+@define-color glass_ws alpha(@color8, 0.55);
+@define-color glass_ws_empty alpha(@color0, 0.55);
+@define-color glass_ws_visible alpha(@color8, 0.60);
+@define-color glass_ws_active alpha(@color4, 0.60);
+@define-color glass_ws_urgent alpha(@color1, 0.60);
+
+@define-color glass_inhibit alpha(@color4, 0.60);
+@define-color glass_warn alpha(@color3, 0.55);
+@define-color glass_crit alpha(@color1, 0.55);
+@define-color glass_charge alpha(@color3, 0.55);
+@define-color glass_battery_warn alpha(@color4, 0.55);
+
+* {
+    border: none;
+    min-height: 0;
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+window#waybar {
+    background: transparent;
+}
+
+window#waybar > box {
+    background-color: @glass_bar;
+    border-radius: 18px;
+    border: none;
+    margin: 0;
+}
+
+#custom-launcher {
+    padding: 0 10px 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    border: none;
+    color: @background;
+    font-size: 19px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-launcher:hover {
+    background-image: linear-gradient(
+        135deg,
+        @color5 0%,
+        @color4 100%
+    );
+    border: none;
+}
+
+#custom-updates,
+#custom-updates-trigger {
+    padding: 0 10px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module_dark;
+    border: 1px solid @glass_border;
+    color: @color6;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-updates:hover,
+#custom-updates-trigger:hover {
+    background-color: alpha(@color8, 0.90);
+    border-color: alpha(@color4, 0.45);
+    color: @color4;
+}
+
+#clock,
+#custom-weather {
+    padding: 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module_dark;
+    border: 1px solid @glass_border;
+    color: @foreground;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+}
+
+#clock:hover,
+#custom-weather:hover {
+    background-color: alpha(@color8, 0.90);
+    border-color: alpha(@color4, 0.45);
+}
+
+#custom-notification {
+    padding: 0 12px 0 9px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module_dark;
+    border: 1px solid @glass_border;
+    color: @foreground;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-notification:hover {
+    background-color: alpha(@color8, 0.90);
+}
+
+#custom-theme-toggle {
+    padding: 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module;
+    color: @color6;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-theme-toggle:hover {
+    color: @color6;
+    background-color: alpha(@color6, 0.15);
+}
+
+#workspaces {
+    padding: 0;
+    margin: 2px 6px;
+    border-radius: 12px;
+    background-color: @glass_module;
+    border: 1px solid alpha(@color8, 0.10);
+}
+
+#workspaces button {
+    padding: 0 4px;
+    margin: 1px;
+    min-width: 16px;
+    border-radius: 8px;
+    background-color: transparent;
+    color: alpha(@foreground, 0.65);
+    font-size: 12px;
+    transition: all 0.2s ease-in-out;
+}
+
+#workspaces button.empty {
+    padding: 0 4px;
+    margin: 1px;
+    min-width: 16px;
+    background-color: transparent;
+    color: alpha(@foreground, 0.35);
+}
+
+#workspaces button.visible {
+    background-color: alpha(@color8, 0.60);
+    color: @foreground;
+}
+
+#workspaces button.active {
+    padding: 0 4px;
+    min-width: 24px;
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    color: @background;
+    font-weight: 700;
+}
+
+#workspaces button:hover {
+    background-color: @color8;
+    color: @foreground;
+}
+
+#workspaces button.active:hover {
+    background-image: linear-gradient(
+        135deg,
+        @color5 0%,
+        @color4 100%
+    );
+}
+
+#workspaces button.urgent {
+    background-image: linear-gradient(
+        135deg,
+        alpha(@color1, 0.75) 0%,
+        @color1 100%
+    );
+    color: @background;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+#custom-mpris-trigger {
+    padding: 0 10px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_mpris;
+    border: 1px solid alpha(@color8, 0.25);
+    color: @color6;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-mpris-trigger:hover {
+    background-color: alpha(@color6, 0.30);
+    border-color: alpha(@color6, 0.45);
+    color: @color4;
+}
+
+#mpris {
+    padding: 0 10px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_mpris;
+    color: @color6;
+    font-size: 12px;
+    border: 1px solid alpha(@color6, 0.25);
+    transition: all 0.2s ease-in-out;
+}
+
+#mpris:hover {
+    background-color: alpha(@color6, 0.30);
+    border-color: alpha(@color6, 0.45);
+}
+
+#mpris.playing {
+    color: @color6;
+}
+
+#mpris.paused {
+    color: alpha(@color6, 0.60);
+}
+
+#mpris.stopped {
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    background-color: transparent;
+    border: none;
+}
+
+#network,
+#custom-net-speed {
+    padding: 0 8px;
+    margin: 2px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: @foreground;
+    font-size: 11px;
+    transition: all 0.2s ease-in-out;
+}
+
+#network:hover,
+#custom-net-speed:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#custom-net-speed.network-kb {
+    color: @color6;
+    font-weight: bold;
+}
+
+#custom-net-speed.network-mb {
+    color: @color4;
+    font-weight: 900;
+}
+
+#custom-net-speed.network-disconnected,
+#network.disconnected {
+    color: @color1;
+}
+
+#network.linked,
+#network.ethernet {
+    color: @color5;
+}
+
+#network.wifi {
+    color: @color4;
+}
+
+#bluetooth {
+    padding: 0 8px;
+    margin: 2px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: @foreground;
+    font-size: 11px;
+    transition: all 0.2s ease-in-out;
+}
+
+#bluetooth:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#bluetooth.disabled {
+    color: alpha(@foreground, 0.40);
+}
+
+#bluetooth.connected {
+    color: @color4;
+}
+
+#pulseaudio.output,
+#pulseaudio {
+    padding: 0 12px 0 9px;
+    margin: 2px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: @foreground;
+    font-size: 11px;
+    transition: all 0.2s ease-in-out;
+}
+
+#pulseaudio.output:hover,
+#pulseaudio:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#pulseaudio.output.muted,
+#pulseaudio.muted {
+    color: alpha(@foreground, 0.40);
+}
+
+#backlight {
+    padding: 0 13px 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    color: @color5;
+    font-size: 11px;
+    transition: all 0.2s ease-in-out;
+}
+
+#backlight:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#cpu {
+    padding: 0 8px;
+    margin: 2px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: alpha(@foreground, 0.75);
+    font-size: 12px;
+    transition: all 0.2s ease-in-out;
+}
+
+#cpu:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#cpu.warning {
+    color: @color3;
+    background-color: alpha(@color3, 0.20);
+}
+
+#cpu.critical {
+    color: @color1;
+    background-color: alpha(@color1, 0.30);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#memory {
+    padding: 0 8px;
+    margin: 2px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: alpha(@foreground, 0.75);
+    font-size: 11px;
+    transition: all 0.2s ease-in-out;
+}
+
+#memory:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#memory.warning {
+    color: @color3;
+    background-color: alpha(@color3, 0.20);
+}
+
+#memory.critical {
+    color: @color1;
+    background-color: alpha(@color1, 0.30);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#battery {
+    padding: 0 5px;
+    margin: 2px;
+    background-color: @glass_module_dark;
+    border: 1px solid @glass_border;
+    border-radius: 8px;
+    color: @foreground;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+}
+
+#battery:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#battery.good {
+    color: @color5;
+}
+
+#battery.charging,
+#battery.plugged,
+#battery.full {
+    color: @color5;
+    background-color: alpha(@color5, 0.25);
+    border-color: alpha(@color5, 0.15);
+}
+
+#battery.warning:not(.charging) {
+    color: @color4;
+    background-color: alpha(@color4, 0.30);
+    border-color: alpha(@color4, 0.20);
+}
+
+#battery.critical:not(.charging) {
+    color: @background;
+    background-image: linear-gradient(
+        135deg,
+        alpha(@color1, 0.80) 0%,
+        @color1 100%
+    );
+    animation: critical-blink 1s ease-in-out infinite;
+}
+
+@keyframes critical-blink {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+#custom-inhibit-suspend {
+    padding: 0 12px 0 9px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module_dark;
+    border: 1px solid @glass_border;
+    color: @foreground;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-inhibit-suspend:hover {
+    background-color: alpha(@foreground, 0.12);
+}
+
+#custom-inhibit-suspend.disabled {
+    color: @color5;
+    background-color: alpha(@color5, 0.30);
+    border-color: alpha(@color5, 0.20);
+}
+
+#custom-inhibit-suspend.enabled {
+    color: alpha(@foreground, 0.70);
+    background-color: @glass_module_dark;
+}
+
+#custom-power {
+    padding: 0 12px 0 9px;
+    margin: 2px;
+    border-radius: 10px;
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    border: none;
+    color: @background;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+#custom-power:hover {
+    background-color: @color4;
+    background-image: none;
+    border: none;
+}
+
+#custom-cava {
+    padding: 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module;
+    color: @color4;
+    border: 1px solid @glass_border;
+}
+
+#custom-lyrics {
+    padding: 0 10px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module;
+    color: @color6;
+    border: 1px solid @glass_border;
+}
+
+#tray {
+    padding: 0 8px;
+    margin: 2px;
+    border-radius: 10px;
+    background-color: @glass_module;
+    border: 1px solid @glass_border;
+    transition: all 0.2s ease-in-out;
+}
+
+#tray:hover {
+    border-color: alpha(@color4, 0.45);
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: alpha(@color1, 0.20);
+    border-radius: 6px;
+}
+
+#tray menu {
+    background-color: alpha(@color8, 0.92);
+    border: 1px solid alpha(@color8, 0.70);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+#tray menu menuitem {
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: @foreground;
+}
+
+#tray menu menuitem:hover {
+    background-color: alpha(@color8, 0.75);
+}
+
+tooltip decoration {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+tooltip,
+tooltip.background,
+.tooltip {
+    background-color: alpha(@color0, 0.57);
+    background: linear-gradient(
+        135deg,
+        alpha(@color0, 0.57),
+        alpha(@color8, 0.57)
+    );
+    border: 1px solid alpha(@color4, 0.50);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+tooltip label,
+.tooltip label {
+    color: @foreground;
+    padding: 8px 12px;
+    font-family:
+        "JetBrainsMono Nerd Font Propo",
+        "JetBrainsMono Nerd Font",
+        monospace;
+    font-size: 12px;
+    font-weight: 600;
+}

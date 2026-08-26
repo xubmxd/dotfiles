@@ -1,0 +1,362 @@
+@import url("/home/xubm/.cache/wal/colors-waybar.css");
+
+@define-color glass_module alpha(@color0, 0.60);
+@define-color glass_module_low alpha(@color0, 0.52);
+@define-color glass_module_high alpha(@color8, 0.55);
+@define-color glass_primary_container alpha(@color4, 0.60);
+@define-color glass_tooltip alpha(@color8, 0.55);
+
+@define-color glass_border alpha(@color4, 0.25);
+@define-color glass_hover alpha(@color8, 0.65);
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono NF", "JetBrains Mono", "Symbols Nerd Font", sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+    background-image: none;
+}
+
+window#waybar {
+    background: transparent;
+    color: @foreground;
+}
+
+window#waybar > box {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+tooltip decoration {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+tooltip,
+tooltip.background,
+.tooltip {
+    background-color: alpha(@color0, 0.57);
+    background: linear-gradient(
+        135deg,
+        alpha(@color0, 0.57),
+        alpha(@color8, 0.57)
+    );
+    border: 1px solid alpha(@color4, 0.5);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+tooltip label,
+.tooltip label {
+    color: @foreground;
+    padding: 8px 12px;
+    font-family: "JetBrainsMono Nerd Font Propo", "JetBrainsMono Nerd Font", monospace;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#clock,
+#workspaces,
+#group-stats,
+#pulseaudio,
+#backlight,
+#bluetooth,
+#battery,
+#custom-network,
+#custom-notification,
+#custom-updates,
+#custom-inhibit-suspend {
+    background-color: @glass_module;
+    color: @foreground;
+    border-radius: 10px;
+    margin: 3px 1px;
+    padding: 6px 2px 6px 3px;
+}
+
+#clock {
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    color: @background;
+    font-size: 11px;
+    padding: 7px 2px 8px 3px;
+}
+
+#custom-notification,
+#custom-updates {
+    font-size: 10px;
+}
+
+#custom-notification:hover,
+#custom-updates:hover {
+    background-color: @glass_hover;
+    border: 1px solid alpha(@color4, 0.45);
+}
+
+#group-stats {
+    background-color: @glass_module_low;
+    padding: 8px 0;
+    border: 1px solid alpha(@color8, 0.15);
+}
+
+#cpu label,
+#memory label,
+#temperature label {
+    -gtk-icon-transform: scale(1);
+    margin: 0 1px;
+}
+
+#cpu,
+#memory,
+#temperature {
+    background: transparent;
+    margin: 4px 0;
+    padding: 0 1px;
+    font-size: 10px;
+    color: alpha(@foreground, 0.75);
+    min-width: 22px;
+}
+
+#cpu:hover,
+#memory:hover,
+#temperature:hover {
+    color: @color4;
+}
+
+#cpu.critical,
+#memory.critical,
+#temperature.critical {
+    color: @color1;
+}
+
+#workspaces {
+    background-color: @glass_module_high;
+    padding: 2px 0;
+    border: 1px solid alpha(@color8, 0.15);
+}
+
+#workspaces button {
+    padding: 3px 0;
+    margin: 1px 2px;
+    border-radius: 9px;
+    color: alpha(@foreground, 0.60);
+    background: transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+#workspaces button.empty {
+    color: alpha(@foreground, 0.30);
+    background: transparent;
+}
+
+#workspaces button.visible {
+    background-color: alpha(@color8, 0.60);
+    color: @foreground;
+}
+
+#workspaces button.active {
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    color: @background;
+    font-weight: 700;
+}
+
+#workspaces button:hover {
+    background-color: @color8;
+    color: @foreground;
+}
+
+#workspaces button.active:hover {
+    background-image: linear-gradient(
+        135deg,
+        @color5 0%,
+        @color4 100%
+    );
+}
+
+#workspaces button.urgent {
+    background-image: linear-gradient(
+        135deg,
+        alpha(@color1, 0.80) 0%,
+        @color1 100%
+    );
+    color: @background;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+#custom-network {
+    font-size: 10px;
+    padding: 8px 2px 8px 0;
+}
+
+#custom-network:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#custom-network.network-kb {
+    color: @color6;
+}
+
+#custom-network.network-mb {
+    color: @color4;
+    font-weight: 900;
+}
+
+#custom-network.network-disconnected {
+    color: @color1;
+}
+
+#pulseaudio,
+#backlight,
+#bluetooth,
+#battery {
+    font-size: 10px;
+    padding: 8px 0;
+}
+
+#pulseaudio:hover,
+#backlight:hover,
+#bluetooth:hover,
+#battery:hover {
+    background-color: @glass_hover;
+    border: 1px solid alpha(@color4, 0.45);
+}
+
+#pulseaudio {
+    color: @color4;
+}
+
+#pulseaudio.muted {
+    color: alpha(@foreground, 0.40);
+}
+
+#backlight {
+    color: @color5;
+}
+
+#bluetooth {
+    color: @color6;
+}
+
+#bluetooth.disabled {
+    color: alpha(@foreground, 0.40);
+}
+
+#bluetooth.connected {
+    color: @color4;
+}
+
+#battery {
+    color: @foreground;
+}
+
+#battery.charging,
+#battery.plugged,
+#battery.full {
+    color: @color5;
+    background-color: alpha(@color5, 0.25);
+    border-color: alpha(@color5, 0.15);
+}
+
+#battery.warning {
+    color: @color4;
+    background-color: alpha(@color4, 0.25);
+    border-color: alpha(@color4, 0.20);
+}
+
+#battery.critical:not(.charging) {
+    color: @background;
+    background-image: linear-gradient(
+        135deg,
+        alpha(@color1, 0.80) 0%,
+        @color1 100%
+    );
+    animation: critical-blink 1s ease-in-out infinite;
+}
+
+@keyframes critical-blink {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+#custom-power {
+    background-image: linear-gradient(
+        135deg,
+        @color4 0%,
+        @color5 100%
+    );
+    color: @background;
+    font-size: 16px;
+    margin: 6px 1px;
+    padding: 4px 2px 4px 9px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+#custom-power:hover {
+    background-image: linear-gradient(
+        135deg,
+        @color5 0%,
+        @color4 100%
+    );
+}
+
+#custom-inhibit-suspend {
+    font-size: 12px;
+    padding: 6px 2px 6px 9px;
+    margin: 2px 1px;
+}
+
+#custom-inhibit-suspend:hover {
+    background-color: @glass_hover;
+    border-color: alpha(@color4, 0.45);
+}
+
+#custom-inhibit-suspend.disabled {
+    color: @color5;
+    background-color: alpha(@color5, 0.30);
+    border-color: alpha(@color5, 0.20);
+}
+
+#custom-inhibit-suspend.enabled {
+    color: alpha(@foreground, 0.70);
+    background-color: @glass_module;
+}
