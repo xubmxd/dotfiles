@@ -370,5 +370,5 @@ awww img "$SELECTED_GIF" \
 cp "$SELECTED_GIF" "$CACHE_FILE"
 cp "$SELECTED_GIF" "$BRAVE_FILE"
 
-THEME=$(spicetify config current_theme)
-pywal-spicetify "$THEME"
+# THEME=$(spicetify config current_theme)
+# pywal-spicetify "$THEME"

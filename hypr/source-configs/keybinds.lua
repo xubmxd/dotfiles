@@ -17,6 +17,7 @@ hl.bind("CTRL + SHIFT + W", hl.dsp.exec_cmd("~/.local/bin/exec-waybar"))
 hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/wallpaper-selector.sh"))
 hl.bind(mainMod .. " + SHIFT + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/gif-selector.sh"))
 hl.bind(mainMod .. " + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-wallpaper.sh"))
+hl.bind(mainMod .. " + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-gif.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
 
 -- Emoji

@@ -164,7 +164,7 @@ hl.window_rule({
     match = {
         class = "vesktop",
     },
-    opacity = 0.8,
+    opacity = 0.9,
 })
 
 -- #### Mewsic ####

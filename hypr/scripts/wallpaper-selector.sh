@@ -286,17 +286,17 @@ element selected.normal {
 
 display_name() {
     case "$1" in
-    anime) echo "󰑈  Anime" ;;
-    scenic) echo "󰉔  Scenic" ;;
-    "2d scenic") echo "󰉔  2d Scenic" ;;
-    dark) echo "󰌪  Dark" ;;
-    space) echo "󰠱  Space" ;;
-    gaming) echo "󰊗  Gaming" ;;
-    rice) echo "󰣇 Rice" ;;
-    cars) echo "󰭮  Cars" ;;
-    pixel) echo "󰝤 Pixel" ;;
-    minimal) echo "󰈔  Minimal" ;;
-    nature) echo "󰔉  Nature" ;;
+    anime)   echo "▷  Anime" ;;
+    scenic)  echo "⌇  Scenic" ;;
+    "2D")    echo "◇  2D" ;;
+    lofi)    echo "☾  lofi" ;;
+    space)   echo "✧  Space" ;;
+    gaming)  echo "󰊗  Gaming" ;;
+    rice)    echo "󰣇  Rice" ;;
+    cars)    echo "󰭮  Cars" ;;
+    pixel)   echo "▦  Pixel" ;;
+    minimal) echo "□  Minimal" ;;
+    nature)  echo "♧  Nature" ;;
     *) echo "󰉋  ${1^}" ;;
     esac
 }
@@ -412,6 +412,7 @@ matugen image "$WALL" \
 # ------------------------------------------------------------
 if pgrep -x "eww" > /dev/null; then
     eww -c "$HOME/.config/eww/visualizer" reload
+    eww -c "$HOME/.config/eww/lyrics" reload
 fi
 
 # ------------------------------------------------------------
@@ -430,5 +431,5 @@ awww img "$WALL" \
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
 
-THEME=$(spicetify config current_theme)
-pywal-spicetify "$THEME"
+# THEME=$(spicetify config current_theme)
+# pywal-spicetify "$THEME"

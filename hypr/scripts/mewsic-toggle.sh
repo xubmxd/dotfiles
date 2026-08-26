@@ -28,11 +28,12 @@ if hyprctl clients | grep -qE "class: ${APP_ID}|title: ${WINDOW_TITLE}"; then
 fi
 
 # ---------------------------------------------------------
-# Launch a new dedicated Foot instance & Eww Visualizer
+# Launch a new dedicated Foot instance & Eww Widgets
 # ---------------------------------------------------------
 
-# 1. Start the visualizer
+# 1. Start the visualizer and lyrics widgets
 eww -c "$HOME/.config/eww/visualizer" open cava_visualizer
+# eww -c "$HOME/.config/eww/lyrics" open mewsic_lyrics
 
 # 2. Launch Foot
 "$TERMINAL" \
@@ -64,7 +65,8 @@ hyprctl dispatch "hl.dsp.window.move({ workspace = 'special:music', window = 'cl
         sleep 1
     done
     
-    # Once the loop breaks, trigger cleanup
+    # Once the loop breaks, trigger cleanup for both widgets and cava
     eww -c "$HOME/.config/eww/visualizer" close cava_visualizer
+    # eww -c "$HOME/.config/eww/lyrics" close mewsic_lyrics
     killall cava
 ) &
