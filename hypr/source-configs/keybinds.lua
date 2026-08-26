@@ -11,7 +11,8 @@ hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/de
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + U", hl.dsp.layout("togglesplit"))
-hl.bind("CTRL + SHIFT + W", hl.dsp.exec_cmd("~/.local/bin/exec-waybar"))
+hl.bind("CTRL + W", hl.dsp.exec_cmd("~/.local/bin/exec-waybar"))
+hl.bind("CTRL + SHIFT + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/waybar-selector.sh"))
 
 -- wallpaper - scripts
 hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/wallpaper-selector.sh"))
