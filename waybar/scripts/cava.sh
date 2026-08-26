@@ -37,7 +37,8 @@ validate_bars() {
 }
 
 mewsic_running() {
-    pgrep -f "mewsic.py" >/dev/null
+    # Updated to target the Rust binary instead of the Python script
+    pgrep -x "mewsic_rs" >/dev/null
 }
 ################################################################################
 # Parse arguments

@@ -21,12 +21,12 @@ window#waybar {
 
 window#waybar > box {
   background-color: alpha(@background, 0.6);
-  padding: 3px 0;
+  padding: 5px 0;
   transition: all 0.3s ease;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   SHARED MODULE STYLES (Added #bluetooth here)
+   SHARED MODULE STYLES
    ───────────────────────────────────────────────────────────────────────────── */
 
 #clock,
@@ -45,12 +45,12 @@ window#waybar > box {
 #custom-spotify-cat,
 #tray,
 #custom-spotify {
-  margin: 1px 6px;
-  padding: 0 10px;
+  margin: 6px 1px;
+  padding: 8px 0;
   border-radius: 10px;
   background: transparent;
   color: @foreground;
-  font-size: 12px;
+  font-size: 16px;
   border: 1px solid alpha(@color4, 0.2);
   transition: all 0.2s ease-in-out;
 }
@@ -73,45 +73,23 @@ window#waybar > box {
   border: 1px solid @color4;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LEFT MODULES OVERRIDE (Reduced Gaps)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#custom-notification,
-#mpris,
-#custom-spotify-cat {
-  margin: 1px 2px;
-}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MODULE OVERRIDES & ALIGNMENT FIXES
    ───────────────────────────────────────────────────────────────────────────── */
 
-#custom-notification {
-  padding: 0;
-  min-width: 40px;
-}
-
-#custom-spotify-cat {
-  font-size: 15px;
-}
-
 #clock {
-  padding: 0 5px;
+  padding: 10px 0;
   font-weight: 700;
+  font-size: 14px;
 }
 
 #custom-launcher {
   min-height: 24px;
   min-width: 24px;
-  font-size: 16px;
+  font-size: 18px;
   color: @foreground;
   transition: all 0.2s ease;
-}
-
-#custom-net-speed {
-  font-size: 10px;
-  border-color: alpha(@foreground, 0.2);
 }
 
 #network.disconnected,
@@ -130,24 +108,24 @@ window#waybar > box {
    ───────────────────────────────────────────────────────────────────────────── */
 
 #workspaces {
-  margin: 1px 2px;
-  margin-left: 10px;
+  margin: 5px 1px;
 }
 
 #workspaces button {
-  padding: 0 8px;
-  margin: 1px 2px;
-  min-width: 12px;
+  padding: 8px 0;
+  margin: 4px 1px;
+  min-height: 20px;
+  min-width: 24px;
   border-radius: 6px;
   background-color: alpha(@color0, 0.4);
   color: @foreground;
-  font-size: 12px;
+  font-size: 14px;
   border: 1px solid alpha(@color4, 0.2);
   transition: all 0.2s ease-in-out;
 }
 
 #workspaces button.empty {
-  min-width: 20px;
+  min-height: 20px;
   background-color: alpha(@color0, 0.2);
   color: alpha(@foreground_variant, 0.4);
 }
@@ -157,8 +135,8 @@ window#waybar > box {
 }
 
 #workspaces button.active {
-  min-width: 28px;
-  padding: 0 1px;
+  min-height: 28px;
+  padding: 1px 0;
   background-color: alpha(@color4_container, 0.6);
   font-weight: 700;
   border: 1px solid @color4;
@@ -172,6 +150,7 @@ window#waybar > box {
 
 #custom-cava {
   color: @color4;
+  padding: 15px 0;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -206,96 +185,18 @@ window#waybar > box {
   box-shadow: 0 2px 8px alpha(@color1, 0.4);
 }
 
-#mpris.paused {
-  color: alpha(@foreground, 0.5);
-  min-width: 10px;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   LYRICS
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#custom-lyrics {
-  color: @color6;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0 12px;
-  min-width: 180px;
-  transition:
-    color 0.3s ease,
-    border-color 0.3s ease,
-    background-color 0.3s ease;
-}
-
-#custom-lyrics:hover {
-  color: @foreground;
-}
-
-#custom-lyrics.paused {
-  color: alpha(@foreground, 0.45);
-}
-
-#custom-lyrics.no-lyrics {
-  color: alpha(@foreground, 0.35);
-  font-style: italic;
-}
-
-#custom-lyrics.playing {
-  color: @color6;
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
    ───────────────────────────────────────────────────────────────────────────── */
 
 @keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
 }
 
 @keyframes critical-blink {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.8;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT MODULES (Remove Spaces)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#backlight,
-#pulseaudio,
-#network,
-#bluetooth,
-#clock,
-#battery {
-  margin-left: 4px;
-  margin-right: 4px;
-}
-#clock{
-    margin-right: 10px;
-}
-
-
-#cavaGLSL{
-    background: transparent;
-
-    border-radius: 50%;
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
 }
