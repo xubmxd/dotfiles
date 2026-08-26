@@ -1,19 +1,17 @@
 {
   "layer": "top",
   "position": "left",
-  "width": 40,
-  "margin-top": 15,
-  "margin-bottom": 15,
-  "margin-left": 10,
+  "width": 25,
+  "margin-top": 150,
+  "margin-bottom": 150,
+  "margin-left": 5,
+  "spacing": 15,
 
-  "modules-left": ["custom/launcher", "hyprland/workspaces"],
-  "modules-center": ["custom/cava"],
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
   "modules-right": [
-    "tray",
-    "backlight",
-    "pulseaudio",
-    "network",
-    "battery",
+    "group/system",
     "clock"
   ],
 
@@ -28,36 +26,47 @@
         "1": "一",
         "2": "二",
         "3": "三",
-        "4": "四",
-        "5": "五",
-        "6": "六",
-        "7": "七",
-        "8": "八",
-        "9": "九"
+        "4": "四"
     },
     "on-click": "activate"
   },
 
-  "bluetooth": {
-    "format": "",
-    "format-disabled": "󰂲",
-    "format-connected": "",
-    "tooltip-format": "{controller_alias}\t{controller_address}",
-    "tooltip-format-connected": "{device_alias} {device_battery_percentage}%\n{device_enumerate}",
-    "on-click": "blueman-manager"
+  "custom/cava": {
+    "format": "{}",
+    "exec": "~/.config/waybar/scripts/cava.sh"
   },
 
-  "clock": {
-    "format": "{:%H\n%M}",
-    "tooltip-format": "{:%A, %d %B %Y}"
+  "group/system": {
+    "orientation": "vertical",
+    "class": "system-pill",
+    "modules": [
+        "tray",
+        "network",
+        "backlight",
+        "pulseaudio",
+        "battery"
+    ]
+  },
+
+  "tray": {
+    "icon-size": 18,
+    "spacing": 10,
+    "show-passive-items": true
+  },
+
+  "network": {
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰖪",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format": "{essid}",
+    "on-click": "nm-connection-editor"
   },
 
   "backlight": {
     "device": "intel_backlight",
     "format": "{icon}",
     "format-icons": ["", "", "", "", "", "", ""],
-    "on-scroll-up": "brightnessctl set +5%",
-    "on-scroll-down": "brightnessctl set 5%-",
     "tooltip-format": "{percent}%"
   },
 
@@ -68,15 +77,6 @@
     "tooltip-format": "{volume}%"
   },
 
-  "network": {
-    "format-wifi": "{icon}",
-    "format-ethernet": "󰈀",
-    "format-disconnected": "󰖪",
-    "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
-    "tooltip-format": "{essid} ({signaldBm}dBm)",
-    "on-click": "nm-connection-editor"
-  },
-
   "battery": {
     "format": "{icon}",
     "format-charging": "",
@@ -84,20 +84,8 @@
     "tooltip-format": "{capacity}%"
   },
 
-  "custom/cava": {
-    "format": "{}",
-    "exec": "~/.config/waybar/scripts/cava.sh"
-  },
-
-  "custom/launcher": {
-    "format": "󰣇",
-    "tooltip": false,
-    "on-click": "rofi -show drun"
-  },
-
-  "tray": {
-    "icon-size": 18,
-    "spacing": 8,
-    "show-passive-items": true
+  "clock": {
+    "format": "{:%H\n%M}",
+    "tooltip-format": "{:%A, %d %B %Y}"
   }
 }

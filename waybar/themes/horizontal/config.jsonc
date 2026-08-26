@@ -5,16 +5,12 @@
   "margin-top": 5,
   "margin-left": 300,
   "margin-right": 300,
-  // "margin-bottom": 5,
 
   "modules-left": ["tray", "hyprland/workspaces"],
-  // "modules-center": ["custom/cava"],
   "modules-right": [
     "backlight",
     "pulseaudio",
     "network",
-    // "bluetooth",
-    // "battery",
     "clock",
   ],
 

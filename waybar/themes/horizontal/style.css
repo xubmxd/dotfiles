@@ -1,33 +1,82 @@
 @import url("/home/xubm/.cache/wal/colors-waybar.css");
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RESET & FOUNDATIONS
-   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  PYWAL / GLASS PALETTE                                                       │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+@define-color bar_bg              alpha(@background, 0.60);
+
+@define-color module_bg           transparent;
+@define-color module_hover        alpha(@color4, 0.10);
+
+@define-color border_subtle       alpha(@color4, 0.20);
+@define-color border_hover        @color4;
+
+@define-color workspace_bg        alpha(@color0, 0.40);
+@define-color workspace_empty     alpha(@color0, 0.20);
+@define-color workspace_visible   alpha(@color0, 0.60);
+@define-color workspace_active    alpha(@color4, 0.60);
+
+@define-color muted               alpha(@foreground, 0.45);
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  GLOBAL                                                                      │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 * {
-  border-radius: 15px;
-  border: none;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
-  font-weight: 600;
-  font-size: 17px;
+    border: none;
+    border-radius: 15px;
+
+    min-height: 0;
+
+    margin: 0;
+    padding: 0;
+
+    font-family:
+        "JetBrainsMono Nerd Font",
+        "Symbols Nerd Font",
+        sans-serif;
+
+    font-size: 17px;
+    font-weight: 600;
 }
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  WAYBAR BAR                                                                   │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 window#waybar {
-  background: transparent;
+
+    background: transparent;
+
+    color: @foreground;
 }
+
+
+/*
+ * The actual horizontal glass surface.
+ *
+ * Keeping the outer window transparent lets the rounded bar itself
+ * define the visible shape.
+ */
 
 window#waybar > box {
-  background-color: alpha(@background, 0.6);
-  padding: 3px 0;
-  transition: all 0.3s ease;
+
+    background-color: @bar_bg;
+
+    padding: 3px 0;
+
+    transition:
+        background-color 0.3s ease;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   SHARED MODULE STYLES (Added #bluetooth here)
-   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  SHARED MODULE STYLE                                                          │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #clock,
 #custom-notification,
@@ -45,15 +94,29 @@ window#waybar > box {
 #custom-spotify-cat,
 #tray,
 #custom-spotify {
-  margin: 1px 6px;
-  padding: 0 10px;
-  border-radius: 10px;
-  background: transparent;
-  color: @foreground;
-  font-size: 12px;
-  border: 1px solid alpha(@color4, 0.2);
-  transition: all 0.2s ease-in-out;
+
+    margin: 1px 6px;
+
+    padding: 0 10px;
+
+    border-radius: 10px;
+
+    background: @module_bg;
+
+    color: @foreground;
+
+    font-size: 12px;
+
+    border: 1px solid @border_subtle;
+
+    transition:
+        background-color 0.2s ease-in-out,
+        border-color 0.2s ease-in-out,
+        color 0.2s ease-in-out;
 }
+
+
+/* Hover */
 
 #clock:hover,
 #custom-notification:hover,
@@ -67,235 +130,453 @@ window#waybar > box {
 #custom-launcher:hover,
 #custom-mpris-placeholder:hover,
 #mpris:hover,
+#custom-lyrics:hover,
 #custom-spotify-cat:hover,
 #tray:hover,
 #custom-spotify:hover {
-  border: 1px solid @color4;
+
+    border-color: @border_hover;
+
+    background-color: @module_hover;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LEFT MODULES OVERRIDE (Reduced Gaps)
-   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  LEFT SIDE                                                                    │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #custom-notification,
 #mpris,
 #custom-spotify-cat {
-  margin: 1px 2px;
+
+    margin-left: 2px;
+    margin-right: 2px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   MODULE OVERRIDES & ALIGNMENT FIXES
-   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Notification */
 
 #custom-notification {
-  padding: 0;
-  min-width: 40px;
+
+    min-width: 40px;
+
+    padding: 0;
 }
+
+
+/* Spotify cat */
 
 #custom-spotify-cat {
-  font-size: 15px;
+
+    font-size: 15px;
 }
+
+
+/* MPRIS */
+
+#mpris {
+
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+
+#mpris.paused {
+
+    color: @muted;
+
+    min-width: 10px;
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  CLOCK                                                                        │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #clock {
-  padding: 0 5px;
-  font-weight: 700;
+
+    padding-left: 5px;
+    padding-right: 5px;
+
+    font-weight: 700;
+
+    margin-left: 4px;
+    margin-right: 10px;
 }
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  LAUNCHER                                                                     │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #custom-launcher {
-  min-height: 24px;
-  min-width: 24px;
-  font-size: 16px;
-  color: @foreground;
-  transition: all 0.2s ease;
+
+    min-height: 24px;
+    min-width: 24px;
+
+    font-size: 16px;
+
+    color: @foreground;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 }
 
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  NETWORK SPEED                                                                │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
 #custom-net-speed {
-  font-size: 10px;
-  border-color: alpha(@foreground, 0.2);
+
+    font-size: 10px;
+
+    border-color: alpha(@foreground, 0.20);
 }
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  NETWORK                                                                      │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #network.disconnected,
 #bluetooth.disabled {
-  color: @foreground;
+
+    color: @foreground;
 }
+
 
 #network.linked,
 #network.ethernet,
 #bluetooth.connected {
-  color: @color6;
+
+    color: @color6;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   WORKSPACES
-   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  WORKSPACES                                                                   │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #workspaces {
-  margin: 1px 2px;
-  margin-left: 10px;
+
+    margin: 1px 2px;
+
+    margin-left: 10px;
 }
+
 
 #workspaces button {
-  padding: 0 8px;
-  margin: 1px 2px;
-  min-width: 12px;
-  border-radius: 6px;
-  background-color: alpha(@color0, 0.4);
-  color: @foreground;
-  font-size: 12px;
-  border: 1px solid alpha(@color4, 0.2);
-  transition: all 0.2s ease-in-out;
+
+    padding: 0 8px;
+
+    margin: 1px 2px;
+
+    min-width: 12px;
+
+    border-radius: 6px;
+
+    background-color: @workspace_bg;
+
+    color: @foreground;
+
+    font-size: 12px;
+
+    border: 1px solid @border_subtle;
+
+    transition:
+        background-color 0.2s ease-in-out,
+        border-color 0.2s ease-in-out,
+        color 0.2s ease-in-out;
 }
+
+
+/* Empty workspace */
 
 #workspaces button.empty {
-  min-width: 20px;
-  background-color: alpha(@color0, 0.2);
-  color: alpha(@foreground_variant, 0.4);
+
+    min-width: 20px;
+
+    background-color: @workspace_empty;
+
+    color: alpha(@foreground, 0.40);
 }
+
+
+/* Visible workspace */
 
 #workspaces button.visible {
-  background-color: alpha(@color0, 0.6);
+
+    background-color: @workspace_visible;
 }
+
+
+/* Active workspace */
 
 #workspaces button.active {
-  min-width: 28px;
-  padding: 0 1px;
-  background-color: alpha(@color4_container, 0.6);
-  font-weight: 700;
-  border: 1px solid @color4;
+
+    min-width: 28px;
+
+    padding: 0 1px;
+
+    background-color: @workspace_active;
+
+    font-weight: 700;
+
+    border: 1px solid @color4;
 }
+
+
+/* Workspace hover */
+
+#workspaces button:hover {
+
+    background-color: alpha(@color4, 0.20);
+
+    border-color: @color4;
+
+    color: @foreground;
+}
+
+
+/* Urgent workspace */
 
 #workspaces button.urgent {
-  background-color: alpha(@color1_container, 0.6);
-  border: 1px solid @color1;
-  animation: pulse 1.5s ease-in-out infinite;
+
+    background-color: alpha(@color1, 0.60);
+
+    border: 1px solid @color1;
+
+    animation:
+        pulse 1.5s ease-in-out infinite;
 }
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  CAVA                                                                         │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #custom-cava {
-  color: @color4;
+
+    color: @color4;
+
+    font-size: 12px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   STATE INDICATORS
-   ───────────────────────────────────────────────────────────────────────────── */
 
-#pulseaudio.muted,
+/* Silent */
+
 #custom-cava.silent {
-  color: alpha(@color8, 0.4);
+
+    color: alpha(@color8, 0.40);
 }
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  AUDIO                                                                        │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+#pulseaudio.muted {
+
+    color: alpha(@color8, 0.40);
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  BACKLIGHT                                                                    │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+#backlight {
+
+    color: @foreground;
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  BLUETOOTH                                                                    │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+#bluetooth {
+
+    color: @foreground;
+}
+
+
+#bluetooth.connected {
+
+    color: @color6;
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  BATTERY                                                                      │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #battery.good {
-  color: @color6;
+
+    color: @color6;
 }
+
 
 #battery.charging,
 #battery.plugged,
 #battery.full {
-  color: @color6;
-  background-color: alpha(@color4, 0.25);
-  border: 1px solid alpha(@color4, 0.15);
+
+    color: @color6;
+
+    background-color: alpha(@color4, 0.25);
+
+    border: 1px solid alpha(@color4, 0.15);
 }
+
 
 #battery.warning:not(.charging) {
-  color: @color4_fixed;
-  background-color: alpha(@color4_container, 0.3);
+
+    color: @color4;
+
+    background-color: alpha(@color4, 0.30);
 }
+
 
 #battery.critical:not(.charging) {
-  background-image: linear-gradient(135deg, @color1_container 0%, @color1 100%);
-  animation: critical-blink 1s ease-in-out infinite;
-  box-shadow: 0 2px 8px alpha(@color1, 0.4);
+
+    background-image:
+        linear-gradient(
+            135deg,
+            @color1,
+            @color1
+        );
+
+    color: @foreground;
+
+    animation:
+        critical-blink 1s ease-in-out infinite;
+
+    box-shadow:
+        0 2px 8px alpha(@color1, 0.40);
 }
 
-#mpris.paused {
-  color: alpha(@foreground, 0.5);
-  min-width: 10px;
-}
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LYRICS
-   ───────────────────────────────────────────────────────────────────────────── */
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  LYRICS                                                                       │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #custom-lyrics {
-  color: @color6;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0 12px;
-  min-width: 180px;
-  transition:
-    color 0.3s ease,
-    border-color 0.3s ease,
-    background-color 0.3s ease;
+
+    color: @color6;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    padding: 0 12px;
+
+    min-width: 180px;
+
+    transition:
+        color 0.3s ease,
+        border-color 0.3s ease,
+        background-color 0.3s ease;
 }
+
 
 #custom-lyrics:hover {
-  color: @foreground;
+
+    color: @foreground;
 }
+
 
 #custom-lyrics.paused {
-  color: alpha(@foreground, 0.45);
+
+    color: alpha(@foreground, 0.45);
 }
+
 
 #custom-lyrics.no-lyrics {
-  color: alpha(@foreground, 0.35);
-  font-style: italic;
+
+    color: alpha(@foreground, 0.35);
+
+    font-style: italic;
 }
+
 
 #custom-lyrics.playing {
-  color: @color6;
+
+    color: @color6;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   ANIMATIONS
-   ───────────────────────────────────────────────────────────────────────────── */
 
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  TRAY                                                                         │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
-  50% {
-    opacity: 0.7;
-  }
+#tray {
 
-  100% {
-    opacity: 1;
-  }
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
-@keyframes critical-blink {
-  0% {
-    opacity: 1;
-  }
 
-  50% {
-    opacity: 0.8;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT MODULES (Remove Spaces)
-   ───────────────────────────────────────────────────────────────────────────── */
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  RIGHT-SIDE SPACING                                                           │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
 
 #backlight,
 #pulseaudio,
 #network,
 #bluetooth,
-#clock,
 #battery {
-  margin-left: 4px;
-  margin-right: 4px;
-}
-#clock{
-    margin-right: 10px;
+
+    margin-left: 4px;
+    margin-right: 4px;
 }
 
 
-#cavaGLSL{
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  CAVA GLSL                                                                    │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+#cavaGLSL {
+
     background: transparent;
 
     border-radius: 50%;
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────────────────────╮
+   │  ANIMATIONS                                                                   │
+   ╰──────────────────────────────────────────────────────────────────────────────╯ */
+
+@keyframes pulse {
+
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+@keyframes critical-blink {
+
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
