@@ -2,6 +2,7 @@
 
 WAYBAR_DIR="$HOME/.config/waybar"
 THEMES_DIR="$WAYBAR_DIR/themes"
+HYPR_ANIM_FILE="$HOME/.config/hypr/source-configs/waybar_anim.lua"
 
 themes=$(find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 
@@ -28,14 +29,30 @@ if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$STYLE_FILE" ]; then
     exit 1
 fi
 
-killall waybar
-sleep 0.2
-waybar -c "$CONFIG_FILE" -s "$STYLE_FILE" &
+# 1. Persist Waybar Theme
+cp "$CONFIG_FILE" "$WAYBAR_DIR/config.jsonc"
+cp "$STYLE_FILE" "$WAYBAR_DIR/style.css"
+
+# 2. Persist & Apply Hyprland Animations
+mkdir -p "$(dirname "$HYPR_ANIM_FILE")"
 
 choice_lower=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
 
 if [[ "$choice_lower" == *"vertical"* ]]; then
+    # Write valid Lua syntax to the file
+    echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })' > "$HYPR_ANIM_FILE"
+    
+    # Apply immediately via IPC
     hyprctl eval 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })'
 elif [[ "$choice_lower" == *"horizontal"* ]]; then
+    # Write valid Lua syntax to the file
+    echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })' > "$HYPR_ANIM_FILE"
+    
+    # Apply immediately via IPC
     hyprctl eval 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })'
 fi
+
+# 3. Restart Waybar
+killall waybar
+sleep 0.2
+waybar &

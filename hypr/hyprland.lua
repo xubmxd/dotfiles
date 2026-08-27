@@ -45,11 +45,8 @@ require("source-configs.appearance")
 require("source-configs.animation.apple")
 -- require("source-configs.animation.premium")
 
--- hl.config({
---     animations = {
---         enabled = false
---     }
--- })
+-- Load the dynamic Waybar workspace animations
+require("source-configs.waybar_anim")
 
 --#############
 --### INPUT ###
@@ -70,4 +67,7 @@ require("source-configs.window-rules")
 --### Layer rules ###
 --###################
 require("source-configs.layer-rules")
+
+
+require("source-configs.waybar_anim")
 
