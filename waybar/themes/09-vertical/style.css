@@ -1,0 +1,289 @@
+@import url("/home/xubm/.cache/wal/colors-waybar.css");
+
+@define-color glass_bg alpha(@background, 0.72);
+@define-color glass_hover alpha(@foreground, 0.07);
+
+@define-color workspace_bg alpha(@foreground, 0.10);
+@define-color workspace_hover alpha(@color4, 0.20);
+@define-color workspace_active @color4;
+
+@define-color tooltip_bg alpha(@background, 0.92);
+
+* {
+    font-family:
+        "JetBrainsMono Nerd Font",
+        "Symbols Nerd Font",
+        "Noto Sans",
+        sans-serif;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    min-height: 0;
+
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background: @glass_bg;
+    color: @foreground;
+
+    border: 1px solid alpha(@color4, 0.30);
+    border-radius: 28px;
+
+    margin: 8px 4px;
+
+    box-shadow: none;
+    background-image: none;
+}
+
+#workspaces,
+.system-pill,
+#clock {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
+    background-image: none;
+}
+
+#workspaces {
+    padding: 7px 0;
+}
+
+#workspaces button {
+    min-width: 38px;
+    min-height: 38px;
+
+    margin: 3px 4px;
+    padding: 0;
+
+    border-radius: 50%;
+
+    color: alpha(@foreground, 0.48);
+    background: @workspace_bg;
+
+    box-shadow: none;
+
+    transition:
+        background-color 0.20s ease,
+        color 0.20s ease;
+}
+
+#workspaces button:hover {
+    background: @workspace_hover;
+    color: @foreground;
+}
+
+#workspaces button.active {
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 2px 3px;
+    padding: 0;
+
+    background: @workspace_active;
+    color: @background;
+
+    border-radius: 50%;
+
+    box-shadow: none;
+}
+
+#workspaces button.urgent {
+    background: @color1;
+    color: @background;
+}
+
+#workspaces button label {
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
+}
+
+.system-pill {
+    padding: 8px 0;
+}
+
+#network,
+#backlight,
+#pulseaudio,
+#battery,
+#tray {
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 3px 0;
+    padding: 0;
+
+    background: transparent;
+
+    border: none;
+    border-radius: 50%;
+
+    box-shadow: none;
+
+    font-family:
+        "Symbols Nerd Font",
+        "JetBrainsMono Nerd Font",
+        sans-serif;
+
+    font-size: 17px;
+
+    transition:
+        background-color 0.20s ease,
+        color 0.20s ease;
+}
+
+#network label,
+#backlight label,
+#pulseaudio label,
+#battery label {
+    padding: 0;
+    margin: 0;
+    font-size: 17px;
+}
+
+#network {
+    color: @color4;
+}
+
+#backlight {
+    color: @color3;
+}
+
+#pulseaudio {
+    color: @color5;
+}
+
+#battery {
+    color: @color6;
+}
+
+#tray {
+    color: @foreground;
+}
+
+#network:hover,
+#backlight:hover,
+#pulseaudio:hover,
+#battery:hover,
+#tray:hover {
+    background: @glass_hover;
+    color: @foreground;
+    border-radius: 50%;
+}
+
+#pulseaudio.muted {
+    color: alpha(@foreground, 0.30);
+}
+
+#network.disconnected {
+    color: @color1;
+}
+
+#battery.charging {
+    color: @color2;
+}
+
+#battery.warning:not(.charging) {
+    color: @color3;
+}
+
+#battery.critical:not(.charging) {
+    color: @color1;
+    animation: battery-critical 1s ease-in-out infinite;
+}
+
+#tray {
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 3px 0;
+    padding: 0;
+}
+
+#tray > .passive {
+    opacity: 0.55;
+}
+
+#tray > .needs-attention {
+    color: @color1;
+}
+
+#custom-cava {
+    min-width: 40px;
+
+    margin: 2px 0;
+    padding: 4px 0;
+
+    background: transparent;
+    color: @color4;
+
+    font-size: 13px;
+
+    box-shadow: none;
+}
+
+#clock {
+    padding: 10px 0;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+
+    border: none;
+    box-shadow: none;
+}
+
+tooltip decoration {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+tooltip,
+tooltip.background,
+.tooltip {
+    background: @tooltip_bg;
+
+    border: 1px solid alpha(@color4, 0.45);
+    border-radius: 12px;
+
+    box-shadow: none;
+    background-image: none;
+}
+
+tooltip label,
+.tooltip label {
+    color: @foreground;
+
+    padding: 8px 12px;
+
+    font-family:
+        "JetBrainsMono Nerd Font",
+        monospace;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@keyframes battery-critical {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.40;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

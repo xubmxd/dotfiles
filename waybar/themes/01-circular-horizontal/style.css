@@ -1,1061 +1,119 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIQUID GLASS — PYWAL
-   Adapted for your horizontal Waybar configuration
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 @import url("/home/xubm/.cache/wal/colors-waybar.css");
-
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   PYWAL COLOR MAPPING
-   ───────────────────────────────────────────────────────────────────────────── */
-
-@define-color background @background;
-@define-color foreground @foreground;
-
-@define-color primary   @color4;
-@define-color secondary @color6;
-@define-color tertiary  @color5;
-@define-color error     @color1;
-
-@define-color primary-mild   alpha(@color4, 0.25);
-@define-color secondary-mild alpha(@color6, 0.25);
-@define-color tertiary-mild  alpha(@color5, 0.25);
-@define-color error-mild     alpha(@color1, 0.25);
-
-@define-color surface-elevated alpha(@color8, 0.70);
-
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   GLASS CONTROLS
-   ───────────────────────────────────────────────────────────────────────────── */
-
-@define-color glass_bar
-    alpha(@background, 0.65);
-
-@define-color glass_module
-    alpha(@color0, 0.62);
-
-@define-color glass_primary_mild
-    alpha(@color4, 0.28);
-
-@define-color glass_secondary_mild
-    alpha(@color6, 0.28);
-
-@define-color glass_tertiary_mild
-    alpha(@color5, 0.28);
-
-@define-color glass_error_mild
-    alpha(@color1, 0.28);
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   FOUNDATIONS
-   ═════════════════════════════════════════════════════════════════════════════ */
 
 * {
     border: none;
-    border-radius: 0;
-
-    font-family:
-        "JetBrains Mono Nerd Font Propo",
-        "JetBrainsMono Nerd Font",
-        "Noto Sans",
-        sans-serif;
-
-    font-weight: 600;
-
     min-height: 0;
-
-    padding: 0;
-    margin: 0;
-
-    font-size: 13px;
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
 }
-
 
 window#waybar {
-    background: @glass_bar;
-    color: @foreground;
+    background: transparent;
 }
 
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   TOOLTIP
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-tooltip decoration {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
+/* --- The Three Floating Pills --- */
+.modules-left,
+.modules-center,
+.modules-right {
+    background-color: alpha(@color0, 0.75);
+    border: 1px solid alpha(@color4, 0.30);
+    border-radius: 24px;
+    padding: 4px 16px;
 }
 
-
-tooltip,
-tooltip.background,
-.tooltip {
-
-    background:
-        linear-gradient(
-            135deg,
-            alpha(@color0, 0.88),
-            alpha(@color8, 0.78)
-        );
-
-    border:
-        1px solid alpha(@color4, 0.50);
-
-    border-radius: 12px;
-
-    box-shadow: none;
+/* Add some specific margin to the center pill to separate it */
+.modules-center {
+    background-image: linear-gradient(135deg, alpha(@color4, 0.20) 0%, alpha(@color5, 0.20) 100%);
+    padding: 4px 24px;
 }
 
-
-tooltip label,
-.tooltip label {
-
-    color: @foreground;
-
-    padding: 8px 12px;
-
-    font-family:
-        "JetBrains Mono Nerd Font Propo",
-        "JetBrainsMono Nerd Font",
-        monospace;
-
-    font-size: 12px;
-
-    font-weight: 600;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   WORKSPACES — LIQUID BLOB
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#workspaces {
-
-    background-color: @glass_module;
-
-    padding: 5px 8px;
-
-    margin: 0 5px;
-
-    border-radius: 20px;
-
-    border:
-        2px solid @glass_primary_mild;
-}
-
-
+/* --- Left Pill: Workspaces --- */
 #workspaces button {
-
-    padding: 0 5px;
-
-    margin: 0 3px;
-
-    min-width: 18px;
-    min-height: 18px;
-
-    border-radius: 12px;
-
-    background-color:
-        alpha(@color4, 0.16);
-
-    color:
-        alpha(@foreground, 0.60);
-
-    font-size: 11px;
-
-    border: none;
-
-    box-shadow: none;
-
-    transition:
-        min-width 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55),
-        min-height 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55),
-        border-radius 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-        background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.3s ease-in-out,
-        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        margin 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    padding: 4px 12px;
+    margin: 0px 4px;
+    border-radius: 20px;
+    background-color: transparent;
+    color: alpha(@foreground, 0.50);
+    transition: all 0.3s cubic-bezier(.55, -0.68, .48, 1.68);
 }
 
-
-/* Empty */
-
-#workspaces button.empty {
-
-    background-color:
-        alpha(@color4, 0.08);
-
-    color:
-        alpha(@foreground, 0.30);
+#workspaces button.visible {
+    color: @foreground;
 }
-
-
-/* Occupied */
-
-#workspaces button:not(.empty):not(.active) {
-
-    color:
-        alpha(@foreground, 0.88);
-
-    background-color:
-        alpha(@color4, 0.12);
-
-    border:
-        1px solid alpha(@color4, 0.20);
-}
-
-
-/* Active */
 
 #workspaces button.active {
-
-    min-width: 26px;
-    min-height: 18px;
-
-    border-radius: 12px;
-
-    background-color:
-        @color4;
-
-    color:
-        @background;
-
-    font-size: 12px;
-
-    margin: 0 4px;
-
-    box-shadow:
-        inset 0 0 12px alpha(@color4, 0.60),
-        inset 0 0 4px alpha(@color4, 0.40);
+    background-color: @color4;
+    color: @background;
 }
-
-
-/* Hover */
 
 #workspaces button:hover {
-
-    min-width: 18px;
-    min-height: 14px;
-
-    border-radius: 10px;
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.50),
-        inset 0 0 3px alpha(@color5, 0.30);
+    background-color: alpha(@color8, 0.50);
+    color: @foreground;
 }
 
-
-/* Urgent */
-
-#workspaces button.urgent {
-
-    background-color:
-        @color1;
-
-    color:
-        @background;
-
-    min-width: 20px;
-
-    border-radius: 10px;
-
-    animation:
-        liquid-pulse
-        0.8s cubic-bezier(0.4, 0, 0.6, 1)
-        infinite alternate;
-
-    box-shadow:
-        inset 0 0 14px alpha(@color1, 0.70),
-        inset 0 0 6px alpha(@color1, 0.50);
+/* --- Center Pill: Clock --- */
+#clock {
+    color: @foreground;
+    font-weight: 900;
+    font-size: 15px;
 }
 
-
-@keyframes liquid-pulse {
-
-    0% {
-
-        min-width: 17px;
-
-        box-shadow:
-            inset 0 0 10px alpha(@color1, 0.50),
-            inset 0 0 4px alpha(@color1, 0.30);
-    }
-
-    100% {
-
-        min-width: 23px;
-
-        box-shadow:
-            inset 0 0 18px alpha(@color1, 0.80),
-            inset 0 0 8px alpha(@color1, 0.60);
-    }
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   UNIVERSAL MODULES
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#clock,
-#tray,
-#custom-notification,
-#custom-net-speed,
-#custom-updates-trigger,
-#custom-updates,
+/* --- Right Pill: Hardware & Tray --- */
 #network,
-#bluetooth,
+#backlight,
 #pulseaudio,
 #battery,
-#backlight,
-#custom-launcher,
-#custom-firefox,
-#custom-terminal,
-#custom-text-editor,
-#custom-files,
-#custom-snip,
-#custom-clip,
-#custom-calculator,
-#custom-inhibit-suspend,
-#custom-lock,
-#custom-reboot,
-#custom-quit {
-
-    background-color:
-        @glass_module;
-
-    border-radius:
-        26px;
-
-    border:
-        2px solid @glass_primary_mild;
-
-    padding:
-        2px 12px;
-
-    margin:
-        2px 4px;
-
-    color:
-        @foreground;
-
-    transition:
-        all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+#tray {
+    background: transparent;
+    color: @foreground;
+    padding: 0px 10px;
+    margin: 0px 2px;
+    transition: all 0.2s ease-in-out;
 }
 
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   LEFT APP GROUP
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-firefox {
-
-    border-radius:
-        26px 0 0 26px;
-
-    margin-right:
-        0;
-
-    padding-right:
-        10px;
+/* Hover effects for individual items inside the right pill */
+#network:hover,
+#backlight:hover,
+#pulseaudio:hover,
+#battery:hover {
+    color: @color4;
+    text-shadow: 0px 0px 5px alpha(@color4, 0.4);
 }
 
-
-#custom-terminal,
-#custom-text-editor,
-#custom-files {
-
-    border-radius:
-        0;
-
-    margin-left:
-        0;
-
-    margin-right:
-        0;
+/* Status-specific coloring */
+#pulseaudio.muted {
+    color: alpha(@foreground, 0.40);
 }
-
-
-#custom-snip {
-
-    border-radius:
-        0 26px 26px 0;
-
-    margin-left:
-        0;
-
-    margin-right:
-        0;
-}
-
-
-#custom-clip {
-
-    border-radius:
-        0;
-
-    margin-left:
-        0;
-
-    margin-right:
-        0;
-}
-
-
-#custom-calculator {
-
-    border-radius:
-        0 26px 26px 0;
-
-    margin-left:
-        0;
-
-    margin-right:
-        0;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   LAUNCHER
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-launcher {
-
-    color:
-        @primary;
-
-    font-size:
-        16px;
-
-    margin:
-        2px 5px;
-}
-
-
-#custom-launcher:hover {
-
-    background-color:
-        @color4;
-
-    color:
-        @background;
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 12px alpha(@color4, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   CLOCK
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#clock {
-
-    color:
-        @color4;
-
-    margin:
-        2px 4px;
-
-    padding:
-        2px 14px;
-
-    font-size:
-        13px;
-
-    font-weight:
-        800;
-}
-
-
-#clock:hover {
-
-    background-color:
-        @color4;
-
-    color:
-        @background;
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 4px alpha(@color4, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   NOTIFICATIONS
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-notification {
-
-    font-size:
-        15px;
-
-    color:
-        @color6;
-}
-
-
-#custom-notification:hover {
-
-    background-color:
-        @color6;
-
-    color:
-        @background;
-
-    border-color:
-        @color6;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color6, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   UPDATES
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-updates-trigger,
-#custom-updates {
-
-    color:
-        @color5;
-}
-
-
-#custom-updates-trigger:hover,
-#custom-updates:hover {
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    border-color:
-        @color5;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.30);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   NETWORK
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#network {
-
-    color:
-        @color4;
-}
-
-
-#network:hover {
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    border-color:
-        @color5;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.40);
-}
-
 
 #network.disconnected {
-
-    color:
-        @color1;
-
-    border-color:
-        @error-mild;
+    color: @color1;
 }
 
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   NETWORK SPEED
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-net-speed {
-
-    color:
-        @color4;
-
-    font-size:
-        12px;
-
-    padding:
-        0 10px;
-
-    min-width:
-        90px;
-
-    transition:
-        color 0.1s ease-in-out,
-        text-shadow 0.1s ease-in-out,
-        background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+#battery.charging,
+#battery.plugged {
+    color: @color2;
 }
 
-
-#custom-net-speed.network-kb {
-
-    color:
-        @color6;
-
-    border-color:
-        @glass_secondary_mild;
+#battery.critical:not(.charging) {
+    color: @color1;
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
-
-#custom-net-speed.network-mb {
-
-    color:
-        @color4;
-
-    font-weight:
-        900;
-
-    text-shadow:
-        0 0 5px alpha(@color4, 0.80);
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color4, 0.40);
+/* --- Tooltips --- */
+tooltip {
+    background-color: alpha(@color0, 0.90);
+    border: 1px solid alpha(@color4, 0.40);
+    border-radius: 12px;
 }
 
-
-#custom-net-speed.network-disconnected {
-
-    color:
-        @color1;
-
-    border-color:
-        @glass_error_mild;
+tooltip label {
+    color: @foreground;
+    padding: 8px;
 }
 
-
-#custom-net-speed:hover {
-
-    background-color:
-        @color4;
-
-    color:
-        @background;
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color4, 0.40);
-
-    text-shadow:
-        none;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   AUDIO
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#pulseaudio {
-
-    font-size:
-        14px;
-
-    color:
-        @color4;
-}
-
-
-#pulseaudio:hover {
-
-    background-color:
-        @color6;
-
-    color:
-        @background;
-
-    border-color:
-        @color6;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color6, 0.40);
-}
-
-
-#pulseaudio.muted {
-
-    color:
-        alpha(@foreground, 0.45);
-
-    border-color:
-        alpha(@foreground, 0.20);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   BACKLIGHT
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#backlight {
-
-    color:
-        @color4;
-}
-
-
-#backlight:hover {
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    border-color:
-        @color5;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   BLUETOOTH
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#bluetooth {
-
-    color:
-        @color6;
-}
-
-
-#bluetooth:hover {
-
-    background-color:
-        @color6;
-
-    color:
-        @background;
-
-    border-color:
-        @color6;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color6, 0.40);
-}
-
-
-#bluetooth.disabled {
-
-    color:
-        alpha(@foreground, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   BATTERY
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#battery {
-
-    color:
-        @color4;
-
-    padding:
-        2px 12px;
-
-    margin:
-        2px 4px;
-}
-
-
-#battery:hover {
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    border-color:
-        @color5;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.40);
-}
-
-
-#battery.warning {
-
-    color:
-        @color3;
-
-    border-color:
-        @color3;
-}
-
-
-#battery.critical {
-
-    color:
-        @color1;
-
-    border-color:
-        @color1;
-
-    animation:
-        blink
-        0.6s cubic-bezier(0.4, 0, 0.6, 1)
-        infinite alternate;
-}
-
-
-#battery.charging {
-
-    color:
-        @background;
-
-    background-color:
-        @color4;
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color4, 0.40);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   TRAY
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#tray {
-
-    color:
-        @color4;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   POWER / ACTIONS
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-inhibit-suspend,
-#custom-lock,
-#custom-reboot,
-#custom-quit {
-
-    font-size:
-        14px;
-
-    margin:
-        0 3px;
-
-    padding:
-        0 10px;
-
-    min-width:
-        14px;
-
-    min-height:
-        14px;
-
-    color:
-        @color4;
-
-    border-radius:
-        50%;
-
-    border:
-        2px solid @glass_primary_mild;
-
-    background-color:
-        @glass_module;
-}
-
-
-#custom-lock:hover {
-
-    background-color:
-        @color6;
-
-    color:
-        @background;
-
-    border-color:
-        @color6;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color6, 0.40);
-}
-
-
-#custom-inhibit-suspend:hover {
-
-    background-color:
-        @color5;
-
-    color:
-        @background;
-
-    border-color:
-        @color5;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color5, 0.40);
-}
-
-
-#custom-inhibit-suspend.enabled {
-
-    color:
-        @color4;
-
-    border-color:
-        @color4;
-}
-
-
-#custom-inhibit-suspend.disabled {
-
-    color:
-        @color1;
-
-    border-color:
-        @color1;
-}
-
-
-#custom-reboot:hover {
-
-    background-color:
-        @color4;
-
-    color:
-        @background;
-
-    border-color:
-        @color4;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color4, 0.40);
-}
-
-
-#custom-quit:hover {
-
-    background-color:
-        @color1;
-
-    color:
-        @background;
-
-    border-color:
-        @color1;
-
-    box-shadow:
-        inset 0 0 10px alpha(@color1, 0.50);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   CAVA
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-cava {
-
-    color:
-        @color4;
-
-    padding:
-        0 10px;
-}
-
-
-#custom-cava.silent {
-
-    color:
-        alpha(@foreground, 0.35);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   LYRICS
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#custom-lyrics {
-
-    color:
-        @color6;
-
-    padding:
-        0 12px;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   MPRIS
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-#mpris {
-
-    color:
-        @color4;
-
-    padding:
-        0 10px;
-}
-
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   ANIMATIONS
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes blink {
-
-    0% {
-
-        background-color:
-            transparent;
-
-        box-shadow:
-            none;
-    }
-
-    100% {
-
-        background-color:
-            @color1;
-
-        color:
-            @background;
-
-        box-shadow:
-            inset 0 0 14px alpha(@color1, 0.60);
-    }
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
