@@ -10,7 +10,10 @@ if [ -z "$themes" ]; then
     exit 1
 fi
 
-choice=$(echo -e "$themes" | rofi -dmenu -i -p "Select Waybar Theme:" -theme-str 'window {width: 300px;}')
+choice=$(echo -e "$themes" | rofi -dmenu -i \
+    -theme ~/.config/rofi/launcher.rasi \
+    -theme-str 'window {width: 300px;}' \
+    -theme-str 'textbox-prompt-colon { str: " "; }')
 
 if [[ -z "$choice" ]]; then
     exit 0
@@ -28,3 +31,11 @@ fi
 killall waybar
 sleep 0.2
 waybar -c "$CONFIG_FILE" -s "$STYLE_FILE" &
+
+choice_lower=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$choice_lower" == *"vertical"* ]]; then
+    hyprctl eval 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })'
+elif [[ "$choice_lower" == *"horizontal"* ]]; then
+    hyprctl eval 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })'
+fi
