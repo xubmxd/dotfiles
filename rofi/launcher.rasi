@@ -12,16 +12,6 @@ configuration {
 }
 
 * {
-    background: transparent;
-
-    bg: rgba(0, 0, 0, 0.48);
-    bg-search: rgba(0, 0, 0, 0.58);
-    bg-row: rgba(0, 0, 0, 0.20);
-    bg-selected: rgba(255, 255, 255, 0.16);
-
-    fg: @foreground;
-    fg-dim: rgba(255, 255, 255, 0.55);
-
     border: 0px;
     border-color: transparent;
 
@@ -29,87 +19,94 @@ configuration {
     padding: 0px;
     spacing: 0px;
 
-    radius: 8px;
+    radius: 10px;
 
-    text-color: @fg;
+    background-color: transparent;
+
+    text-color: @normal-foreground;
 }
 
 window {
-    background-color: transparent;
-    border: 0px;
+    transparency: "real";
+
+    background-color: rgba(0, 0, 0, 0.55);
+
+    border: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
 
     location: center;
     anchor: center;
 
     width: 480px;
+
     padding: 4px;
 }
 
 mainbox {
     background-color: transparent;
-    border: 0px;
 
+    border: 0px;
     padding: 0px;
+    margin: 0px;
+
     spacing: 4px;
+
+    children: [
+        inputbar,
+        listview
+    ];
 }
 
 inputbar {
-    background-color: @bg-search;
+    background-color: rgba(0, 0, 0, 0.58);
     border: 0px;
-    border-radius: @radius;
-    padding: 8px 12px;
+    border-radius: 8px;
+
+    padding: 7px 12px;
     margin: 0px;
+
     spacing: 0px;
 
-    children: [ textbox-prompt-colon, entry, case-indicator ];
+    children: [
+        textbox-prompt-colon,
+        entry
+    ];
 }
 
 textbox-prompt-colon {
-    background-color: transparent;
-    text-color: @fg;
-    str: "";
-    font: "JetBrainsMono Nerd Font 12";
-    padding: 0px 8px 0px 0px;
-    margin: 0px;
-}
+    expand: false;
+    str: " "; 
 
-prompt {
-    background-color: transparent;
 
-    text-color: @fg-dim;
-    font: "Inter 11";
+    font: "Symbols Nerd Font 14";
+    text-color: @normal-foreground;
+
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
 
     padding: 0px;
-    margin: 0px;
+    margin: 0px 8px 0px 0px;
 }
 
 entry {
-    background-color: transparent;
+    text-color: @normal-foreground;
+    placeholder-color: @normal-foreground;
 
-    text-color: @fg;
-    placeholder-color: @fg-dim;
     font: "Inter 11";
 
-    border: 0px;
-
     padding: 0px;
     margin: 0px;
+
+    vertical-align: 0.5;
 }
 
-case-indicator {
-    background-color: transparent;
-
-    text-color: @fg-dim;
-
-    padding: 0px;
-    margin: 0px;
-}
 
 listview {
-    background-color: @bg;
+    background-color: rgba(0, 0, 0, 0.40);
 
     border: 0px;
-    border-radius: @radius;
+    border-radius: 8px;
 
     padding: 4px;
 
@@ -119,76 +116,89 @@ listview {
     fixed-height: false;
 
     scrollbar: false;
+
+    spacing: 2px;
 }
 
 element {
-    background-color: @bg-row;
+    background-color: transparent;
 
-    text-color: @fg;
+    text-color: @normal-foreground;
+
+    border: 0px;
+    border-radius: 6px;
 
     padding: 6px 10px;
-    margin: 1px 0px;
-
-    border-radius: 5px;
+    margin: 0px;
 
     orientation: horizontal;
 }
 
 element normal {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @normal-foreground;
 }
 
 element normal.normal {
-    background-color: @bg-row;
-    text-color: @fg;
+    background-color: transparent;
+    text-color: @normal-foreground;
 }
 
 element normal.urgent {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @urgent-foreground;
 }
 
 element normal.active {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @active-foreground;
 }
 
 element selected {
-    background-color: @bg-selected;
+    background-color: @selected-normal-background;
+    text-color: @selected-normal-foreground;
 }
 
 element selected.normal {
-    background-color: @bg-selected;
-    text-color: @fg;
+    background-color: @selected-normal-background;
+    text-color: @selected-normal-foreground;
 }
 
 element selected.urgent {
-    background-color: @bg-selected;
+    background-color: @selected-urgent-background;
+    text-color: @selected-urgent-foreground;
 }
 
 element selected.active {
-    background-color: @bg-selected;
+    background-color: @selected-active-background;
+    text-color: @selected-active-foreground;
 }
 
 element alternate {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @normal-foreground;
 }
 
 element alternate.normal {
-    background-color: @bg-row;
-    text-color: @fg;
+    background-color: transparent;
+    text-color: @normal-foreground;
 }
 
 element alternate.urgent {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @urgent-foreground;
 }
 
 element alternate.active {
-    background-color: @bg-row;
+    background-color: transparent;
+    text-color: @active-foreground;
 }
 
 element-text {
     background-color: transparent;
 
-    text-color: @fg;
+    text-color: inherit;
+
     font: "Inter 11";
 
     vertical-align: 0.5;
@@ -207,21 +217,9 @@ element-icon selected {
     background-color: transparent;
 }
 
-scrollbar {
-    background-color: transparent;
-
-    handle-width: 4px;
-    handle-color: rgba(255, 255, 255, 0.25);
-
-    border: 0px;
-
-    padding: 0px;
-    margin: 0px;
-}
-
 error-message {
     background-color: transparent;
-    text-color: @urgent-background;
+    text-color: @urgent-foreground;
 }
 
 mode-switcher {
