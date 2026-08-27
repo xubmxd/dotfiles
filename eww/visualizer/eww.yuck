@@ -1,32 +1,64 @@
 (include "./lyrics.yuck")
-;; Listen to the bash script output continuously
-(deflisten cava_json :initial "[]"
+
+
+;; ─────────────────────────────────────────────────────────────────────────────
+;; CAVA DATA
+;; ─────────────────────────────────────────────────────────────────────────────
+
+(deflisten cava_json
+  :initial "[]"
   "bash ~/.config/eww/visualizer/run_cava.sh")
 
+
+;; ─────────────────────────────────────────────────────────────────────────────
+;; CAVA VISUALIZER
+;; ─────────────────────────────────────────────────────────────────────────────
+
 (defwidget cava_widget []
-  (box :class "cava-container" 
-       :orientation "h" 
-       :space-evenly true 
-       :spacing 4 
-       :valign "end"
-    
+  (box
+    :class "cava-container"
+    :orientation "h"
+    :space-evenly false
+    :spacing 0
+    :hexpand true
+    :vexpand true
+    :halign "fill"
+    :valign "fill"
+
     (for val in cava_json
-      (box :class "cava-bar" 
-           :valign "end" 
-           ;; FIXED: GTK requires min-height instead of height
-           :style "min-height: ${val}px;")
+      (box
+        :class "cava-bar"
+        :hexpand true
+        :valign "end"
+        :style "min-height: ${val}px;"
+      )
     )
   )
 )
 
+
+;; ─────────────────────────────────────────────────────────────────────────────
+;; CAVA WINDOW
+;; ─────────────────────────────────────────────────────────────────────────────
+
 (defwindow cava_visualizer
+
   :monitor 0
+
+  ;; Keep Cava behind normal application windows.
   :stacking "bg"
-  :exclusive false
+
+  ;; Cava does not reserve screen space.
+    :exclusive "ignore"
+
   :namespace "cava-visualizer"
-  :geometry (geometry :x "0%"
-                      :y "0%"
-                      :width "100%"
-                      :height "150px"
-                      :anchor "bottom center")
-  (cava_widget))
+
+    :geometry (geometry
+      :x "0px"
+      :y "0px"
+      :width "100%"
+      :height "150px"
+      :anchor "bottom left")
+
+  (cava_widget)
+)
