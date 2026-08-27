@@ -3,7 +3,7 @@
 WAYBAR_DIR="$HOME/.config/waybar"
 THEMES_DIR="$WAYBAR_DIR/themes"
 
-themes=$(ls -1 "$THEMES_DIR")
+themes=$(find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 
 if [ -z "$themes" ]; then
     notify-send "Waybar Selector" "No themes found in $THEMES_DIR"
