@@ -1,1 +1,81 @@
-../config-vertical.jsonc
+{
+  "layer": "top",
+  "position": "left",
+  "width": 35,
+  "margin-top": 150,
+  "margin-bottom": 150,
+  "margin-left": 5,
+  "spacing": 10,
+
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "tray",
+    "network",
+    "backlight",
+    "pulseaudio",
+    "battery"
+  ],
+
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4],
+    },
+
+    "format": "{icon}",
+    "format-icons": {
+        "1": "一",
+        "2": "二",
+        "3": "三",
+        "4": "四",
+        "5": "五"
+    },
+    "on-click": "activate"
+  },
+
+  "clock": {
+    "format": "{:%H\n%M}",
+    "tooltip-format": "{:%A, %d %B %Y}"
+  },
+
+  "backlight": {
+    "device": "intel_backlight",
+    "format": "{icon}",
+    "format-icons": ["", "", "", "", "", "", ""],
+    "tooltip-format": "{percent}%"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "",
+    "format-icons": ["", "", ""],
+    "tooltip-format": "{volume}%"
+  },
+
+  "network": {
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰖪",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format": "{essid}"
+  },
+
+  "battery": {
+    "format": "{icon}",
+    "format-charging": "",
+    "format-icons": ["", "", "", "", ""],
+    "tooltip-format": "{capacity}%"
+  },
+
+  "tray": {
+    "icon-size": 14,
+    "spacing": 8,
+    "show-passive-items": true
+  }
+}
