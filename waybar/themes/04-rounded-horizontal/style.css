@@ -1,0 +1,153 @@
+@import "/home/xubm/.cache/wal/colors-waybar.css";
+
+* {
+    border: none;
+    border-radius: 0px;
+    font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo", sans-serif;
+    font-weight: bold;
+    transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+window#waybar {
+    background: transparent;
+}
+
+tooltip {
+    background: @background;
+    border: 1px solid @color0;
+    border-radius: 12px;
+}
+
+tooltip label {
+    color: @foreground;
+    padding: 6px;
+}
+
+#workspaces {
+    background-color: @background;
+    padding: 5px 3px;
+    margin: 0 0 0 12px;
+    border-radius: 18px;
+    border: 1px solid @color8;
+    color: @foreground;
+}
+
+#workspaces button {
+    padding: 0px 6px;
+    margin: 0px 3px;
+    border-radius: 50px;
+    color: transparent;
+    background-color: @color8;
+}
+
+#workspaces button.active {
+    background-color: @color7;
+    color: @color7;
+    min-width: 35px;
+    font-size: 13px;
+}
+
+/* =========================================
+   MÓDULOS DERECHA
+   ========================================= */
+
+#battery,
+#pulseaudio,
+#network,
+#clock,
+#tray,
+#custom-swaync {
+    background-color: @background;
+    color: @color7;
+    padding: 0 10px;
+    margin-right: 5px;
+    border-radius: 50px;
+    border: 1px solid @color8;
+}
+
+/* =========================================
+   CPU / RAM / TEMPERATURA
+   ========================================= */
+
+#cpu,
+#memory,
+#temperature {
+    background-color: @background;
+    color: @color7;
+    padding: 0 10px;
+    margin-right: 5px;
+    border-radius: 50px;
+    border: 1px solid @color8;
+}
+
+#cpu:hover,
+#memory:hover,
+#temperature:hover {
+    background-color: @color7;
+    color: @background;
+}
+
+/* =========================================
+   CLOCK / WEATHER
+   ========================================= */
+
+#custom-clock-weather {
+    background-color: @background;
+    color: @color7;
+    padding: 0 15px;
+    margin: 0 6px;
+    border-radius: 50px;
+    border: 1px solid @color8;
+}
+
+#custom-clock-weather:hover {
+    background-color: @color7;
+    color: @background;
+}
+
+/* =========================================
+   BATTERY
+   ========================================= */
+
+#battery.charging,
+#battery.full {
+    color: #8be9a8;
+}
+
+#battery.warning {
+    color: #f1fa8c;
+}
+
+#battery.critical {
+    color: #ff5555;
+}
+
+/* =========================================
+   HOVERS
+   ========================================= */
+
+#pulseaudio:hover {
+    background-color: @color7;
+    color: @background;
+}
+
+#network:hover {
+    background-color: @color7;
+    color: @background;
+}
+
+#battery:hover {
+    background-color: @color7;
+    color: @background;
+}
+
+/* =========================================
+   TRAY
+   ========================================= */
+
+#tray {
+    color: @foreground;
+}

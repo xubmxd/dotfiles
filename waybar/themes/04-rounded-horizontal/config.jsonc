@@ -1,0 +1,126 @@
+{
+    "position": "top",
+    "margin-top": 15,
+
+    "modules-left": [
+        "hyprland/workspaces"
+    ],
+
+    "modules-center": [
+        "custom/clock-weather"
+    ],
+
+    "modules-right": [
+        "cpu",
+        "memory",
+        "temperature",
+        "tray",
+        "battery",
+        "pulseaudio",
+        "network",
+        "custom/swaync"
+    ],
+
+    "custom/clock-weather": {
+        "exec": "~/.config/waybar/scripts/clock-weather.sh",
+        "interval": 60,
+        "format": "{}"
+    },
+
+    "cpu": {
+        "format": " CPU {usage}%",
+        "interval": 3
+    },
+
+    "memory": {
+        "format": " RAM {percentage}%",
+        "interval": 6
+    },
+
+    "temperature": {
+        "hwmon-path": "/sys/class/hwmon/hwmon4/temp2_input",
+        "format": " {temperatureC}°C",
+        "critical-threshold": 85,
+        "interval": 3
+    },
+
+    "hyprland/workspaces": {
+        "format": "",
+        "all-outputs": false,
+        "active-only": false,
+        "sort-by-number": true,
+
+        "persistent-workspaces": {
+            "eDP-1": [1, 2, 3, 4, 5],
+            "HDMI-A-1": [6, 7, 8, 9, 10]
+        },
+
+        "on-click": "activate",
+        "on-scroll-down": "hyprctl dispatch workspace e+1",
+        "on-scroll-up": "hyprctl dispatch workspace e-1",
+        "cursor": "pointer"
+    },
+
+    "tray": {
+        "icon-size": 22,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "pulseaudio": {
+        "format": "󰕾 {volume}%",
+        "format-bluetooth": "󰂰 {volume}%",
+        "format-muted": "󰖁",
+        "scroll-step": 1,
+        "on-click": "~/.config/rofi/launchers/audio-switcher.sh",
+        "ignored-sinks": [
+            "Easy Effects Sink"
+        ]
+    },
+
+      "network": {
+    "format-wifi": "{icon} {essid}",
+    "format-ethernet": "󰈀 {ifname}",
+    "format-disconnected": "󰖪 Disconnected",
+    "format-icons": ["󰤯 ", "󰤟 ", "󰤢 ", "󰤥 ", "󰤨 "],
+    "max-length": 25,
+    "tooltip-format": "{essid} ({signaldBm}dBm) ",
+    "on-click": "nm-connection-editor",
+  },
+
+
+    "battery": {
+        "interval": 5,
+
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+
+        "format": "{capacity}% {icon}",
+        "format-charging": "󰂄 {capacity}%",
+        "format-full": "󰁹 {capacity}%",
+
+        "format-icons": [
+            "",
+            "",
+            "",
+            "",
+            ""
+        ],
+
+        "tooltip": true,
+        "tooltip-format": "{capacity}%\n{timeTo}"
+    },
+
+    "custom/swaync": {
+        "tooltip": true,
+        "format": "",
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    }
+}
