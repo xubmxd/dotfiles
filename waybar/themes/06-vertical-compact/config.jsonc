@@ -11,7 +11,8 @@
     "hyprland/workspaces"
   ],
   "modules-center": [
-    "clock"
+    "clock",
+    "clock#calendar"
   ],
   "modules-right": [
     "tray",
@@ -25,7 +26,7 @@
     "disable-scroll": true,
     "all-outputs": true,
     "persistent-workspaces": {
-      "*": [1, 2, 3, 4],
+      "*": [1, 2, 3, 4]
     },
 
     "format": "{icon}",
@@ -42,6 +43,18 @@
   "clock": {
     "format": "{:%H\n%M}",
     "tooltip-format": "{:%A, %d %B %Y}"
+  },
+
+  "clock#calendar": {
+    "format": "{:%a\n%d\n%b}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "today": "<u><b>{}</b></u>"
+      }
+    }
   },
 
   "backlight": {

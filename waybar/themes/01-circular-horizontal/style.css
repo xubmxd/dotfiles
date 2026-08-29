@@ -14,7 +14,6 @@ window#waybar {
 
 /* --- The Three Floating Pills --- */
 .modules-left,
-.modules-center,
 .modules-right {
     background-color: alpha(@color0, 0.75);
     border: 1px solid alpha(@color4, 0.30);
@@ -22,11 +21,6 @@ window#waybar {
     padding: 4px 16px;
 }
 
-/* Add some specific margin to the center pill to separate it */
-.modules-center {
-    background-image: linear-gradient(135deg, alpha(@color4, 0.20) 0%, alpha(@color5, 0.20) 100%);
-    padding: 4px 24px;
-}
 
 /* --- Left Pill: Workspaces --- */
 #workspaces button {
