@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import Quickshell.Hyprland
 import "components" as CustomComponents
 
 ShellRoot {
@@ -23,8 +24,8 @@ ShellRoot {
         }
 
         margins.top: 5
-        implicitWidth: 380
-        implicitHeight: 125
+        implicitWidth: 420
+        implicitHeight: 240
 
         FileView {
             id: pywal
@@ -86,10 +87,27 @@ ShellRoot {
         property string currentOsd: "volume"
         property bool suppressOsd: true
 
+        property var focusedWorkspace: Hyprland.focusedWorkspace
+        property bool suppressWsOsd: true
+
         Timer {
             interval: 1000
             running: true
-            onTriggered: islandWindow.suppressOsd = false
+            onTriggered: {
+                islandWindow.suppressOsd = false
+                islandWindow.suppressWsOsd = false
+            }
+        }
+
+        onFocusedWorkspaceChanged: {
+            if (suppressWsOsd)
+                return
+            if (islandBackground.islandState === "overview")
+                return
+            if (!hoverHandler.hovered) {
+                islandBackground.islandState = "workspace-osd"
+                wsOsdTimer.restart()
+            }
         }
 
         onTrackedVolumeChanged: {
@@ -163,6 +181,31 @@ ShellRoot {
             }
         }
 
+        Timer {
+            id: wsOsdTimer
+            interval: 1500
+            onTriggered: {
+                if (!hoverHandler.hovered)
+                    islandBackground.islandState = "idle"
+            }
+        }
+
+        Timer {
+            id: overviewTimer
+            interval: 5000
+            onTriggered: {
+                if (!hoverHandler.hovered && islandBackground.islandState === "overview")
+                    islandBackground.islandState = "idle"
+            }
+        }
+
+        function openOverview() {
+            osdTimer.stop()
+            wsOsdTimer.stop()
+            overviewTimer.stop()
+            islandBackground.islandState = "overview"
+        }
+
         Rectangle {
             id: islandBackground
 
@@ -171,9 +214,33 @@ ShellRoot {
 
             property string islandState: "idle"
 
-            width: islandState === "idle" ? 120 : (islandState === "osd" ? 300 : 380)
-            height: islandState === "idle" ? 40 : (islandState === "osd" ? 60 : 125)
-            radius: islandState === "idle" ? 20 : (islandState === "osd" ? 30 : 24)
+            width: {
+                switch (islandState) {
+                case "idle": return 120
+                case "osd": return 300
+                case "workspace-osd": return 260
+                case "overview": return 400
+                default: return 380
+                }
+            }
+            height: {
+                switch (islandState) {
+                case "idle": return 40
+                case "osd": return 60
+                case "workspace-osd": return 50
+                case "overview": return 230
+                default: return 125
+                }
+            }
+            radius: {
+                switch (islandState) {
+                case "idle": return 20
+                case "osd": return 30
+                case "workspace-osd": return 25
+                case "overview": return 28
+                default: return 24
+                }
+            }
 
             color: islandWindow.colors.color0
             opacity: 0.75
@@ -190,9 +257,15 @@ ShellRoot {
                 onHoveredChanged: {
                     if (hovered) {
                         osdTimer.stop()
-                        islandBackground.islandState = "hover"
+                        wsOsdTimer.stop()
+                        overviewTimer.stop()
+                        if (islandBackground.islandState !== "overview")
+                            islandBackground.islandState = "hover"
                     } else {
-                        islandBackground.islandState = "idle"
+                        if (islandBackground.islandState === "overview")
+                            overviewTimer.restart()
+                        else
+                            islandBackground.islandState = "idle"
                     }
                 }
             }
@@ -232,6 +305,21 @@ ShellRoot {
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 250 } }
+                    onOverviewRequested: islandWindow.openOverview()
+                }
+
+                CustomComponents.Workspaces {
+                    anchors.fill: parent
+                    textColor: islandWindow.colors.color15
+                    activeColor: islandWindow.colors.color4
+                    backgroundColor: islandWindow.colors.color0
+                    subtleColor: islandWindow.colors.color8
+                    opacity: islandBackground.islandState === "workspace-osd" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                    onWorkspaceActivated: {
+                        islandBackground.islandState = "idle"
+                    }
                 }
             }
         }

@@ -1,63 +1,66 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
+import QtQuick.Layouts
+import Quickshell
 import Quickshell.Hyprland
 
 Item {
-    id: workspaceRoot
-    
+    id: workspacesRoot
+
     property color textColor: "#ffffff"
     property color activeColor: "#ffffff"
     property color backgroundColor: "#000000"
+    property color subtleColor: "#888888"
 
-    function getKanji(id) {
-        const kanji = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
-        return id > 0 && id < 10 ? kanji[id] : id.toString()
+    property var focusedWorkspace: Hyprland.focusedWorkspace
+
+    signal workspaceActivated()
+
+    function wsLabel(ws) {
+        if (!ws)
+            return ""
+        if (ws.name && isNaN(parseInt(ws.name)))
+            return ws.name
+        return "Workspace " + ws.id
     }
 
-    Row {
+    RowLayout {
         anchors.centerIn: parent
-        spacing: 12
+        spacing: 14
 
-        Repeater {
-            model: Hyprland.workspaces
+        Row {
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 6
 
-            Rectangle {
-                width: 32
-                height: 32
-                radius: 16
-                color: modelData.active ? workspaceRoot.activeColor : "transparent"
-                border.color: modelData.active ? "transparent" : alpha(workspaceRoot.textColor, 0.3)
-                border.width: 1
-                
-                Behavior on color { ColorAnimation { duration: 200 } }
-                Behavior on border.color { ColorAnimation { duration: 200 } }
+            Repeater {
+                model: Hyprland.workspaces
 
-                Text {
-                    anchors.centerIn: parent
-                    text: workspaceRoot.getKanji(modelData.id)
-                    color: modelData.active ? workspaceRoot.backgroundColor : workspaceRoot.textColor
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 14
-                    font.bold: true
-                    
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                }
+                delegate: Rectangle {
+                    required property HyprlandWorkspace modelData
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: modelData.activate()
+                    visible: modelData.id > 0
+                    width: visible ? (modelData.active ? 22 : 8) : 0
+                    height: visible ? 8 : 0
+                    radius: 4
+                    color: modelData.active
+                        ? workspacesRoot.activeColor
+                        : workspacesRoot.subtleColor
+
+                    Behavior on width {
+                        NumberAnimation { duration: 200; easing.type: Easing.OutQuad }
+                    }
                 }
             }
         }
-    }
 
-    function alpha(colorString, opacity) {
-        let c = String(colorString)
-        return Qt.rgba(
-            parseInt(c.slice(1, 3), 16) / 255,
-            parseInt(c.slice(3, 5), 16) / 255,
-            parseInt(c.slice(5, 7), 16) / 255,
-            opacity
-        )
+        Text {
+            Layout.alignment: Qt.AlignVCenter
+            text: workspacesRoot.wsLabel(workspacesRoot.focusedWorkspace)
+            color: workspacesRoot.textColor
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 14
+            font.bold: true
+        }
     }
 }

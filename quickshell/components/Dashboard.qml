@@ -12,6 +12,8 @@ Item {
     property color backgroundColor: "#000000"
     property color subtleColor: "#888888"
 
+    signal overviewRequested()
+
     property var activePlayer: {
         let players = Mpris.players.values
         if (players.length === 0) return null
@@ -85,6 +87,7 @@ Item {
                 font.pixelSize: 12
                 font.bold: true
             }
+
         }
 
         Rectangle {
