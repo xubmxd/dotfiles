@@ -171,6 +171,116 @@ ShellRoot {
             }
         }
 
+                // ============================================================
+        // IPC / KEYBINDS
+        //
+        // These functions are called externally using:
+        //
+        // quickshell ipc call island <function>
+        //
+        // They intentionally only change islandState and timers.
+        // Nothing in MusicPlayer.qml or the existing hover/mouse
+        // architecture is modified.
+        // ============================================================
+
+        IpcHandler {
+            target: "island"
+
+            // --------------------------------------------------------
+            // MUSIC
+            // --------------------------------------------------------
+
+            function toggleMusic(): void {
+                if (!musicData.hasTrack)
+                    return
+
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "music-expanded") {
+                    islandBackground.islandState = "music-compact"
+                } else {
+                    islandBackground.islandState = "music-expanded"
+                }
+            }
+
+            function openMusic(): void {
+                if (!musicData.hasTrack)
+                    return
+
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                islandBackground.islandState = "music-expanded"
+            }
+
+            function closeMusic(): void {
+                if (!musicData.hasTrack)
+                    return
+
+                hoverExpandDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                islandBackground.islandState = "music-compact"
+            }
+
+            // --------------------------------------------------------
+            // DASHBOARD
+            // --------------------------------------------------------
+
+            function toggleDashboard(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "hover") {
+                    islandBackground.islandState =
+                        islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "hover"
+                }
+            }
+
+            function openDashboard(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                islandBackground.islandState = "hover"
+            }
+
+            function closeDashboard(): void {
+                if (islandBackground.islandState === "hover") {
+                    islandBackground.islandState =
+                        islandWindow.restingState
+                }
+            }
+
+            // --------------------------------------------------------
+            // CLOSE EVERYTHING
+            // --------------------------------------------------------
+
+            function close(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                osdTimer.stop()
+                wsOsdTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                islandBackground.islandState =
+                    islandWindow.restingState
+            }
+        }
+
         // ============================================================
         // AUDIO
         // ============================================================
