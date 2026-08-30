@@ -8,10 +8,11 @@ import "components" as CustomComponents
 ShellRoot {
     PanelWindow {
         id: islandWindow
+
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "custom-island"
-        WlrLayershell.exclusiveZone: 45
-        
+        WlrLayershell.exclusiveZone: 40
+
         color: "transparent"
 
         anchors {
@@ -20,19 +21,46 @@ ShellRoot {
             left: false
             right: false
         }
-        margins.top: 5
 
+        margins.top: 5
         implicitWidth: 380
         implicitHeight: 125
 
         FileView {
             id: pywal
             path: Quickshell.env("HOME") + "/.cache/wal/colors.json"
+            blockLoading: true
+            watchChanges: true
+            onFileChanged: reload()
         }
 
         property var colors: {
-            try { return JSON.parse(pywal.data).colors } 
-            catch (e) { return { color0: "#0f0f0f", color4: "#ffffff", color8: "#555555", color15: "#ffffff" } }
+            try {
+                var parsed = JSON.parse(pywal.text())
+                if (parsed.colors)
+                    return parsed.colors
+            } catch (error) {
+                console.warn("Failed to load pywal colors:", error)
+            }
+
+            return {
+                color0: "#1a1a1a",
+                color1: "#ef4444",
+                color2: "#22c55e",
+                color3: "#eab308",
+                color4: "#3b82f6",
+                color5: "#a855f7",
+                color6: "#06b6d4",
+                color7: "#d1d5db",
+                color8: "#555555",
+                color9: "#f87171",
+                color10: "#4ade80",
+                color11: "#facc15",
+                color12: "#60a5fa",
+                color13: "#c084fc",
+                color14: "#22d3ee",
+                color15: "#ffffff"
+            }
         }
 
         PwObjectTracker {
@@ -41,18 +69,16 @@ ShellRoot {
         }
 
         property real trackedVolume: {
-            let sink = Pipewire.defaultAudioSink
-            if (sink && sink.audio && sink.audio.volume !== undefined) {
+            var sink = Pipewire.defaultAudioSink
+            if (sink && sink.audio && sink.audio.volume !== undefined)
                 return sink.audio.volume
-            }
             return 0
         }
 
         property bool isMuted: {
-            let sink = Pipewire.defaultAudioSink
-            if (sink && sink.audio && sink.audio.muted !== undefined) {
+            var sink = Pipewire.defaultAudioSink
+            if (sink && sink.audio && sink.audio.muted !== undefined)
                 return sink.audio.muted
-            }
             return false
         }
 
@@ -67,17 +93,19 @@ ShellRoot {
         }
 
         onTrackedVolumeChanged: {
-            if (islandWindow.suppressOsd) return
-            islandWindow.currentOsd = "volume"
+            if (suppressOsd)
+                return
+            currentOsd = "volume"
             if (!hoverHandler.hovered) {
                 islandBackground.islandState = "osd"
                 osdTimer.restart()
             }
         }
-        
+
         onIsMutedChanged: {
-            if (islandWindow.suppressOsd) return
-            islandWindow.currentOsd = "volume"
+            if (suppressOsd)
+                return
+            currentOsd = "volume"
             if (!hoverHandler.hovered) {
                 islandBackground.islandState = "osd"
                 osdTimer.restart()
@@ -87,24 +115,29 @@ ShellRoot {
         Process {
             id: brightnessProc
             command: ["brightnessctl", "-m"]
+
             stdout: StdioCollector {
                 onStreamFinished: {
-                    let raw = String(text).trim()
-                    let parts = raw.split(",")
-                    if (parts.length >= 4) {
-                        let percentStr = parts[3].replace("%", "")
-                        let val = parseInt(percentStr) / 100.0
-                        if (!isNaN(val)) {
-                            if (islandWindow.trackedBrightness === -1) {
-                                islandWindow.trackedBrightness = val
-                            } else if (Math.abs(val - islandWindow.trackedBrightness) > 0.01) {
-                                islandWindow.trackedBrightness = val
-                                islandWindow.currentOsd = "brightness"
-                                if (!islandWindow.suppressOsd && !hoverHandler.hovered) {
-                                    islandBackground.islandState = "osd"
-                                    osdTimer.restart()
-                                }
-                            }
+                    var raw = String(text).trim()
+                    var parts = raw.split(",")
+
+                    if (parts.length < 4)
+                        return
+
+                    var brightness = parseInt(parts[3].replace("%", "")) / 100.0
+
+                    if (isNaN(brightness))
+                        return
+
+                    if (islandWindow.trackedBrightness === -1) {
+                        islandWindow.trackedBrightness = brightness
+                    } else if (Math.abs(brightness - islandWindow.trackedBrightness) > 0.01) {
+                        islandWindow.trackedBrightness = brightness
+                        islandWindow.currentOsd = "brightness"
+
+                        if (!islandWindow.suppressOsd && !hoverHandler.hovered) {
+                            islandBackground.islandState = "osd"
+                            osdTimer.restart()
                         }
                     }
                 }
@@ -115,31 +148,33 @@ ShellRoot {
             interval: 200
             running: true
             repeat: true
-            onTriggered: brightnessProc.running = true
+            onTriggered: {
+                if (!brightnessProc.running)
+                    brightnessProc.running = true
+            }
         }
 
         Timer {
             id: osdTimer
             interval: 2000
             onTriggered: {
-                if (!hoverHandler.hovered) {
+                if (!hoverHandler.hovered)
                     islandBackground.islandState = "idle"
-                }
             }
         }
 
         Rectangle {
             id: islandBackground
-            
+
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
-            
+
             property string islandState: "idle"
-            
+
             width: islandState === "idle" ? 120 : (islandState === "osd" ? 300 : 380)
             height: islandState === "idle" ? 40 : (islandState === "osd" ? 60 : 125)
             radius: islandState === "idle" ? 20 : (islandState === "osd" ? 30 : 24)
-            
+
             color: islandWindow.colors.color0
             opacity: 0.75
             border.color: islandWindow.colors.color4
@@ -164,11 +199,10 @@ ShellRoot {
 
             Item {
                 anchors.fill: parent
-                
+
                 CustomComponents.Clock {
                     anchors.fill: parent
                     textColor: islandWindow.colors.color15
-                    
                     opacity: islandBackground.islandState === "idle" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -179,11 +213,11 @@ ShellRoot {
                     activeColor: islandWindow.colors.color4
                     subtleColor: islandWindow.colors.color8
                     backgroundColor: islandWindow.colors.color0
-                    
                     osdType: islandWindow.currentOsd
-                    osdValue: islandWindow.currentOsd === "volume" ? islandWindow.trackedVolume : (islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness)
+                    osdValue: islandWindow.currentOsd === "volume"
+                        ? islandWindow.trackedVolume
+                        : (islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness)
                     isMuted: islandWindow.isMuted
-                    
                     opacity: islandBackground.islandState === "osd" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -195,7 +229,6 @@ ShellRoot {
                     activeColor: islandWindow.colors.color4
                     backgroundColor: islandWindow.colors.color0
                     subtleColor: islandWindow.colors.color8
-                    
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 250 } }
