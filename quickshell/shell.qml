@@ -149,18 +149,93 @@ ShellRoot {
             id: musicData
         }
 
+        // ============================================================
+        // ISLAND NAVIGATOR
+        //
+        // Keep navigation separate from transient states such as:
+        // Dashboard, OSD and expanded music.
+        //
+        // Add future islands to islandOrder. The navigation functions
+        // automatically wrap around.
+        // ============================================================
+
+        property var islandOrder: ["clock", "music"]
+        property int selectedIslandIndex: 0
+
+        property string selectedIsland:
+            islandOrder.length > 0
+            ? islandOrder[selectedIslandIndex]
+            : "clock"
+
         property string restingState:
-            musicData.hasTrack
+            selectedIsland === "music" && musicData.hasTrack
             ? "music-compact"
             : "idle"
+
+        function normalizeIslandIndex(index) {
+            const count = islandOrder.length
+            if (count <= 0)
+                return 0
+
+            return ((index % count) + count) % count
+        }
+
+        function showSelectedIsland() {
+            // Music is unavailable when no real track exists.
+            if (selectedIsland === "music" && !musicData.hasTrack) {
+                selectedIslandIndex = 0
+            }
+
+            hoverExpandDelayTimer.stop()
+            hoverCollapseDelayTimer.stop()
+            osdTimer.stop()
+            wsOsdTimer.stop()
+
+            islandWindow.hoverExpandedActive = false
+            islandBackground.islandState = islandWindow.restingState
+        }
+
+        function nextIsland() {
+            if (islandOrder.length <= 0)
+                return
+
+            let next = normalizeIslandIndex(selectedIslandIndex + 1)
+
+            // Skip unavailable music rather than leaving an empty island.
+            if (islandOrder[next] === "music" && !musicData.hasTrack)
+                next = 0
+
+            selectedIslandIndex = next
+            showSelectedIsland()
+        }
+
+        function previousIsland() {
+            if (islandOrder.length <= 0)
+                return
+
+            let previous = normalizeIslandIndex(selectedIslandIndex - 1)
+
+            // Skip unavailable music rather than leaving an empty island.
+            if (islandOrder[previous] === "music" && !musicData.hasTrack)
+                previous = 0
+
+            selectedIslandIndex = previous
+            showSelectedIsland()
+        }
 
         Connections {
             target: musicData
 
             function onHasTrackChanged() {
-                const current =
-                    islandBackground.islandState
+                const current = islandBackground.islandState
 
+                // If music disappears while it is selected, fall back
+                // to Clock.
+                if (!musicData.hasTrack && islandWindow.selectedIsland === "music")
+                    islandWindow.selectedIslandIndex = 0
+
+                // Only update resting states. Don't interrupt Dashboard,
+                // OSD or other transient/expanded UI.
                 if (current === "idle"
                     || current === "music-compact"
                     || current === "music-expanded") {
@@ -185,6 +260,18 @@ ShellRoot {
 
         IpcHandler {
             target: "island"
+
+            // --------------------------------------------------------
+            // ISLAND NAVIGATION
+            // --------------------------------------------------------
+
+            function nextIsland(): void {
+                islandWindow.nextIsland()
+            }
+
+            function previousIsland(): void {
+                islandWindow.previousIsland()
+            }
 
             // --------------------------------------------------------
             // MUSIC
@@ -738,11 +825,20 @@ ShellRoot {
 
                 anchors.fill: parent
 
+                // Keep this below component controls so MusicPlayer's
+                // buttons remain clickable.
                 z: -1
 
                 hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
 
-                acceptedButtons: Qt.NoButton
+                property real pressX: 0
+                property real pressY: 0
+                property bool horizontalSwipe: false
+                property bool swipeEligible: false
+
+                readonly property real swipeThreshold: 55
+                readonly property real verticalTolerance: 45
 
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
@@ -750,26 +846,77 @@ ShellRoot {
                     // Hovering idle opens dashboard immediately.
                     if (islandBackground.islandState === "idle") {
 
-                        islandWindow.hoverExpandedActive =
-                            false
-
-                        islandBackground.islandState =
-                            "hover"
-
+                        islandWindow.hoverExpandedActive = false
+                        islandBackground.islandState = "hover"
                         return
                     }
 
                     // Hovering compact music starts expansion.
-                    if (islandBackground.islandState
-                        === "music-compact") {
-
+                    if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
-                    }
                 }
 
                 onExited: {
                     hoverExpandDelayTimer.stop()
                     hoverCollapseDelayTimer.restart()
+                }
+
+                onPressed: function(mouse) {
+                    pressX = mouse.x
+                    pressY = mouse.y
+                    horizontalSwipe = false
+
+                    // Navigation is only allowed from compact/resting
+                    // islands. Expanded UI keeps its own controls.
+                    swipeEligible =
+                        islandBackground.islandState === "idle"
+                        || islandBackground.islandState === "music-compact"
+                }
+
+                onPositionChanged: function(mouse) {
+                    if (!swipeEligible || horizontalSwipe)
+                        return
+
+                    const dx = mouse.x - pressX
+                    const dy = mouse.y - pressY
+
+                    // Match Tide's intent: horizontal gestures navigate,
+                    // while predominantly vertical movement is ignored.
+                    if (Math.abs(dy) > verticalTolerance)
+                        return
+
+                    if (Math.abs(dx) > 12
+                        && Math.abs(dx) > Math.abs(dy)) {
+                        horizontalSwipe = true
+                        hoverExpandDelayTimer.stop()
+                        hoverCollapseDelayTimer.stop()
+                    }
+                }
+
+                onReleased: function(mouse) {
+                    if (!swipeEligible || !horizontalSwipe)
+                        return
+
+                    const dx = mouse.x - pressX
+                    const dy = mouse.y - pressY
+
+                    if (Math.abs(dy) <= verticalTolerance
+                        && Math.abs(dx) >= swipeThreshold) {
+
+                        // Swipe left = next, swipe right = previous.
+                        if (dx < 0)
+                            islandWindow.nextIsland()
+                        else
+                            islandWindow.previousIsland()
+                    }
+
+                    horizontalSwipe = false
+                    swipeEligible = false
+                }
+
+                onCanceled: {
+                    horizontalSwipe = false
+                    swipeEligible = false
                 }
             }
 
