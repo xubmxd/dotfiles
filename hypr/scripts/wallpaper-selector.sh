@@ -41,7 +41,7 @@ reindex_wallpapers() {
         fi
 
         ((count++))
-    done < <(find . -maxdepth 1 -type f -name "*.png" -printf '%T@ %P\n' | sort -n | cut -d' ' -f2-)
+        done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
 }
 
 # Run re-index on all category folders automatically when launcher starts
@@ -85,7 +85,7 @@ while IFS= read -r dir; do
     CATEGORY_MAP["$display"]="$folder"
     CATEGORY_LIST+="$display"$'\n'
 
-done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
+done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name ".*" | sort)
 
 while true; do
 
@@ -194,6 +194,16 @@ awww img "$WALL" \
     --transition-type any\
     --transition-step 90 \
     --transition-fps 60
+
+# ------------------------------------------------------------
+# Reload Active Status Bar (Waybar or Quickshell)
+# ------------------------------------------------------------
+
+if pgrep -x "waybar" > /dev/null; then
+    killall waybar && waybar &
+elif pgrep -x "quickshell" > /dev/null; then
+    true
+fi
 
 # ------------------------------------------------------------
 # Do the remaining process

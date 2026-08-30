@@ -35,6 +35,14 @@ hl.layer_rule({
 
 hl.layer_rule({
     match = {
+        namespace = "custom-island",
+    },
+    blur = true,
+    ignore_alpha = 0.2,
+})
+
+hl.layer_rule({
+    match = {
         namespace = "gtk-layer-shell",
     },
     blur = true,
