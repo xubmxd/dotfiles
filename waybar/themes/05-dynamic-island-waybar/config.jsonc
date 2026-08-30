@@ -1,0 +1,88 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 42,
+  "margin-top": 12,
+  "spacing": 0,
+
+  "modules-left": [],
+  "modules-center": [
+    "hyprland/workspaces",
+    "clock",
+    "tray",
+    "network",
+    "backlight",
+    "pulseaudio",
+    "battery"
+  ],
+  "modules-right": [],
+
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4]
+    },
+    "format": "{icon}",
+    "format-icons": {
+        "1": "一",
+        "2": "二",
+        "3": "三",
+        "4": "四",
+        "5": "五",
+        "6": "六",
+        "7": "七",
+        "8": "八",
+        "9": "九"
+    },
+    "on-click": "activate"
+  },
+
+  "clock": {
+    "format": " {:%H:%M}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "today": "<u><b>{}</b></u>"
+      }
+    }
+  },
+
+  "backlight": {
+    "device": "intel_backlight",
+    "format": "{icon}",
+    "format-icons": ["", "", "", "", "", "", ""],
+    "tooltip-format": "{percent}%"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "",
+    "format-icons": ["", "", ""],
+    "tooltip-format": "{volume}%"
+  },
+
+  "network": {
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰖪",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format": "{essid} ({signaldBm}dBm)",
+    "on-click": "nm-connection-editor"
+  },
+
+  "battery": {
+    "format": "{icon}",
+    "format-charging": "",
+    "format-icons": ["", "", "", "", ""],
+    "tooltip-format": "{capacity}%"
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10,
+    "show-passive-items": true
+  }
+}

@@ -242,18 +242,21 @@ window#waybar {
     box-shadow: none;
 }
 
-/* --- Added Calendar Styling --- */
+/* ╭──────────────────────────────────────────────────────────────╮
+   │  CALENDAR MODULE (clock#calendar)                            │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
 #clock.calendar {
-    color: @color4;
-    margin-top: -15px;
+    color: @color4; /* Gives the calendar icon a distinct accent color */
+    margin-top: 4px;
     transition: all 0.20s ease;
 }
 
-#clock.calendar:hover {
+#clock.calendar:hover,
+#clock:hover{
     color: @color6;
     text-shadow: 0px 0px 5px alpha(@color6, 0.5);
 }
-/* ----------------------------- */
 
 tooltip decoration {
     background: transparent;
