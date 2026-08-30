@@ -99,27 +99,71 @@ Item {
             Layout.preferredHeight: 40
             spacing: 12
 
-            Rectangle {
-                width: 32
-                height: 32
-                radius: 16
-                color: dashboardRoot.activeColor
-                opacity: 0.15
+            Row {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 10
 
                 Text {
-                    anchors.centerIn: parent
-                    text: dashboardRoot.activePlayer && dashboardRoot.activePlayer.playbackState === 1 ? "󰏤" : "󰐊"
-                    color: dashboardRoot.activeColor
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "󰒮"
+                    color: dashboardRoot.subtleColor
                     font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 14
+                    font.pixelSize: 18
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (dashboardRoot.activePlayer) {
+                                dashboardRoot.activePlayer.previous()
+                            }
+                        }
+                    }
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (dashboardRoot.activePlayer && dashboardRoot.activePlayer.canPlay) {
-                            dashboardRoot.activePlayer.togglePlaying()
+                Rectangle {
+                    width: 32
+                    height: 32
+                    radius: 16
+                    color: "transparent"
+                    border.color: dashboardRoot.subtleColor
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: dashboardRoot.activePlayer && dashboardRoot.activePlayer.playbackState === 1 ? "󰏤" : "󰐊"
+                        color: dashboardRoot.activeColor
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 14
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (dashboardRoot.activePlayer && dashboardRoot.activePlayer.canPlay) {
+                                dashboardRoot.activePlayer.togglePlaying()
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "󰒭"
+                    color: dashboardRoot.subtleColor
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 18
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (dashboardRoot.activePlayer) {
+                                dashboardRoot.activePlayer.next()
+                            }
                         }
                     }
                 }
