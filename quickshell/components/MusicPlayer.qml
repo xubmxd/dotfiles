@@ -18,6 +18,8 @@ Item {
 
     // ============================================================
     // COMPACT VIEW
+    //
+    // Designed for the 40px-high navigated music island.
     // ============================================================
 
     Item {
@@ -42,14 +44,13 @@ Item {
         Item {
             id: compactArt
 
-            width: 48
-            height: 48
+            width: 30
+            height: 30
 
             anchors.left: parent.left
-            anchors.leftMargin: 20
+            anchors.leftMargin: 18
             anchors.verticalCenter: parent.verticalCenter
 
-            // Actual artwork
             Image {
                 id: compactArtImage
 
@@ -68,17 +69,16 @@ Item {
                 visible: false
             }
 
-            // Rounded mask
             Rectangle {
                 id: compactArtMask
 
                 anchors.fill: parent
-                radius: 12
+
+                radius: 4
 
                 visible: false
             }
 
-            // The actual rounded artwork
             OpacityMask {
                 anchors.fill: parent
 
@@ -88,11 +88,10 @@ Item {
                 visible: compactArtImage.source.toString() !== ""
             }
 
-            // Fallback artwork icon
             Rectangle {
                 anchors.fill: parent
 
-                radius: 12
+                radius: 9
 
                 color: Qt.rgba(1, 1, 1, 0.06)
 
@@ -106,7 +105,7 @@ Item {
                     color: root.subtleColor
 
                     font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 20
+                    font.pixelSize: 15
                 }
             }
         }
@@ -119,14 +118,14 @@ Item {
             id: compactMetadata
 
             anchors.left: compactArt.right
-            anchors.leftMargin: 14
+            anchors.leftMargin: 9
 
             anchors.right: compactPlayBtn.left
-            anchors.rightMargin: 10
+            anchors.rightMargin: 8
 
             anchors.verticalCenter: parent.verticalCenter
 
-            spacing: 2
+            spacing: 0
 
             Text {
                 width: parent.width
@@ -138,7 +137,7 @@ Item {
                 color: root.textColor
 
                 font.family: "sans-serif"
-                font.pixelSize: 14
+                font.pixelSize: 11
                 font.weight: Font.DemiBold
 
                 elide: Text.ElideRight
@@ -155,7 +154,7 @@ Item {
                 color: root.subtleColor
 
                 font.family: "sans-serif"
-                font.pixelSize: 12
+                font.pixelSize: 9
                 font.weight: Font.Medium
 
                 elide: Text.ElideRight
@@ -170,8 +169,11 @@ Item {
         PlayerControlButton {
             id: compactPlayBtn
 
+            width: 32
+            height: 32
+
             anchors.right: parent.right
-            anchors.rightMargin: 10
+            anchors.rightMargin: 4
             anchors.verticalCenter: parent.verticalCenter
 
             kind: root.playerData && root.playerData.isPlaying
@@ -192,6 +194,9 @@ Item {
 
         // --------------------------------------------------------
         // CLICK TO EXPAND
+        //
+        // Kept behind the controls so the play button remains
+        // independently clickable.
         // --------------------------------------------------------
 
         MouseArea {
@@ -208,6 +213,8 @@ Item {
 
     // ============================================================
     // EXPANDED VIEW
+    //
+    // Original functionality preserved.
     // ============================================================
 
     Item {

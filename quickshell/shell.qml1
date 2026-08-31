@@ -20,6 +20,11 @@ ShellRoot {
 
         // ============================================================
         // TIDE-STYLE SURFACE ARCHITECTURE
+        //
+        // The PanelWindow spans the screen width.
+        //
+        // ONLY the Region mask receives pointer input, so transparent
+        // areas do not block clicks on windows underneath.
         // ============================================================
 
         anchors {
@@ -41,6 +46,13 @@ ShellRoot {
 
         // ============================================================
         // SURFACE HEIGHT MANAGEMENT
+        //
+        // The Wayland surface grows immediately when content expands.
+        //
+        // During collapse, we retain the previous height briefly so the
+        // height animation can finish without clipping the island.
+        //
+        // This follows the same general idea Tide uses.
         // ============================================================
 
         readonly property real requestedWindowHeight:
@@ -112,10 +124,22 @@ ShellRoot {
             }
 
             return {
-                color0: "#1a1a1a", color1: "#ef4444", color2: "#22c55e", color3: "#eab308",
-                color4: "#3b82f6", color5: "#a855f7", color6: "#06b6d4", color7: "#d1d5db",
-                color8: "#555555", color9: "#f87171", color10: "#4ade80", color11: "#facc15",
-                color12: "#60a5fa", color13: "#c084fc", color14: "#22d3ee", color15: "#ffffff"
+                color0: "#1a1a1a",
+                color1: "#ef4444",
+                color2: "#22c55e",
+                color3: "#eab308",
+                color4: "#3b82f6",
+                color5: "#a855f7",
+                color6: "#06b6d4",
+                color7: "#d1d5db",
+                color8: "#555555",
+                color9: "#f87171",
+                color10: "#4ade80",
+                color11: "#facc15",
+                color12: "#60a5fa",
+                color13: "#c084fc",
+                color14: "#22d3ee",
+                color15: "#ffffff"
             }
         }
 
@@ -129,25 +153,27 @@ ShellRoot {
 
         // ============================================================
         // ISLAND NAVIGATOR
+        //
+        // Keep navigation separate from transient states such as:
+        // Dashboard, OSD and expanded music.
+        //
+        // Add future islands to islandOrder. The navigation functions
+        // automatically wrap around.
         // ============================================================
 
-        property var islandOrder: {
-            var islands = ["clock"]
-
-            if (musicData.hasTrack)
-                islands.push("music")
-
-            if (NotificationService.notifications.length > 0)
-                islands.push("notifications")
-
-            return islands
-        }
+        property var islandOrder: ["clock", "music", "notifications"]
         property int selectedIslandIndex: 0
 
+        // Remember whether Music was selected when MPRIS briefly loses
+        // its track during a track transition.
         property bool restoreMusicAfterTrackChange: false
 
         // ============================================================
         // TRANSIENT NOTIFICATION PILL
+        //
+        // Notifications are not part of islandOrder while they pop up.
+        // The current island is remembered and restored after the pill
+        // disappears, so navigation remains completely independent.
         // ============================================================
 
         property string notificationReturnState: "idle"
@@ -162,6 +188,8 @@ ShellRoot {
 
             const current = islandBackground.islandState
 
+            // Do not overwrite the original return target when several
+            // notifications arrive while the pill is already visible.
             if (!notificationPillActive) {
                 if (current === "idle"
                     || current === "music-compact"
@@ -169,6 +197,8 @@ ShellRoot {
                     || current === "notifications") {
                     notificationReturnState = current
                 } else {
+                    // OSD, workspace OSD and dashboard are transient too.
+                    // Return to the user's actual selected island instead.
                     notificationReturnState = restingState
                 }
             }
@@ -211,6 +241,9 @@ ShellRoot {
             ? islandOrder[selectedIslandIndex]
             : "clock"
 
+        // The navigator always shows the compact notification pill.
+        // The expanded notification UI is only opened explicitly via
+        // expandNotification(), never while cycling through islands.
         property string restingState: {
             if (selectedIsland === "music" && musicData.hasTrack)
                 return "music-compact"
@@ -234,6 +267,7 @@ ShellRoot {
         }
 
         function showSelectedIsland() {
+            // Music is unavailable when no real track exists.
             if (selectedIsland === "music" && !musicData.hasTrack)
                 selectedIslandIndex = 0
 
@@ -253,6 +287,7 @@ ShellRoot {
 
             let next = normalizeIslandIndex(selectedIslandIndex + 1)
 
+            // Skip unavailable islands without assuming their position.
             while (islandOrder[next] === "music"
                    && !musicData.hasTrack
                    && next !== selectedIslandIndex) {
@@ -269,6 +304,7 @@ ShellRoot {
 
             let previous = normalizeIslandIndex(selectedIslandIndex - 1)
 
+            // Skip unavailable islands without assuming their position.
             while (islandOrder[previous] === "music"
                    && !musicData.hasTrack
                    && previous !== selectedIslandIndex) {
@@ -280,30 +316,14 @@ ShellRoot {
         }
 
         Connections {
-            target: NotificationService
-
-            function onNotificationsChanged() {
-                if (NotificationService.notifications.length === 0) {
-
-                    const notificationIndex =
-                        islandWindow.islandOrder.indexOf("notifications")
-
-                    if (islandWindow.selectedIsland === "notifications") {
-                        islandWindow.selectedIslandIndex = 0
-
-                        if (islandBackground.islandState === "notification-pill")
-                            islandBackground.islandState = "idle"
-                    }
-                }
-            }
-        }
-
-        Connections {
             target: musicData
 
             function onHasTrackChanged() {
                 const current = islandBackground.islandState
 
+                // During a track change some MPRIS players briefly report
+                // no track. Remember that the user had Music selected, then
+                // temporarily fall back to Clock.
                 if (!musicData.hasTrack
                     && islandWindow.selectedIsland === "music") {
 
@@ -311,6 +331,8 @@ ShellRoot {
                     islandWindow.selectedIslandIndex = 0
                 }
 
+                // As soon as the next track becomes available, restore the
+                // user's previous Music selection.
                 if (musicData.hasTrack
                     && islandWindow.restoreMusicAfterTrackChange) {
 
@@ -323,6 +345,8 @@ ShellRoot {
                     islandWindow.restoreMusicAfterTrackChange = false
                 }
 
+                // Only update resting states. Don't interrupt Dashboard,
+                // OSD or other transient/expanded UI.
                 if (current === "idle"
                     || current === "music-compact"
                     || current === "music-expanded") {
@@ -333,8 +357,11 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // NOTIFICATIONS SERVER
+                // ============================================================
+        // NOTIFICATIONS
+        //
+        // NotificationService owns the bounded in-memory history.
+        // The server only receives notifications and hands them over.
         // ============================================================
 
         NotificationServer {
@@ -356,6 +383,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // NOTIFICATION AUTO-HIDE
+        // ============================================================
+
         Timer {
             id: notificationAutoHideTimer
 
@@ -370,10 +401,22 @@ ShellRoot {
 
         // ============================================================
         // IPC / KEYBINDS
+        //
+        // These functions are called externally using:
+        //
+        // quickshell ipc call island <function>
+        //
+        // They intentionally only change islandState and timers.
+        // Nothing in MusicPlayer.qml or the existing hover/mouse
+        // architecture is modified.
         // ============================================================
 
         IpcHandler {
             target: "island"
+
+            // --------------------------------------------------------
+            // ISLAND NAVIGATION
+            // --------------------------------------------------------
 
             function nextIsland(): void {
                 islandWindow.nextIsland()
@@ -382,6 +425,10 @@ ShellRoot {
             function previousIsland(): void {
                 islandWindow.previousIsland()
             }
+
+            // --------------------------------------------------------
+            // MUSIC
+            // --------------------------------------------------------
 
             function toggleMusic(): void {
                 if (!musicData.hasTrack)
@@ -400,20 +447,33 @@ ShellRoot {
             }
 
             function openMusic(): void {
-                if (!musicData.hasTrack) return
+                if (!musicData.hasTrack)
+                    return
+
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
                 islandBackground.islandState = "music-expanded"
             }
 
             function closeMusic(): void {
-                if (!musicData.hasTrack) return
+                if (!musicData.hasTrack)
+                    return
+
                 hoverExpandDelayTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
                 islandBackground.islandState = "music-compact"
             }
 
+            // --------------------------------------------------------
+            // NOTIFICATIONS
+            // --------------------------------------------------------
+
+            // Expand the currently visible/latest notification pill.
             function expandNotification(): void {
                 islandWindow.expandNotificationPill()
             }
@@ -422,28 +482,36 @@ ShellRoot {
                 islandWindow.dismissNotificationPill()
             }
 
+            // Open the FULL notification center.
+            // This should NOT change selectedIslandIndex because navigation
+            // and the notification center are separate concepts.
             function openNotifications(): void {
                 if (!NotificationService.latestNotification
                     && NotificationService.notifications.length === 0)
                     return
 
                 notificationAutoHideTimer.stop()
+
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
 
                 islandWindow.hoverExpandedActive = false
-                islandBackground.islandState = "notifications"
+
+                islandBackground.islandState = "notification-expanded"
             }
 
+            // Close the full notification center and return to whichever
+            // compact island the user had selected.
             function closeNotifications(): void {
-                if (islandBackground.islandState === "notifications") {
+                if (islandBackground.islandState === "notification-expanded") {
                     islandBackground.islandState =
                         islandWindow.restingState
                 }
             }
 
+            // Toggle the FULL notification center.
             function toggleNotifications(): void {
-                if (islandBackground.islandState === "notifications") {
+                if (islandBackground.islandState === "notification-expanded") {
                     closeNotifications()
                 } else {
                     openNotifications()
@@ -452,10 +520,15 @@ ShellRoot {
 
             function clearNotifications(): void {
                 NotificationService.clearAll()
-                if (islandBackground.islandState === "notifications")
+
+                if (islandBackground.islandState === "notification-expanded")
                     islandBackground.islandState =
                         islandWindow.restingState
             }
+
+            // --------------------------------------------------------
+            // DASHBOARD
+            // --------------------------------------------------------
 
             function toggleDashboard(): void {
                 hoverExpandDelayTimer.stop()
@@ -474,7 +547,9 @@ ShellRoot {
             function openDashboard(): void {
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
                 islandBackground.islandState = "hover"
             }
 
@@ -485,13 +560,20 @@ ShellRoot {
                 }
             }
 
+            // --------------------------------------------------------
+            // CLOSE EVERYTHING
+            // --------------------------------------------------------
+
             function close(): void {
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
+
                 osdTimer.stop()
                 wsOsdTimer.stop()
                 notificationAutoHideTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
                 islandBackground.islandState =
                     islandWindow.restingState
             }
@@ -503,13 +585,19 @@ ShellRoot {
 
         PwObjectTracker {
             id: audioTracker
-            objects: [ Pipewire.defaultAudioSink ]
+
+            objects: [
+                Pipewire.defaultAudioSink
+            ]
         }
 
         property real trackedVolume: {
             var sink = Pipewire.defaultAudioSink
 
-            if (sink && sink.audio && sink.audio.volume !== undefined) {
+            if (sink
+                && sink.audio
+                && sink.audio.volume !== undefined) {
+
                 return sink.audio.volume
             }
 
@@ -519,7 +607,10 @@ ShellRoot {
         property bool isMuted: {
             var sink = Pipewire.defaultAudioSink
 
-            if (sink && sink.audio && sink.audio.muted !== undefined) {
+            if (sink
+                && sink.audio
+                && sink.audio.muted !== undefined) {
+
                 return sink.audio.muted
             }
 
@@ -531,9 +622,14 @@ ShellRoot {
         // ============================================================
 
         property real trackedBrightness: -1
+
         property string currentOsd: "volume"
+
         property bool suppressOsd: true
-        property var focusedWorkspace: Hyprland.focusedWorkspace
+
+        property var focusedWorkspace:
+            Hyprland.focusedWorkspace
+
         property bool suppressWsOsd: true
 
         Timer {
@@ -597,33 +693,54 @@ ShellRoot {
         Process {
             id: brightnessProc
 
-            command: [ "brightnessctl", "-m" ]
+            command: [
+                "brightnessctl",
+                "-m"
+            ]
 
             stdout: StdioCollector {
                 onStreamFinished: {
-                    var raw = String(text).trim()
-                    var parts = raw.split(",")
+                    var raw =
+                        String(text).trim()
+
+                    var parts =
+                        raw.split(",")
 
                     if (parts.length < 4)
                         return
 
                     var brightness =
-                        parseInt(parts[3].replace("%", "")) / 100.0
+                        parseInt(
+                            parts[3].replace("%", "")
+                        ) / 100.0
 
                     if (isNaN(brightness))
                         return
 
                     if (islandWindow.trackedBrightness === -1) {
-                        islandWindow.trackedBrightness = brightness
-                    } else if (Math.abs(brightness - islandWindow.trackedBrightness) > 0.01) {
 
-                        islandWindow.trackedBrightness = brightness
-                        islandWindow.currentOsd = "brightness"
+                        islandWindow.trackedBrightness =
+                            brightness
+
+                    } else if (
+                        Math.abs(
+                            brightness
+                            - islandWindow.trackedBrightness
+                        ) > 0.01
+                    ) {
+
+                        islandWindow.trackedBrightness =
+                            brightness
+
+                        islandWindow.currentOsd =
+                            "brightness"
 
                         if (!islandWindow.suppressOsd
                             && !islandMouseArea.containsMouse) {
 
-                            islandBackground.islandState = "osd"
+                            islandBackground.islandState =
+                                "osd"
+
                             osdTimer.restart()
                         }
                     }
@@ -635,6 +752,7 @@ ShellRoot {
             interval: 200
             running: true
             repeat: true
+
             onTriggered: {
                 if (!brightnessProc.running)
                     brightnessProc.running = true
@@ -647,7 +765,9 @@ ShellRoot {
 
         Timer {
             id: osdTimer
+
             interval: 2000
+
             onTriggered: {
                 if (!islandMouseArea.containsMouse) {
                     islandBackground.islandState =
@@ -658,7 +778,9 @@ ShellRoot {
 
         Timer {
             id: wsOsdTimer
+
             interval: 1500
+
             onTriggered: {
                 if (!islandMouseArea.containsMouse) {
                     islandBackground.islandState =
@@ -668,21 +790,33 @@ ShellRoot {
         }
 
         // ============================================================
-        // HOVER LOGIC
+        // TIDE-STYLE HOVER LOGIC
+        //
+        // IMPORTANT:
+        //
+        // Timers don't blindly trust onExited().
+        //
+        // They check containsMouse AGAIN when firing.
+        //
+        // This prevents transient pointer changes from immediately
+        // collapsing the island.
         // ============================================================
 
         property bool hoverExpandedActive: false
 
         Timer {
             id: hoverExpandDelayTimer
+
             interval: 250
             repeat: false
+
             onTriggered: {
                 if (!islandMouseArea.containsMouse)
                     return
 
                 if (islandBackground.islandState
                     !== "music-compact") {
+
                     return
                 }
 
@@ -695,34 +829,46 @@ ShellRoot {
 
         Timer {
             id: hoverCollapseDelayTimer
+
             interval: 250
             repeat: false
+
             onTriggered: {
                 if (islandMouseArea.containsMouse)
                     return
 
+                // Dashboard hover state
                 if (islandBackground.islandState === "hover") {
+
                     islandBackground.islandState =
                         islandWindow.restingState
+
                     return
                 }
 
+                // Hover-expanded music
                 if (islandWindow.hoverExpandedActive
                     && islandBackground.islandState
                     === "music-expanded") {
 
-                    islandWindow.hoverExpandedActive = false
+                    islandWindow.hoverExpandedActive =
+                        false
+
                     islandBackground.islandState =
                         islandWindow.restingState
+
                     return
                 }
 
+                // Restart interrupted OSD timers
                 if (islandBackground.islandState === "osd") {
                     osdTimer.restart()
                     return
                 }
 
-                if (islandBackground.islandState === "workspace-osd") {
+                if (islandBackground.islandState
+                    === "workspace-osd") {
+
                     wsOsdTimer.restart()
                 }
             }
@@ -736,65 +882,84 @@ ShellRoot {
             id: islandBackground
 
             anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenter:
+                parent.horizontalCenter
 
             property string islandState: "idle"
 
             // --------------------------------------------------------
-            // TARGET WIDTH (DYNAMIC FOR NOTIFICATIONS)
+            // TARGET WIDTH
             // --------------------------------------------------------
 
             readonly property real targetWidth: {
                 switch (islandState) {
+
                 case "idle":
                     return 120
+
                 case "hover":
                     return 380
+
                 case "osd":
                     return 300
+
                 case "workspace-osd":
                     return 260
+
                 case "music-compact":
-                    return 250
+                    return 320
+
                 case "music-expanded":
                     return 380
+
                 case "notifications":
                     return 430
-                // Reads the dynamic implicit width based on content
+
                 case "notification-pill":
-                    return notificationPill.implicitWidth
+                    return 360
+
                 case "notification-expanded":
-                    return notificationPill.implicitWidth
+                    return 430
+
                 default:
                     return 120
                 }
             }
 
             // --------------------------------------------------------
-            // TARGET HEIGHT (DYNAMIC FOR NOTIFICATIONS)
+            // TARGET HEIGHT
             // --------------------------------------------------------
 
             readonly property real targetHeight: {
                 switch (islandState) {
+
                 case "idle":
                     return 40
+
                 case "hover":
                     return 125
+
                 case "osd":
                     return 60
+
                 case "workspace-osd":
                     return 50
+
                 case "music-compact":
-                    return 40
+                    return 64
+
                 case "music-expanded":
                     return 440
+
                 case "notifications":
                     return 500
-                // Reads the dynamic implicit height based on content
+
                 case "notification-pill":
-                    return notificationPill.implicitHeight
+                    return 76
+
                 case "notification-expanded":
-                    return notificationPill.implicitHeight
+                    return 210
+
                 default:
                     return 40
                 }
@@ -806,24 +971,34 @@ ShellRoot {
 
             readonly property real targetRadius: {
                 switch (islandState) {
+
                 case "idle":
                     return 20
+
                 case "hover":
                     return 24
+
                 case "osd":
                     return 30
+
                 case "workspace-osd":
                     return 25
+
                 case "music-compact":
                     return 32
+
                 case "music-expanded":
                     return 32
+
                 case "notifications":
                     return 28
+
                 case "notification-pill":
                     return 38
+
                 case "notification-expanded":
                     return 28
+
                 default:
                     return 20
                 }
@@ -834,11 +1009,23 @@ ShellRoot {
             radius: targetRadius
 
             color: islandWindow.colors.color0
+
             opacity: 0.85
 
-            border.color: Qt.rgba(1, 1, 1, 0.08)
+            border.color:
+                Qt.rgba(1, 1, 1, 0.08)
+
             border.width: 1
+
             clip: true
+
+            // ========================================================
+            // VISUAL MORPHING
+            //
+            // The rectangle animates.
+            //
+            // The PanelWindow width DOES NOT animate with it anymore.
+            // ========================================================
 
             Behavior on width {
                 NumberAnimation {
@@ -861,10 +1048,23 @@ ShellRoot {
                 }
             }
 
+            // ========================================================
+            // TIDE-STYLE POINTER HANDLING
+            //
+            // MouseArea uses containsMouse instead of relying on
+            // immediate state changes from HoverHandler.
+            //
+            // z: -1 allows MusicPlayer controls above it to remain
+            // clickable.
+            // ========================================================
+
             MouseArea {
                 id: islandMouseArea
 
                 anchors.fill: parent
+
+                // Keep this below component controls so MusicPlayer's
+                // buttons remain clickable.
                 z: -1
 
                 hoverEnabled: true
@@ -881,12 +1081,15 @@ ShellRoot {
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
 
+                    // Hovering idle opens dashboard immediately.
                     if (islandBackground.islandState === "idle") {
+
                         islandWindow.hoverExpandedActive = false
                         islandBackground.islandState = "hover"
                         return
                     }
 
+                    // Hovering compact music starts expansion.
                     if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
                 }
@@ -901,6 +1104,8 @@ ShellRoot {
                     pressY = mouse.y
                     horizontalSwipe = false
 
+                    // Navigation is only allowed from compact/resting
+                    // islands. Expanded UI keeps its own controls.
                     swipeEligible =
                         islandBackground.islandState === "idle"
                         || islandBackground.islandState === "music-compact"
@@ -914,10 +1119,13 @@ ShellRoot {
                     const dx = mouse.x - pressX
                     const dy = mouse.y - pressY
 
+                    // Match Tide's intent: horizontal gestures navigate,
+                    // while predominantly vertical movement is ignored.
                     if (Math.abs(dy) > verticalTolerance)
                         return
 
-                    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+                    if (Math.abs(dx) > 12
+                        && Math.abs(dx) > Math.abs(dy)) {
                         horizontalSwipe = true
                         hoverExpandDelayTimer.stop()
                         hoverCollapseDelayTimer.stop()
@@ -931,7 +1139,10 @@ ShellRoot {
                     const dx = mouse.x - pressX
                     const dy = mouse.y - pressY
 
-                    if (Math.abs(dy) <= verticalTolerance && Math.abs(dx) >= swipeThreshold) {
+                    if (Math.abs(dy) <= verticalTolerance
+                        && Math.abs(dx) >= swipeThreshold) {
+
+                        // Swipe left = next, swipe right = previous.
                         if (dx < 0)
                             islandWindow.nextIsland()
                         else
@@ -955,122 +1166,277 @@ ShellRoot {
             Item {
                 anchors.fill: parent
 
+                // ----------------------------------------------------
+                // CLOCK
+                // ----------------------------------------------------
+
                 CustomComponents.Clock {
                     anchors.fill: parent
-                    textColor: islandWindow.colors.color15
-                    opacity: islandBackground.islandState === "idle" ? 1 : 0
-                    visible: opacity > 0
+
+                    textColor:
+                        islandWindow.colors.color15
+
+                    opacity:
+                        islandBackground.islandState === "idle"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation {
+                            duration: 200
+                        }
                     }
                 }
+
+                // ----------------------------------------------------
+                // OSD
+                // ----------------------------------------------------
 
                 CustomComponents.Osd {
                     anchors.fill: parent
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: islandWindow.colors.color0
-                    osdType: islandWindow.currentOsd
-                    osdValue: islandWindow.currentOsd === "volume"
+
+                    activeColor:
+                        islandWindow.colors.color4
+
+                    subtleColor:
+                        islandWindow.colors.color8
+
+                    backgroundColor:
+                        islandWindow.colors.color0
+
+                    osdType:
+                        islandWindow.currentOsd
+
+                    osdValue:
+                        islandWindow.currentOsd
+                        === "volume"
                         ? islandWindow.trackedVolume
-                        : (islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness)
-                    isMuted: islandWindow.isMuted
-                    opacity: islandBackground.islandState === "osd" ? 1 : 0
-                    visible: opacity > 0
+                        : (
+                            islandWindow.trackedBrightness
+                            === -1
+                            ? 0
+                            : islandWindow.trackedBrightness
+                        )
+
+                    isMuted:
+                        islandWindow.isMuted
+
+                    opacity:
+                        islandBackground.islandState === "osd"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation {
+                            duration: 200
+                        }
                     }
                 }
+
+                // ----------------------------------------------------
+                // DASHBOARD
+                // ----------------------------------------------------
 
                 CustomComponents.Dashboard {
                     anchors.fill: parent
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    backgroundColor: islandWindow.colors.color0
-                    subtleColor: islandWindow.colors.color8
-                    opacity: islandBackground.islandState === "hover" ? 1 : 0
-                    visible: opacity > 0
+
+                    textColor:
+                        islandWindow.colors.color15
+
+                    activeColor:
+                        islandWindow.colors.color4
+
+                    backgroundColor:
+                        islandWindow.colors.color0
+
+                    subtleColor:
+                        islandWindow.colors.color8
+
+                    opacity:
+                        islandBackground.islandState === "hover"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation {
+                            duration: 250
+                        }
                     }
                 }
+
+                // ----------------------------------------------------
+                // WORKSPACES
+                // ----------------------------------------------------
 
                 CustomComponents.Workspaces {
                     anchors.fill: parent
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    backgroundColor: islandWindow.colors.color0
-                    subtleColor: islandWindow.colors.color8
-                    opacity: islandBackground.islandState === "workspace-osd" ? 1 : 0
-                    visible: opacity > 0
+
+                    textColor:
+                        islandWindow.colors.color15
+
+                    activeColor:
+                        islandWindow.colors.color4
+
+                    backgroundColor:
+                        islandWindow.colors.color0
+
+                    subtleColor:
+                        islandWindow.colors.color8
+
+                    opacity:
+                        islandBackground.islandState
+                        === "workspace-osd"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation {
+                            duration: 200
+                        }
                     }
                 }
+
+                // ----------------------------------------------------
+                // INCOMING NOTIFICATION PILL
+                // ----------------------------------------------------
 
                 CustomComponents.NotificationPill {
-                    id: notificationPill
-
                     anchors.fill: parent
-                    notification: NotificationService.latestNotification
-                    expanded: islandBackground.islandState === "notification-expanded"
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
+                    notification:
+                        NotificationService.latestNotification
 
-                    opacity: (islandBackground.islandState === "notification-pill"
-                              || islandBackground.islandState === "notification-expanded") ? 1 : 0
-                    visible: opacity > 0
+                    expanded:
+                        islandBackground.islandState
+                        === "notification-expanded"
+
+                    textColor:
+                        islandWindow.colors.color15
+
+                    activeColor:
+                        islandWindow.colors.color4
+
+                    subtleColor:
+                        islandWindow.colors.color8
+
+                    opacity:
+                        (
+                            islandBackground.islandState
+                            === "notification-pill"
+                            || islandBackground.islandState
+                            === "notification-expanded"
+                        )
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220 }
+                        NumberAnimation {
+                            duration: 220
+                        }
                     }
                 }
+
+                // ----------------------------------------------------
+                // NOTIFICATION CENTER
+                // ----------------------------------------------------
 
                 CustomComponents.NotificationCenter {
                     anchors.fill: parent
-                    opacity: islandBackground.islandState === "notifications" ? 1 : 0
-                    visible: opacity > 0
+
+                    opacity:
+                        islandBackground.islandState === "notifications"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation {
+                            duration: 250
+                        }
                     }
                 }
 
+                // ----------------------------------------------------
+                // MUSIC PLAYER
+                // ----------------------------------------------------
+
                 CustomComponents.MusicPlayer {
                     anchors.fill: parent
-                    playerData: musicData
-                    isExpanded: islandBackground.islandState === "music-expanded"
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                    playerData:
+                        musicData
 
-                    opacity: (islandBackground.islandState === "music-compact"
-                              || islandBackground.islandState === "music-expanded") ? 1 : 0
-                    visible: opacity > 0
+                    isExpanded:
+                        islandBackground.islandState
+                        === "music-expanded"
+
+                    textColor:
+                        islandWindow.colors.color15
+
+                    activeColor:
+                        islandWindow.colors.color4
+
+                    subtleColor:
+                        islandWindow.colors.color8
+
+                    backgroundColor:
+                        Qt.rgba(1, 1, 1, 0.05)
+
+                    opacity:
+                        (
+                            islandBackground.islandState
+                            === "music-compact"
+                            || islandBackground.islandState
+                            === "music-expanded"
+                        )
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation {
+                            duration: 250
+                        }
                     }
 
                     onRequestExpand: {
                         hoverExpandDelayTimer.stop()
                         hoverCollapseDelayTimer.stop()
-                        islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = "music-expanded"
+
+                        islandWindow.hoverExpandedActive =
+                            false
+
+                        islandBackground.islandState =
+                            "music-expanded"
                     }
 
                     onRequestCompact: {
                         hoverExpandDelayTimer.stop()
-                        islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = "music-compact"
+
+                        islandWindow.hoverExpandedActive =
+                            false
+
+                        islandBackground.islandState =
+                            "music-compact"
                     }
                 }
             }
