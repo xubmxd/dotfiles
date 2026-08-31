@@ -1,19 +1,9 @@
 #!/bin/bash
 
-# ------------------------------------------------------------
-# Wallpaper Picker
-# ------------------------------------------------------------
-
-# Root wallpaper directory
 WALL_ROOT="$HOME/Pictures/wallpapers"
 
-# Cache
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
-
-# ------------------------------------------------------------
-# Re-index & Convert Function (Runs on startup & deletion)
-# ------------------------------------------------------------
 
 reindex_wallpapers() {
     local dir="$1"
@@ -23,14 +13,12 @@ reindex_wallpapers() {
     local prefix=$(echo "$folder_name" | tr ' ' '_')
     local count=1
 
-    # 1. Convert any stray .jpg/.jpeg/.gif to .png first using ffmpeg
     for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do
         [ -e "$f" ] || continue
         local ext="${f##*.}"
         ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
     done
 
-    # 2. Re-index and sequence all png files chronologically
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
         
@@ -41,18 +29,13 @@ reindex_wallpapers() {
         fi
 
         ((count++))
-        done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
+    done < <(find . -maxdepth 1 -type f -name "*.png" | sort)
 }
 
-# Run re-index on all category folders automatically when launcher starts
 for category_dir in "$WALL_ROOT"/*/; do
     [ -d "$category_dir" ] || continue
     reindex_wallpapers "$category_dir"
 done
-
-# ------------------------------------------------------------
-# Category Icons
-# ------------------------------------------------------------
 
 display_name() {
     case "$1" in
@@ -71,10 +54,6 @@ display_name() {
     esac
 }
 
-# ------------------------------------------------------------
-# Build Category List
-# ------------------------------------------------------------
-
 declare -A CATEGORY_MAP
 CATEGORY_LIST=""
 
@@ -89,10 +68,6 @@ done < <(find "$WALL_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name ".*" | sort)
 
 while true; do
 
-    # ------------------------------------------------------------
-    # Category Selection
-    # ------------------------------------------------------------
-
     SELECTED_DISPLAY=$(printf "%s" "$CATEGORY_LIST" |
         rofi -dmenu -i \
             -theme ~/.config/rofi/launcher.rasi \
@@ -102,10 +77,6 @@ while true; do
 
     CATEGORY="${CATEGORY_MAP[$SELECTED_DISPLAY]}"
     WALL_DIR="$WALL_ROOT/$CATEGORY"
-
-    # ------------------------------------------------------------
-    # Wallpaper Selection (Grid View)
-    # ------------------------------------------------------------
 
     SELECTED_NAME=$(
         find "$WALL_DIR" -type f -name "*.png" -printf '%T@ %P\n' |
@@ -129,16 +100,12 @@ while true; do
 
     ROFI_EXIT=$?
 
-    # Escape in wallpaper menu -> go back
     case "$ROFI_EXIT" in
     1)
-        # Escape
         continue
         ;;
 
     10)
-        # Shift+Delete
-
         [ -z "$SELECTED_NAME" ] && continue
 
         WALL="$WALL_DIR/$SELECTED_NAME"
@@ -168,49 +135,21 @@ while true; do
 
 done
 
-# ------------------------------------------------------------
-# Generate Colors
-# ------------------------------------------------------------
-
 wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
 
 matugen image "$WALL" \
     --source-color-index 0 \
     --type scheme-vibrant
 
-# ------------------------------------------------------------
-# Reload Eww (if running)
-# ------------------------------------------------------------
 if pgrep -x "eww" > /dev/null; then
     eww -c "$HOME/.config/eww/visualizer" reload
     eww -c "$HOME/.config/eww/lyrics" reload
 fi
-
-# ------------------------------------------------------------
-# Apply Wallpaper
-# ------------------------------------------------------------
 
 awww img "$WALL" \
     --transition-type any\
     --transition-step 90 \
     --transition-fps 60
 
-# ------------------------------------------------------------
-# Reload Active Status Bar (Waybar or Quickshell)
-# ------------------------------------------------------------
-
-if pgrep -x "waybar" > /dev/null; then
-    killall waybar && waybar &
-elif pgrep -x "quickshell" > /dev/null; then
-    true
-fi
-
-# ------------------------------------------------------------
-# Do the remaining process
-# ------------------------------------------------------------
-
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
-
-# THEME=$(spicetify config current_theme)
-# pywal-spicetify "$THEME"
