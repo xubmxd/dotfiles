@@ -4,7 +4,9 @@ import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Hyprland
+import Quickshell.Services.Notifications
 import "components" as CustomComponents
+import "services"
 
 ShellRoot {
     PanelWindow {
@@ -159,18 +161,27 @@ ShellRoot {
         // automatically wrap around.
         // ============================================================
 
-        property var islandOrder: ["clock", "music"]
+        property var islandOrder: ["clock", "music", "notifications"]
         property int selectedIslandIndex: 0
+
+        // Remember whether Music was selected when MPRIS briefly loses
+        // its track during a track transition.
+        property bool restoreMusicAfterTrackChange: false
 
         property string selectedIsland:
             islandOrder.length > 0
             ? islandOrder[selectedIslandIndex]
             : "clock"
 
-        property string restingState:
-            selectedIsland === "music" && musicData.hasTrack
-            ? "music-compact"
-            : "idle"
+        property string restingState: {
+            if (selectedIsland === "music" && musicData.hasTrack)
+                return "music-compact"
+
+            if (selectedIsland === "notifications")
+                return "notifications"
+
+            return "idle"
+        }
 
         function normalizeIslandIndex(index) {
             const count = islandOrder.length
@@ -182,9 +193,8 @@ ShellRoot {
 
         function showSelectedIsland() {
             // Music is unavailable when no real track exists.
-            if (selectedIsland === "music" && !musicData.hasTrack) {
+            if (selectedIsland === "music" && !musicData.hasTrack)
                 selectedIslandIndex = 0
-            }
 
             hoverExpandDelayTimer.stop()
             hoverCollapseDelayTimer.stop()
@@ -201,9 +211,12 @@ ShellRoot {
 
             let next = normalizeIslandIndex(selectedIslandIndex + 1)
 
-            // Skip unavailable music rather than leaving an empty island.
-            if (islandOrder[next] === "music" && !musicData.hasTrack)
-                next = 0
+            // Skip unavailable islands without assuming their position.
+            while (islandOrder[next] === "music"
+                   && !musicData.hasTrack
+                   && next !== selectedIslandIndex) {
+                next = normalizeIslandIndex(next + 1)
+            }
 
             selectedIslandIndex = next
             showSelectedIsland()
@@ -215,9 +228,12 @@ ShellRoot {
 
             let previous = normalizeIslandIndex(selectedIslandIndex - 1)
 
-            // Skip unavailable music rather than leaving an empty island.
-            if (islandOrder[previous] === "music" && !musicData.hasTrack)
-                previous = 0
+            // Skip unavailable islands without assuming their position.
+            while (islandOrder[previous] === "music"
+                   && !musicData.hasTrack
+                   && previous !== selectedIslandIndex) {
+                previous = normalizeIslandIndex(previous - 1)
+            }
 
             selectedIslandIndex = previous
             showSelectedIsland()
@@ -229,10 +245,29 @@ ShellRoot {
             function onHasTrackChanged() {
                 const current = islandBackground.islandState
 
-                // If music disappears while it is selected, fall back
-                // to Clock.
-                if (!musicData.hasTrack && islandWindow.selectedIsland === "music")
+                // During a track change some MPRIS players briefly report
+                // no track. Remember that the user had Music selected, then
+                // temporarily fall back to Clock.
+                if (!musicData.hasTrack
+                    && islandWindow.selectedIsland === "music") {
+
+                    islandWindow.restoreMusicAfterTrackChange = true
                     islandWindow.selectedIslandIndex = 0
+                }
+
+                // As soon as the next track becomes available, restore the
+                // user's previous Music selection.
+                if (musicData.hasTrack
+                    && islandWindow.restoreMusicAfterTrackChange) {
+
+                    const musicIndex =
+                        islandWindow.islandOrder.indexOf("music")
+
+                    if (musicIndex >= 0)
+                        islandWindow.selectedIslandIndex = musicIndex
+
+                    islandWindow.restoreMusicAfterTrackChange = false
+                }
 
                 // Only update resting states. Don't interrupt Dashboard,
                 // OSD or other transient/expanded UI.
@@ -247,6 +282,31 @@ ShellRoot {
         }
 
                 // ============================================================
+        // NOTIFICATIONS
+        //
+        // NotificationService owns the bounded in-memory history.
+        // The server only receives notifications and hands them over.
+        // ============================================================
+
+        NotificationServer {
+            id: notificationServer
+
+            bodySupported: true
+
+            onNotification: function(notification) {
+                notification.tracked = true
+                NotificationService.addNotification(notification)
+
+                console.log(
+                    "[Notifications] Received:",
+                    notification.appName,
+                    "-",
+                    notification.summary
+                )
+            }
+        }
+
+        // ============================================================
         // IPC / KEYBINDS
         //
         // These functions are called externally using:
@@ -314,6 +374,41 @@ ShellRoot {
                 islandWindow.hoverExpandedActive = false
 
                 islandBackground.islandState = "music-compact"
+            }
+
+            // --------------------------------------------------------
+            // NOTIFICATIONS
+            // --------------------------------------------------------
+
+            function openNotifications(): void {
+                const notificationIndex =
+                    islandWindow.islandOrder.indexOf("notifications")
+
+                if (notificationIndex >= 0)
+                    islandWindow.selectedIslandIndex = notificationIndex
+
+                islandWindow.showSelectedIsland()
+            }
+
+            function closeNotifications(): void {
+                if (islandBackground.islandState === "notifications") {
+                    const clockIndex = islandWindow.islandOrder.indexOf("clock")
+                    if (clockIndex >= 0)
+                        islandWindow.selectedIslandIndex = clockIndex
+
+                    islandWindow.showSelectedIsland()
+                }
+            }
+
+            function toggleNotifications(): void {
+                if (islandBackground.islandState === "notifications")
+                    closeNotifications()
+                else
+                    openNotifications()
+            }
+
+            function clearNotifications(): void {
+                NotificationService.clearAll()
             }
 
             // --------------------------------------------------------
@@ -701,6 +796,9 @@ ShellRoot {
                 case "music-expanded":
                     return 380
 
+                case "notifications":
+                    return 430
+
                 default:
                     return 120
                 }
@@ -731,6 +829,9 @@ ShellRoot {
                 case "music-expanded":
                     return 440
 
+                case "notifications":
+                    return 500
+
                 default:
                     return 40
                 }
@@ -760,6 +861,9 @@ ShellRoot {
 
                 case "music-expanded":
                     return 32
+
+                case "notifications":
+                    return 28
 
                 default:
                     return 20
@@ -871,6 +975,7 @@ ShellRoot {
                     swipeEligible =
                         islandBackground.islandState === "idle"
                         || islandBackground.islandState === "music-compact"
+                        || islandBackground.islandState === "notifications"
                 }
 
                 onPositionChanged: function(mouse) {
@@ -1065,6 +1170,28 @@ ShellRoot {
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 200
+                        }
+                    }
+                }
+
+                // ----------------------------------------------------
+                // NOTIFICATION CENTER
+                // ----------------------------------------------------
+
+                CustomComponents.NotificationCenter {
+                    anchors.fill: parent
+
+                    opacity:
+                        islandBackground.islandState === "notifications"
+                        ? 1
+                        : 0
+
+                    visible:
+                        opacity > 0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 250
                         }
                     }
                 }
