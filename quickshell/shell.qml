@@ -1009,7 +1009,6 @@ ShellRoot {
                     }
                 }
 
-                // Updated with id: dashboardComponent and robust visibility/opacity state binding
                 CustomComponents.Dashboard {
                     id: dashboardComponent
                     anchors.fill: parent
@@ -1018,9 +1017,12 @@ ShellRoot {
                     backgroundColor: islandWindow.colors.color0
                     subtleColor: islandWindow.colors.color8
                     
-                    // Reverted to clean islandState tracking since "hover" encompasses all dashboard sub-views
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
                     visible: opacity > 0
+                    
+                    onRequestClose: {
+                        islandBackground.islandState = islandWindow.restingState;
+                    }
                     
                     displayBrightness: islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness
                     onBrightnessChanged: (val) => {

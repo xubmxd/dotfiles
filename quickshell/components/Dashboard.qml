@@ -19,13 +19,19 @@ Item {
     onVisibleChanged: {
         if (!visible) {
             currentSubView = "main"
+            wifiConnectionState = "password"
+            targetWifiSsid = ""
+            wifiConnectionStatus = ""
         }
     }
+
+    signal requestClose()
 
     // ============================================================
     // STATE PROPERTIES & SIGNALS
     // ============================================================
     property string currentSubView: "main" // "main", "wifi", "bt", "wifi-password"
+    property string wifiConnectionState: "password" // "password", "connecting", "success", "error"
     property string targetWifiSsid: ""
     property string wifiConnectionStatus: ""
 
@@ -86,7 +92,6 @@ Item {
         }
     }
 
-    // Parses In-Use, SSID, Security, and Signal
     Process {
         id: wifiListProc
         command: ["sh", "-c", "nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL dev wifi list | grep -v '^:$' | head -n 15"]
@@ -131,16 +136,33 @@ Item {
         }
     }
 
-    // Connection Processes
+    // Real Connection Process with Exit Code Detection
     Process {
         id: wifiConnectProc
         property string ssidName: ""
         property string wifiPassword: ""
         command: wifiPassword !== "" ? ["nmcli", "device", "wifi", "connect", ssidName, "password", wifiPassword] : ["nmcli", "device", "wifi", "connect", ssidName]
-        onExited: {
+        
+        onExited: (exitCode, exitStatus) => {
             dashboardRoot.wifiConnectionStatus = "";
             wifiProc.running = true;
-            dashboardRoot.currentSubView = "wifi";
+            if (exitCode === 0) {
+                dashboardRoot.wifiConnectionState = "success";
+                successTimer.restart();
+            } else {
+                dashboardRoot.wifiConnectionState = "error";
+            }
+        }
+    }
+
+    Timer {
+        id: successTimer
+        interval: 1800
+        repeat: false
+        onTriggered: {
+            dashboardRoot.wifiConnectionState = "password";
+            dashboardRoot.currentSubView = "main";
+            dashboardRoot.requestClose();
         }
     }
 
@@ -383,9 +405,12 @@ Item {
                             onClicked: {
                                 if (secured && !inUse) {
                                     dashboardRoot.targetWifiSsid = ssid;
+                                    dashboardRoot.wifiConnectionState = "password";
                                     dashboardRoot.currentSubView = "wifi-password";
                                 } else {
-                                    dashboardRoot.wifiConnectionStatus = "Connecting to " + ssid + "...";
+                                    dashboardRoot.wifiConnectionState = "connecting";
+                                    dashboardRoot.targetWifiSsid = ssid;
+                                    dashboardRoot.currentSubView = "wifi-password";
                                     wifiConnectProc.ssidName = ssid;
                                     wifiConnectProc.wifiPassword = "";
                                     wifiConnectProc.running = true;
@@ -401,110 +426,218 @@ Item {
                         }
                     }
                 }
-                
-                Text {
-                    text: dashboardRoot.wifiConnectionStatus
-                    color: dashboardRoot.subtleColor
-                    font.family: "sans-serif"; font.pixelSize: 12
-                    Layout.alignment: Qt.AlignHCenter
-                    visible: text !== ""
-                }
             }
         }
 
         // ------------------------------------------------------------
-        // WI-FI PASSWORD PROMPT SUB-VIEW
+        // WI-FI FLOW & DYNAMIC ISLAND STATUS SUB-VIEW
         // ------------------------------------------------------------
         FocusScope {
-            id: wifiPasswordView
+            id: wifiFlowView
             width: parent.width; height: parent.height
             visible: dashboardRoot.currentSubView === "wifi-password"
             x: dashboardRoot.currentSubView === "wifi-password" ? 0 : width
-            focus: visible
+            focus: visible && dashboardRoot.wifiConnectionState === "password"
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
             onVisibleChanged: {
-                if (visible) {
+                if (visible && dashboardRoot.wifiConnectionState === "password") {
                     passwordInput.forceActiveFocus();
                 }
             }
 
-            ColumnLayout {
-                anchors.fill: parent; anchors.margins: 20; spacing: 16
+            Item {
+                anchors.fill: parent
+                anchors.margins: 20
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    Rectangle {
-                        width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
-                    }
-                    Text { text: "Enter Password"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
-                }
+                // State 1: Password Entry Form
+                Item {
+                    id: passwordFormContainer
+                    anchors.fill: parent
+                    opacity: dashboardRoot.wifiConnectionState === "password" ? 1 : 0
+                    scale: dashboardRoot.wifiConnectionState === "password" ? 1 : 0.95
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
-                Text {
-                    text: "Network: " + dashboardRoot.targetWifiSsid
-                    color: dashboardRoot.subtleColor
-                    font.family: "sans-serif"; font.pixelSize: 13
-                }
+                    ColumnLayout {
+                        anchors.fill: parent; spacing: 16
 
-                // Password Input Box Container
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
-                    color: Qt.rgba(1, 1, 1, 0.08)
-                    border.color: Qt.rgba(1, 1, 1, 0.2)
-                    border.width: 1
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.IBeamCursor
-                        onClicked: passwordInput.forceActiveFocus()
-                    }
-
-                    TextInput {
-                        id: passwordInput
-                        anchors.fill: parent; anchors.margins: 12
-                        color: dashboardRoot.textColor
-                        font.family: "sans-serif"; font.pixelSize: 14
-                        echoMode: TextInput.Password
-                        focus: true
-
-                        onActiveFocusChanged: {
-                            console.log("Password input active focus:", activeFocus)
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Rectangle {
+                                width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
+                                Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
+                            }
+                            Text { text: "Enter Password"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
                         }
 
                         Text {
-                            text: "Enter network password..."
+                            text: "Network: " + dashboardRoot.targetWifiSsid
                             color: dashboardRoot.subtleColor
-                            font.family: "sans-serif"; font.pixelSize: 14
-                            visible: !passwordInput.text && !passwordInput.activeFocus
-                            anchors.verticalCenter: parent.verticalCenter
+                            font.family: "sans-serif"; font.pixelSize: 13
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                            color: Qt.rgba(1, 1, 1, 0.08)
+                            border.color: Qt.rgba(1, 1, 1, 0.2); border.width: 1
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.IBeamCursor
+                                onClicked: passwordInput.forceActiveFocus()
+                            }
+
+                            TextInput {
+                                id: passwordInput
+                                anchors.fill: parent; anchors.margins: 12
+                                color: dashboardRoot.textColor
+                                font.family: "sans-serif"; font.pixelSize: 14
+                                echoMode: TextInput.Password
+                                focus: dashboardRoot.wifiConnectionState === "password"
+
+                                onActiveFocusChanged: {
+                                    console.log("[WiFi Password] activeFocus:", activeFocus)
+                                }
+
+                                Text {
+                                    text: "Enter network password..."
+                                    color: dashboardRoot.subtleColor
+                                    font.family: "sans-serif"; font.pixelSize: 14
+                                    visible: !passwordInput.text && !passwordInput.activeFocus
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
+
+                        Item { Layout.fillHeight: true }
+
+                        Rectangle {
+                            Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                            color: "#3b82f6"
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Connect"
+                                color: "white"
+                                font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Bold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: dashboardRoot.wifiConnectionState === "password" ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                enabled: dashboardRoot.wifiConnectionState === "password"
+                                onClicked: {
+                                    dashboardRoot.wifiConnectionState = "connecting";
+                                    wifiConnectProc.ssidName = dashboardRoot.targetWifiSsid;
+                                    wifiConnectProc.wifiPassword = passwordInput.text;
+                                    wifiConnectProc.running = true;
+                                    passwordInput.text = ""; // Clear password immediately from memory
+                                }
+                            }
                         }
                     }
                 }
 
-                Item { Layout.fillHeight: true }
+                // States 2, 3, 4: Dynamic Island System Status Display (Connecting, Success, Error)
+                Item {
+                    id: statusDisplayContainer
+                    anchors.fill: parent
+                    opacity: dashboardRoot.wifiConnectionState !== "password" ? 1 : 0
+                    scale: dashboardRoot.wifiConnectionState !== "password" ? 1 : 1.05
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 250 } }
+                    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
-                // Connect Button
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
-                    color: "#3b82f6"
-                    
-                    Text {
+                    ColumnLayout {
                         anchors.centerIn: parent
-                        text: "Connect"
-                        color: "white"
-                        font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Bold
-                    }
+                        spacing: 10
 
-                    MouseArea {
-                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            dashboardRoot.wifiConnectionStatus = "Connecting to " + dashboardRoot.targetWifiSsid + "...";
-                            wifiConnectProc.ssidName = dashboardRoot.targetWifiSsid;
-                            wifiConnectProc.wifiPassword = passwordInput.text;
-                            wifiConnectProc.running = true;
-                            passwordInput.text = "";
+                        Item {
+                            Layout.alignment: Qt.AlignHCenter
+                            width: 36; height: 36
+
+                            // Spinner for Connecting state
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 30; height: 30; radius: 15
+                                color: "transparent"
+                                border.color: "#3b82f6"
+                                border.width: 3
+                                visible: dashboardRoot.wifiConnectionState === "connecting"
+
+                                RotationAnimator on rotation {
+                                    running: dashboardRoot.wifiConnectionState === "connecting"
+                                    from: 0; to: 360
+                                    duration: 1000
+                                    loops: Animation.Infinite
+                                }
+                            }
+
+                            // Checkmark for Success state
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                color: "#22c55e"
+                                font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 22; font.weight: Font.Bold
+                                visible: dashboardRoot.wifiConnectionState === "success"
+                            }
+
+                            // Exclamation for Error state
+                            Text {
+                                anchors.centerIn: parent
+                                text: "!"
+                                color: "#ef4444"
+                                font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 22; font.weight: Font.Bold
+                                visible: dashboardRoot.wifiConnectionState === "error"
+                            }
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: {
+                                if (dashboardRoot.wifiConnectionState === "connecting") return "Connecting...";
+                                if (dashboardRoot.wifiConnectionState === "success") return "Connected";
+                                if (dashboardRoot.wifiConnectionState === "error") return "Connection Failed";
+                                return "";
+                            }
+                            color: dashboardRoot.textColor
+                            font.family: "sans-serif"; font.pixelSize: 15; font.weight: Font.Bold
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: dashboardRoot.targetWifiSsid
+                            color: dashboardRoot.subtleColor
+                            font.family: "sans-serif"; font.pixelSize: 12
+                        }
+
+                        // Try Again Action on Error
+                        Rectangle {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: 6
+                            width: 90; height: 30; radius: 15
+                            color: Qt.rgba(1, 1, 1, 0.15)
+                            visible: dashboardRoot.wifiConnectionState === "error"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Try Again"
+                                color: dashboardRoot.textColor
+                                font.family: "sans-serif"; font.pixelSize: 12; font.weight: Font.Medium
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    dashboardRoot.wifiConnectionState = "password";
+                                    passwordInput.text = "";
+                                    passwordInput.forceActiveFocus();
+                                }
+                            }
                         }
                     }
                 }
