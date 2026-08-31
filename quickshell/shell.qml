@@ -16,6 +16,9 @@ ShellRoot {
         WlrLayershell.namespace: "custom-island"
         WlrLayershell.exclusiveZone: 40
 
+        // Dynamically request keyboard focus from Hyprland only when entering a password
+        focusable: dashboardComponent.currentSubView === "wifi-password"
+
         color: "transparent"
 
         // ============================================================
@@ -1006,12 +1009,16 @@ ShellRoot {
                     }
                 }
 
+                // Updated with id: dashboardComponent and robust visibility/opacity state binding
                 CustomComponents.Dashboard {
+                    id: dashboardComponent
                     anchors.fill: parent
                     textColor: islandWindow.colors.color15
                     activeColor: islandWindow.colors.color4
                     backgroundColor: islandWindow.colors.color0
                     subtleColor: islandWindow.colors.color8
+                    
+                    // Reverted to clean islandState tracking since "hover" encompasses all dashboard sub-views
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
                     visible: opacity > 0
                     
