@@ -531,6 +531,7 @@ ShellRoot {
         // ============================================================
 
         property real trackedBrightness: -1
+        property real pendingBrightness: -1
         property string currentOsd: "volume"
         property bool suppressOsd: true
         property var focusedWorkspace: Hyprland.focusedWorkspace
@@ -627,6 +628,20 @@ ShellRoot {
                             osdTimer.restart()
                         }
                     }
+                }
+            }
+        }
+
+        Process {
+            id: brightnessSetProc
+            property real targetValue: 0
+            command: ["brightnessctl", "s", Math.round(targetValue * 100) + "%"]
+            
+            onExited: {
+                if (islandWindow.pendingBrightness >= 0) {
+                    targetValue = islandWindow.pendingBrightness;
+                    islandWindow.pendingBrightness = -1;
+                    running = true;
                 }
             }
         }
@@ -778,7 +793,7 @@ ShellRoot {
                 case "idle":
                     return 40
                 case "hover":
-                    return 336 // Compressed mathematically perfect height
+                    return 336
                 case "osd":
                     return 60
                 case "workspace-osd":
@@ -879,12 +894,7 @@ ShellRoot {
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
 
-                    if (islandBackground.islandState === "idle") {
-                        islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = "hover"
-                        return
-                    }
-
+                    // Only expand music automatically on hover
                     if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
                 }
@@ -939,6 +949,20 @@ ShellRoot {
                     horizontalSwipe = false
                     swipeEligible = false
                 }
+                
+                // New click handler to specifically open the dashboard or notification pill
+                onClicked: function(mouse) {
+                    if (horizontalSwipe) return
+
+                    if (islandBackground.islandState === "idle") {
+                        islandWindow.hoverExpandedActive = false
+                        islandBackground.islandState = "hover"
+                    } else if (islandBackground.islandState === "hover") {
+                        islandBackground.islandState = islandWindow.restingState
+                    } else if (islandBackground.islandState === "notification-pill") {
+                        islandWindow.expandNotificationPill()
+                    }
+                }
 
                 onCanceled: {
                     horizontalSwipe = false
@@ -990,6 +1014,18 @@ ShellRoot {
                     subtleColor: islandWindow.colors.color8
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
                     visible: opacity > 0
+                    
+                    displayBrightness: islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness
+                    onBrightnessChanged: (val) => {
+                        islandWindow.trackedBrightness = val; 
+                        
+                        if (brightnessSetProc.running) {
+                            islandWindow.pendingBrightness = val; 
+                        } else {
+                            brightnessSetProc.targetValue = val;
+                            brightnessSetProc.running = true;
+                        }
+                    }
 
                     Behavior on opacity {
                         NumberAnimation { duration: 250 }

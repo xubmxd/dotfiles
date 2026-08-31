@@ -13,7 +13,7 @@ Item {
     property color subtleColor: "#888888"
 
     implicitWidth: 380
-    implicitHeight: 336 // Mathematically perfected height based on the exact spacing below
+    implicitHeight: 336 
 
     // ============================================================
     // STATE PROPERTIES & SIGNALS
@@ -60,7 +60,7 @@ Item {
 
     Process {
         id: batProc
-        command: ["sh", "-c", "cat /sys/class/power_supply/BAT*/capacity | head -n 1 && cat /sys/class/power_supply/BAT*/status | head -n 1"]
+        command: ["sh", "-c", "awk '{print int($0)}' /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n 1 && cat /sys/class/power_supply/BAT*/status | head -n 1"]
         stdout: StdioCollector {
             onStreamFinished: {
                 var lines = String(text).trim().split("\n");
@@ -136,8 +136,8 @@ Item {
         // ============================================================
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 92 // Increased slightly to give the elements breathing room
-            spacing: 16 // Mathematically matches the outer margins
+            Layout.preferredHeight: 92
+            spacing: 16
 
             // ------------------ Wi-Fi Card ------------------
             Rectangle {
@@ -146,21 +146,11 @@ Item {
                 radius: 18
                 color: Qt.rgba(1, 1, 1, 0.08)
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        dashboardRoot.wifiEnabled = !dashboardRoot.wifiEnabled; 
-                        wifiToggleProc.targetState = dashboardRoot.wifiEnabled;
-                        wifiToggleProc.running = true;
-                    }
-                }
-
                 RowLayout {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.margins: 14 // Consistent internal padding
+                    anchors.margins: 14 
                     
                     Rectangle {
                         Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 14
@@ -169,7 +159,7 @@ Item {
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
                     
-                    Item { Layout.fillWidth: true } // Dynamically pushes the switch to the right
+                    Item { Layout.fillWidth: true } 
                     
                     Rectangle {
                         Layout.preferredWidth: 38; Layout.preferredHeight: 22; radius: 11
@@ -181,6 +171,17 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter 
                             x: dashboardRoot.wifiEnabled ? 18 : 2
                             Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                        }
+
+                        // Isolated MouseArea for exactly the toggle switch
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                dashboardRoot.wifiEnabled = !dashboardRoot.wifiEnabled; 
+                                wifiToggleProc.targetState = dashboardRoot.wifiEnabled;
+                                wifiToggleProc.running = true;
+                            }
                         }
                     }
                 }
@@ -209,16 +210,6 @@ Item {
                 radius: 18
                 color: Qt.rgba(1, 1, 1, 0.08)
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        dashboardRoot.btEnabled = !dashboardRoot.btEnabled;
-                        btToggleProc.targetState = dashboardRoot.btEnabled;
-                        btToggleProc.running = true;
-                    }
-                }
-
                 RowLayout {
                     anchors.top: parent.top
                     anchors.left: parent.left
@@ -232,7 +223,7 @@ Item {
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
                     
-                    Item { Layout.fillWidth: true } // Dynamically pushes the switch to the right
+                    Item { Layout.fillWidth: true } 
                     
                     Rectangle {
                         Layout.preferredWidth: 38; Layout.preferredHeight: 22; radius: 11
@@ -244,6 +235,17 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter 
                             x: dashboardRoot.btEnabled ? 18 : 2
                             Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                        }
+
+                        // Isolated MouseArea for exactly the toggle switch
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                dashboardRoot.btEnabled = !dashboardRoot.btEnabled;
+                                btToggleProc.targetState = dashboardRoot.btEnabled;
+                                btToggleProc.running = true;
+                            }
                         }
                     }
                 }
@@ -303,21 +305,27 @@ Item {
             }
             
             Rectangle {
+                id: brightnessTrack
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.margins: 12
                 anchors.bottomMargin: 10
-                height: 28
+                height: 28 
                 radius: 14
                 color: Qt.rgba(1, 1, 1, 0.1)
 
+                property real dragBrightness: dashboardRoot.displayBrightness
+                // Decouple UI from system polling during drag for 0ms lag
+                property real activeBrightness: brightnessMouse.pressed ? dragBrightness : dashboardRoot.displayBrightness
+
                 Rectangle {
-                    width: Math.max(height, parent.width * dashboardRoot.displayBrightness)
+                    width: Math.max(height, parent.width * brightnessTrack.activeBrightness)
                     height: parent.height
                     radius: 14
                     color: dashboardRoot.activeColor
-                    Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    // Only animate when we aren't actively dragging
+                    Behavior on width { NumberAnimation { duration: brightnessMouse.pressed ? 0 : 150; easing.type: Easing.OutCubic } }
                     
                     Rectangle {
                         width: parent.height
@@ -331,13 +339,19 @@ Item {
                 }
 
                 MouseArea {
+                    id: brightnessMouse
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onPositionChanged: (mouse) => {
-                        if (pressed) dashboardRoot.brightnessChanged(Math.max(0, Math.min(1, mouse.x / width)))
+                        if (pressed) {
+                            // Minimum 1% so screen doesn't completely turn off
+                            brightnessTrack.dragBrightness = Math.max(0.01, Math.min(1, mouse.x / width))
+                            dashboardRoot.brightnessChanged(brightnessTrack.dragBrightness)
+                        }
                     }
                     onPressed: (mouse) => {
-                        dashboardRoot.brightnessChanged(Math.max(0, Math.min(1, mouse.x / width)))
+                        brightnessTrack.dragBrightness = Math.max(0.01, Math.min(1, mouse.x / width))
+                        dashboardRoot.brightnessChanged(brightnessTrack.dragBrightness)
                     }
                 }
             }
@@ -373,18 +387,22 @@ Item {
                 anchors.right: parent.right
                 anchors.margins: 12
                 anchors.bottomMargin: 10
-                height: 28
+                height: 28 
                 radius: 14
                 color: Qt.rgba(1, 1, 1, 0.1)
 
-                property real vol: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio && Pipewire.defaultAudioSink.audio.volume !== undefined ? Pipewire.defaultAudioSink.audio.volume : 0
+                property real backendVol: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio && Pipewire.defaultAudioSink.audio.volume !== undefined ? Pipewire.defaultAudioSink.audio.volume : 0
+                property real dragVol: backendVol
+                // Decouple UI from system polling during drag for 0ms lag
+                property real activeVol: volMouse.pressed ? dragVol : backendVol
 
                 Rectangle {
-                    width: Math.max(height, parent.width * parent.vol)
+                    width: Math.max(height, parent.width * volumeTrack.activeVol)
                     height: parent.height
                     radius: 14
                     color: dashboardRoot.activeColor
-                    Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    // Only animate when we aren't actively dragging
+                    Behavior on width { NumberAnimation { duration: volMouse.pressed ? 0 : 150; easing.type: Easing.OutCubic } }
                     
                     Rectangle {
                         width: parent.height
@@ -398,16 +416,19 @@ Item {
                 }
                 
                 MouseArea {
+                    id: volMouse
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onPositionChanged: (mouse) => {
                         if (pressed && Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio) {
-                            Pipewire.defaultAudioSink.audio.volume = Math.max(0, Math.min(1, mouse.x / width))
+                            volumeTrack.dragVol = Math.max(0, Math.min(1, mouse.x / width))
+                            Pipewire.defaultAudioSink.audio.volume = volumeTrack.dragVol
                         }
                     }
                     onPressed: (mouse) => {
                         if (Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio) {
-                            Pipewire.defaultAudioSink.audio.volume = Math.max(0, Math.min(1, mouse.x / width))
+                            volumeTrack.dragVol = Math.max(0, Math.min(1, mouse.x / width))
+                            Pipewire.defaultAudioSink.audio.volume = volumeTrack.dragVol
                         }
                     }
                 }
