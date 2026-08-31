@@ -741,7 +741,7 @@ ShellRoot {
             property string islandState: "idle"
 
             // --------------------------------------------------------
-            // TARGET WIDTH (DYNAMIC FOR NOTIFICATIONS & MUSIC)
+            // TARGET WIDTH
             // --------------------------------------------------------
 
             readonly property real targetWidth: {
@@ -754,7 +754,6 @@ ShellRoot {
                     return 300
                 case "workspace-osd":
                     return 260
-                // Reads the dynamic implicit width based on track info
                 case "music-compact":
                     return musicPlayerItem.compactImplicitWidth
                 case "music-expanded":
@@ -771,7 +770,7 @@ ShellRoot {
             }
 
             // --------------------------------------------------------
-            // TARGET HEIGHT (DYNAMIC FOR NOTIFICATIONS)
+            // TARGET HEIGHT
             // --------------------------------------------------------
 
             readonly property real targetHeight: {
@@ -779,7 +778,7 @@ ShellRoot {
                 case "idle":
                     return 40
                 case "hover":
-                    return 125
+                    return 336 // Compressed mathematically perfect height
                 case "osd":
                     return 60
                 case "workspace-osd":
@@ -787,7 +786,7 @@ ShellRoot {
                 case "music-compact":
                     return 40
                 case "music-expanded":
-                    return 440
+                    return 200
                 case "notifications":
                     return 500
                 case "notification-pill":
@@ -1050,6 +1049,9 @@ ShellRoot {
 
                     textColor: islandWindow.colors.color15
                     activeColor: islandWindow.colors.color4
+                    
+                    accentColor: islandWindow.colors.color5 
+                    
                     subtleColor: islandWindow.colors.color8
                     backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
