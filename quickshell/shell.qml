@@ -741,7 +741,7 @@ ShellRoot {
             property string islandState: "idle"
 
             // --------------------------------------------------------
-            // TARGET WIDTH (DYNAMIC FOR NOTIFICATIONS)
+            // TARGET WIDTH (DYNAMIC FOR NOTIFICATIONS & MUSIC)
             // --------------------------------------------------------
 
             readonly property real targetWidth: {
@@ -754,13 +754,13 @@ ShellRoot {
                     return 300
                 case "workspace-osd":
                     return 260
+                // Reads the dynamic implicit width based on track info
                 case "music-compact":
-                    return 250
+                    return musicPlayerItem.compactImplicitWidth
                 case "music-expanded":
                     return 380
                 case "notifications":
                     return 430
-                // Reads the dynamic implicit width based on content
                 case "notification-pill":
                     return notificationPill.implicitWidth
                 case "notification-expanded":
@@ -790,7 +790,6 @@ ShellRoot {
                     return 440
                 case "notifications":
                     return 500
-                // Reads the dynamic implicit height based on content
                 case "notification-pill":
                     return notificationPill.implicitHeight
                 case "notification-expanded":
@@ -815,7 +814,7 @@ ShellRoot {
                 case "workspace-osd":
                     return 25
                 case "music-compact":
-                    return 32
+                    return 20
                 case "music-expanded":
                     return 32
                 case "notifications":
@@ -1043,6 +1042,8 @@ ShellRoot {
                 }
 
                 CustomComponents.MusicPlayer {
+                    id: musicPlayerItem
+
                     anchors.fill: parent
                     playerData: musicData
                     isExpanded: islandBackground.islandState === "music-expanded"

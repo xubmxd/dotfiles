@@ -17,9 +17,36 @@ Item {
     signal requestCompact()
 
     // ============================================================
+    // DYNAMIC SIZING CALCULATIONS
+    // ============================================================
+
+    Text {
+        id: titleMeasure
+        visible: false
+        text: root.playerData ? root.playerData.trackTitle : ""
+        font.family: "sans-serif"
+        font.pixelSize: 11
+        font.weight: Font.DemiBold
+    }
+
+    Text {
+        id: artistMeasure
+        visible: false
+        text: root.playerData ? root.playerData.trackArtist : ""
+        font.family: "sans-serif"
+        font.pixelSize: 9
+        font.weight: Font.Medium
+    }
+
+    // 18(left) + 30(art) + 9(gap) + 8(gap) + 32(btn) + 4(right)
+    readonly property real compactFixedHorizontalSpace: 101 
+    readonly property real compactContentWidth: Math.max(titleMeasure.implicitWidth, artistMeasure.implicitWidth)
+    
+    // Minimum 180px, maximum 360px (to stay slightly smaller than the 380px expanded view)
+    readonly property real compactImplicitWidth: Math.max(180, Math.min(360, compactFixedHorizontalSpace + compactContentWidth))
+
+    // ============================================================
     // COMPACT VIEW
-    //
-    // Designed for the 40px-high navigated music island.
     // ============================================================
 
     Item {
@@ -194,9 +221,6 @@ Item {
 
         // --------------------------------------------------------
         // CLICK TO EXPAND
-        //
-        // Kept behind the controls so the play button remains
-        // independently clickable.
         // --------------------------------------------------------
 
         MouseArea {
@@ -213,8 +237,6 @@ Item {
 
     // ============================================================
     // EXPANDED VIEW
-    //
-    // Original functionality preserved.
     // ============================================================
 
     Item {
@@ -247,8 +269,8 @@ Item {
 
                 Layout.alignment: Qt.AlignHCenter
 
-                width: 220
-                height: 220
+                width: 180
+                height: 180
 
                 Image {
                     id: expandedArtImage
