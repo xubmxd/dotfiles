@@ -102,7 +102,7 @@ ShellRoot {
         }
 
         // ============================================================
-        // ISLAND NAVIGATOR
+        // ISLAND NAVIGATOR (ChatGPT Fixes)
         // ============================================================
 
         property var islandOrder: {
@@ -111,17 +111,217 @@ ShellRoot {
             if (musicData.hasTrack)
                 islands.push("music")
 
+            // Notifications only participate in rotation when there
+            // is actually at least one notification.
             if (NotificationService.notifications.length > 0)
                 islands.push("notifications")
 
             return islands
         }
+
         property int selectedIslandIndex: 0
 
-        property bool restoreMusicAfterTrackChange: false
+        property string selectedIsland: {
+            if (islandOrder.length === 0)
+                return "clock"
+
+            // Protect against the order changing dynamically.
+            const index = Math.max(
+                0,
+                Math.min(selectedIslandIndex, islandOrder.length - 1)
+            )
+
+            return islandOrder[index]
+        }
+
+        property string restingState: {
+            switch (selectedIsland) {
+            case "music":
+                return musicData.hasTrack
+                    ? "music-compact"
+                    : "idle"
+
+            case "notifications":
+                return NotificationService.notifications.length > 0
+                    ? "notifications"
+                    : "idle"
+
+            default:
+                return "idle"
+            }
+        }
 
         // ============================================================
-        // TRANSIENT NOTIFICATION PILL
+        // NAVIGATION HELPERS (ChatGPT Fixes)
+        // ============================================================
+
+        function islandIndex(name) {
+            return islandOrder.indexOf(name)
+        }
+
+        function selectIsland(name) {
+            const index = islandIndex(name)
+
+            if (index >= 0)
+                selectedIslandIndex = index
+        }
+
+        function selectMusicIsland() {
+            if (!musicData.hasTrack)
+                return false
+
+            const index = islandIndex("music")
+
+            if (index < 0)
+                return false
+
+            selectedIslandIndex = index
+            return true
+        }
+
+        function selectClockIsland() {
+            const index = islandIndex("clock")
+
+            selectedIslandIndex = index >= 0 ? index : 0
+        }
+
+        function normalizeIslandIndex(index) {
+            const count = islandOrder.length
+
+            if (count <= 0)
+                return 0
+
+            return ((index % count) + count) % count
+        }
+
+        // ============================================================
+        // DISPLAY CURRENT SELECTION (ChatGPT Fixes)
+        // ============================================================
+
+        function showSelectedIsland() {
+            // Make sure the selected index is valid after the
+            // dynamic islandOrder changes.
+            if (selectedIslandIndex >= islandOrder.length)
+                selectedIslandIndex = 0
+
+            if (selectedIslandIndex < 0)
+                selectedIslandIndex = 0
+
+            hoverExpandDelayTimer.stop()
+            hoverCollapseDelayTimer.stop()
+            osdTimer.stop()
+            wsOsdTimer.stop()
+            notificationAutoHideTimer.stop()
+
+            hoverExpandedActive = false
+
+            islandBackground.islandState = restingState
+        }
+
+        // ============================================================
+        // ROTATION (ChatGPT Fixes)
+        // ============================================================
+
+        function nextIsland() {
+            if (islandOrder.length <= 1) {
+                showSelectedIsland()
+                return
+            }
+
+            selectedIslandIndex =
+                normalizeIslandIndex(selectedIslandIndex + 1)
+
+            showSelectedIsland()
+        }
+
+        function previousIsland() {
+            if (islandOrder.length <= 1) {
+                showSelectedIsland()
+                return
+            }
+
+            selectedIslandIndex =
+                normalizeIslandIndex(selectedIslandIndex - 1)
+
+            showSelectedIsland()
+        }
+
+        // ============================================================
+        // DYNAMIC MUSIC STATE (ChatGPT Fixes)
+        // ============================================================
+
+        Connections {
+            target: musicData
+
+            function onHasTrackChanged() {
+                const currentState = islandBackground.islandState
+
+                // ----------------------------------------------------
+                // MUSIC STOPPED / PLAYER DISAPPEARED
+                // ----------------------------------------------------
+
+                if (!musicData.hasTrack) {
+                    // If Music was selected, return to Clock because
+                    // Music will disappear from islandOrder.
+                    if (islandWindow.selectedIsland === "music")
+                        islandWindow.selectClockIsland()
+
+                    // If the visible UI was music-related, immediately
+                    // return to a valid resting state.
+                    if (currentState === "music-compact"
+                            || currentState === "music-expanded") {
+
+                        islandBackground.islandState =
+                            islandWindow.restingState
+                    }
+
+                    return
+                }
+
+                // ----------------------------------------------------
+                // MUSIC STARTED
+                // ----------------------------------------------------
+
+                // Do not automatically select Music.
+                //
+                // It simply becomes available in islandOrder:
+                //
+                // Clock → Music → Notifications
+                //
+                // This prevents unexpected jumps.
+            }
+        }
+
+        // ============================================================
+        // DYNAMIC NOTIFICATION STATE (ChatGPT Fixes)
+        // ============================================================
+
+        Connections {
+            target: NotificationService
+
+            function onNotificationsChanged() {
+                // If Notifications disappear while selected, the
+                // navigator must move to a valid island immediately.
+
+                if (NotificationService.notifications.length === 0) {
+
+                    if (islandWindow.selectedIsland === "notifications") {
+                        islandWindow.selectClockIsland()
+                    }
+
+                    if (islandBackground.islandState === "notifications"
+                            || islandBackground.islandState === "notification-pill"
+                            || islandBackground.islandState === "notification-expanded") {
+
+                        islandBackground.islandState =
+                            islandWindow.restingState
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // TRANSIENT NOTIFICATION PILL (Restored from Original)
         // ============================================================
 
         property string notificationReturnState: "idle"
@@ -178,133 +378,6 @@ ShellRoot {
         function dismissNotificationPill() {
             if (notificationPillActive)
                 restoreFromNotification()
-        }
-
-        property string selectedIsland:
-            islandOrder.length > 0
-            ? islandOrder[selectedIslandIndex]
-            : "clock"
-
-        property string restingState: {
-            if (selectedIsland === "music" && musicData.hasTrack)
-                return "music-compact"
-
-            if (selectedIsland === "notifications") {
-                if (NotificationService.latestNotification)
-                    return "notification-pill"
-
-                return "idle"
-            }
-
-            return "idle"
-        }
-
-        function normalizeIslandIndex(index) {
-            const count = islandOrder.length
-            if (count <= 0)
-                return 0
-
-            return ((index % count) + count) % count
-        }
-
-        function showSelectedIsland() {
-            if (selectedIsland === "music" && !musicData.hasTrack)
-                selectedIslandIndex = 0
-
-            hoverExpandDelayTimer.stop()
-            hoverCollapseDelayTimer.stop()
-            osdTimer.stop()
-            wsOsdTimer.stop()
-            notificationAutoHideTimer.stop()
-
-            islandWindow.hoverExpandedActive = false
-            islandBackground.islandState = islandWindow.restingState
-        }
-
-        function nextIsland() {
-            if (islandOrder.length <= 0)
-                return
-
-            let next = normalizeIslandIndex(selectedIslandIndex + 1)
-
-            while (islandOrder[next] === "music"
-                   && !musicData.hasTrack
-                   && next !== selectedIslandIndex) {
-                next = normalizeIslandIndex(next + 1)
-            }
-
-            selectedIslandIndex = next
-            showSelectedIsland()
-        }
-
-        function previousIsland() {
-            if (islandOrder.length <= 0)
-                return
-
-            let previous = normalizeIslandIndex(selectedIslandIndex - 1)
-
-            while (islandOrder[previous] === "music"
-                   && !musicData.hasTrack
-                   && previous !== selectedIslandIndex) {
-                previous = normalizeIslandIndex(previous - 1)
-            }
-
-            selectedIslandIndex = previous
-            showSelectedIsland()
-        }
-
-        Connections {
-            target: NotificationService
-
-            function onNotificationsChanged() {
-                if (NotificationService.notifications.length === 0) {
-
-                    const notificationIndex =
-                        islandWindow.islandOrder.indexOf("notifications")
-
-                    if (islandWindow.selectedIsland === "notifications") {
-                        islandWindow.selectedIslandIndex = 0
-
-                        if (islandBackground.islandState === "notification-pill")
-                            islandBackground.islandState = "idle"
-                    }
-                }
-            }
-        }
-
-        Connections {
-            target: musicData
-
-            function onHasTrackChanged() {
-                const current = islandBackground.islandState
-
-                if (!musicData.hasTrack
-                    && islandWindow.selectedIsland === "music") {
-
-                    islandWindow.restoreMusicAfterTrackChange = true
-                    islandWindow.selectedIslandIndex = 0
-                }
-
-                if (musicData.hasTrack
-                    && islandWindow.restoreMusicAfterTrackChange) {
-
-                    const musicIndex =
-                        islandWindow.islandOrder.indexOf("music")
-
-                    if (musicIndex >= 0)
-                        islandWindow.selectedIslandIndex = musicIndex
-
-                    islandWindow.restoreMusicAfterTrackChange = false
-                }
-
-                if (current === "idle"
-                    || current === "music-compact"
-                    || current === "music-expanded") {
-
-                    islandBackground.islandState =
-                        islandWindow.restingState
-                }
-            }
         }
 
         // ============================================================
@@ -366,6 +439,11 @@ ShellRoot {
 
                 islandWindow.hoverExpandedActive = false
 
+                // CRITICAL:
+                // Synchronize the navigator with Music before changing
+                // the visible state.
+                islandWindow.selectMusicIsland()
+
                 if (islandBackground.islandState === "music-expanded") {
                     islandBackground.islandState = "music-compact"
                 } else {
@@ -374,17 +452,38 @@ ShellRoot {
             }
 
             function openMusic(): void {
-                if (!musicData.hasTrack) return
+                if (!musicData.hasTrack)
+                    return
+
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
+                // CRITICAL FIX:
+                // Music must become the selected rotation item.
+                islandWindow.selectMusicIsland()
+
                 islandBackground.islandState = "music-expanded"
             }
 
             function closeMusic(): void {
-                if (!musicData.hasTrack) return
                 hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
                 islandWindow.hoverExpandedActive = false
+
+                // Music may have stopped while expanded.
+                if (!musicData.hasTrack) {
+                    islandWindow.selectClockIsland()
+                    islandBackground.islandState =
+                        islandWindow.restingState
+                    return
+                }
+
+                // Keep navigator synchronized with the compact Music pill.
+                islandWindow.selectMusicIsland()
+
                 islandBackground.islandState = "music-compact"
             }
 
@@ -689,14 +788,6 @@ ShellRoot {
             onTriggered: {
                 if (islandMouseArea.containsMouse)
                     return
-
-                // The auto-collapse logic is cleanly removed below, so leaving the dashboard 
-                // area with your mouse will no longer force it closed.
-                // if (islandBackground.islandState === "hover") {
-                //     islandBackground.islandState =
-                //         islandWindow.restingState
-                //     return
-                // }
 
                 if (islandWindow.hoverExpandedActive
                     && islandBackground.islandState
