@@ -35,10 +35,10 @@ ShellRoot {
 
         mask: Region {
             Region {
-                x: Math.floor(islandBackground.x)
-                y: Math.floor(islandBackground.y)
-                width: Math.ceil(islandBackground.width)
-                height: Math.ceil(islandBackground.height)
+                x: Math.round(islandBackground.x)
+                y: Math.round(islandBackground.y)
+                width: Math.round(islandBackground.width)
+                height: Math.round(islandBackground.height)
             }
         }
 
@@ -47,41 +47,12 @@ ShellRoot {
         // ============================================================
 
         readonly property real requestedWindowHeight:
-            Math.ceil(islandBackground.y
-                      + islandBackground.targetHeight
-                      + 12)
+            Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
-        property real retainedWindowHeight: 0
-
-        implicitHeight:
-            Math.max(requestedWindowHeight, retainedWindowHeight)
-
-        function reconcileWindowHeight() {
-            if (requestedWindowHeight >= retainedWindowHeight) {
-                windowShrinkTimer.stop()
-                retainedWindowHeight = requestedWindowHeight
-                return
-            }
-
-            windowShrinkTimer.restart()
-        }
-
-        onRequestedWindowHeightChanged:
-            reconcileWindowHeight()
-
-        Component.onCompleted:
-            retainedWindowHeight = requestedWindowHeight
-
-        Timer {
-            id: windowShrinkTimer
-
-            interval: 500
-            repeat: false
-
-            onTriggered:
-                islandWindow.retainedWindowHeight =
-                    islandWindow.requestedWindowHeight
-        }
+        // Instantly expand the Wayland surface when opening to prevent clipping,
+        // but smoothly shrink it exactly in sync with the visual animation to 
+        // completely eliminate QtWayland snapping artifacts (the "bounce").
+        implicitHeight: Math.max(requestedWindowHeight, Math.ceil(islandBackground.y + islandBackground.height + 12))
 
         // ============================================================
         // PYWAL COLORS
@@ -719,6 +690,8 @@ ShellRoot {
                 if (islandMouseArea.containsMouse)
                     return
 
+                // The auto-collapse logic is cleanly removed below, so leaving the dashboard 
+                // area with your mouse will no longer force it closed.
                 // if (islandBackground.islandState === "hover") {
                 //     islandBackground.islandState =
                 //         islandWindow.restingState
