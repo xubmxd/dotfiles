@@ -16,14 +16,9 @@ ShellRoot {
         WlrLayershell.namespace: "custom-island"
         WlrLayershell.exclusiveZone: 40
 
-        // Dynamically request keyboard focus from Hyprland only when entering a password
         focusable: dashboardComponent.currentSubView === "wifi-password"
 
         color: "transparent"
-
-        // ============================================================
-        // TIDE-STYLE SURFACE ARCHITECTURE
-        // ============================================================
 
         anchors {
             top: true
@@ -42,21 +37,10 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // SURFACE HEIGHT MANAGEMENT
-        // ============================================================
-
         readonly property real requestedWindowHeight:
             Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
-        // Instantly expand the Wayland surface when opening to prevent clipping,
-        // but smoothly shrink it exactly in sync with the visual animation to 
-        // completely eliminate QtWayland snapping artifacts (the "bounce").
         implicitHeight: Math.max(requestedWindowHeight, Math.ceil(islandBackground.y + islandBackground.height + 12))
-
-        // ============================================================
-        // PYWAL COLORS
-        // ============================================================
 
         FileView {
             id: pywal
@@ -93,17 +77,9 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // MUSIC
-        // ============================================================
-
         CustomComponents.MusicPlayerData {
             id: musicData
         }
-
-        // ============================================================
-        // ISLAND NAVIGATOR (ChatGPT Fixes)
-        // ============================================================
 
         property var islandOrder: {
             var islands = ["clock"]
@@ -111,9 +87,7 @@ ShellRoot {
             if (musicData.hasTrack)
                 islands.push("music")
 
-            // Notifications only participate in rotation when there
-            // is actually at least one notification.
-            if (NotificationService.notifications.length > 0)
+            if (NotificationService.latestNotification)
                 islands.push("notifications")
 
             return islands
@@ -125,7 +99,6 @@ ShellRoot {
             if (islandOrder.length === 0)
                 return "clock"
 
-            // Protect against the order changing dynamically.
             const index = Math.max(
                 0,
                 Math.min(selectedIslandIndex, islandOrder.length - 1)
@@ -142,18 +115,14 @@ ShellRoot {
                     : "idle"
 
             case "notifications":
-                return NotificationService.notifications.length > 0
-                    ? "notifications"
+                return NotificationService.latestNotification
+                    ? "notification-pill"
                     : "idle"
 
             default:
                 return "idle"
             }
         }
-
-        // ============================================================
-        // NAVIGATION HELPERS (ChatGPT Fixes)
-        // ============================================================
 
         function islandIndex(name) {
             return islandOrder.indexOf(name)
@@ -194,13 +163,7 @@ ShellRoot {
             return ((index % count) + count) % count
         }
 
-        // ============================================================
-        // DISPLAY CURRENT SELECTION (ChatGPT Fixes)
-        // ============================================================
-
         function showSelectedIsland() {
-            // Make sure the selected index is valid after the
-            // dynamic islandOrder changes.
             if (selectedIslandIndex >= islandOrder.length)
                 selectedIslandIndex = 0
 
@@ -217,10 +180,6 @@ ShellRoot {
 
             islandBackground.islandState = restingState
         }
-
-        // ============================================================
-        // ROTATION (ChatGPT Fixes)
-        // ============================================================
 
         function nextIsland() {
             if (islandOrder.length <= 1) {
@@ -246,28 +205,16 @@ ShellRoot {
             showSelectedIsland()
         }
 
-        // ============================================================
-        // DYNAMIC MUSIC STATE (ChatGPT Fixes)
-        // ============================================================
-
         Connections {
             target: musicData
 
             function onHasTrackChanged() {
                 const currentState = islandBackground.islandState
 
-                // ----------------------------------------------------
-                // MUSIC STOPPED / PLAYER DISAPPEARED
-                // ----------------------------------------------------
-
                 if (!musicData.hasTrack) {
-                    // If Music was selected, return to Clock because
-                    // Music will disappear from islandOrder.
                     if (islandWindow.selectedIsland === "music")
                         islandWindow.selectClockIsland()
 
-                    // If the visible UI was music-related, immediately
-                    // return to a valid resting state.
                     if (currentState === "music-compact"
                             || currentState === "music-expanded") {
 
@@ -277,32 +224,13 @@ ShellRoot {
 
                     return
                 }
-
-                // ----------------------------------------------------
-                // MUSIC STARTED
-                // ----------------------------------------------------
-
-                // Do not automatically select Music.
-                //
-                // It simply becomes available in islandOrder:
-                //
-                // Clock → Music → Notifications
-                //
-                // This prevents unexpected jumps.
             }
         }
-
-        // ============================================================
-        // DYNAMIC NOTIFICATION STATE (ChatGPT Fixes)
-        // ============================================================
 
         Connections {
             target: NotificationService
 
             function onNotificationsChanged() {
-                // If Notifications disappear while selected, the
-                // navigator must move to a valid island immediately.
-
                 if (NotificationService.notifications.length === 0) {
 
                     if (islandWindow.selectedIsland === "notifications") {
@@ -319,10 +247,6 @@ ShellRoot {
                 }
             }
         }
-
-        // ============================================================
-        // TRANSIENT NOTIFICATION PILL (Restored from Original)
-        // ============================================================
 
         property string notificationReturnState: "idle"
 
@@ -380,10 +304,6 @@ ShellRoot {
                 restoreFromNotification()
         }
 
-        // ============================================================
-        // NOTIFICATIONS SERVER
-        // ============================================================
-
         NotificationServer {
             id: notificationServer
 
@@ -415,10 +335,6 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // IPC / KEYBINDS
-        // ============================================================
-
         IpcHandler {
             target: "island"
 
@@ -439,9 +355,6 @@ ShellRoot {
 
                 islandWindow.hoverExpandedActive = false
 
-                // CRITICAL:
-                // Synchronize the navigator with Music before changing
-                // the visible state.
                 islandWindow.selectMusicIsland()
 
                 if (islandBackground.islandState === "music-expanded") {
@@ -460,8 +373,6 @@ ShellRoot {
 
                 islandWindow.hoverExpandedActive = false
 
-                // CRITICAL FIX:
-                // Music must become the selected rotation item.
                 islandWindow.selectMusicIsland()
 
                 islandBackground.islandState = "music-expanded"
@@ -473,7 +384,6 @@ ShellRoot {
 
                 islandWindow.hoverExpandedActive = false
 
-                // Music may have stopped while expanded.
                 if (!musicData.hasTrack) {
                     islandWindow.selectClockIsland()
                     islandBackground.islandState =
@@ -481,7 +391,6 @@ ShellRoot {
                     return
                 }
 
-                // Keep navigator synchronized with the compact Music pill.
                 islandWindow.selectMusicIsland()
 
                 islandBackground.islandState = "music-compact"
@@ -570,10 +479,6 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // AUDIO
-        // ============================================================
-
         PwObjectTracker {
             id: audioTracker
             objects: [ Pipewire.defaultAudioSink ]
@@ -599,10 +504,6 @@ ShellRoot {
             return false
         }
 
-        // ============================================================
-        // GLOBAL STATE
-        // ============================================================
-
         property real trackedBrightness: -1
         property real pendingBrightness: -1
         property string currentOsd: "volume"
@@ -620,10 +521,6 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // WORKSPACE OSD
-        // ============================================================
-
         onFocusedWorkspaceChanged: {
             if (suppressWsOsd)
                 return
@@ -635,10 +532,6 @@ ShellRoot {
                 wsOsdTimer.restart()
             }
         }
-
-        // ============================================================
-        // VOLUME OSD
-        // ============================================================
 
         onTrackedVolumeChanged: {
             if (suppressOsd)
@@ -663,10 +556,6 @@ ShellRoot {
                 osdTimer.restart()
             }
         }
-
-        // ============================================================
-        // BRIGHTNESS
-        // ============================================================
 
         Process {
             id: brightnessProc
@@ -729,10 +618,6 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // OSD TIMERS
-        // ============================================================
-
         Timer {
             id: osdTimer
             interval: 2000
@@ -754,10 +639,6 @@ ShellRoot {
                 }
             }
         }
-
-        // ============================================================
-        // HOVER LOGIC
-        // ============================================================
 
         property bool hoverExpandedActive: false
 
@@ -810,10 +691,6 @@ ShellRoot {
             }
         }
 
-        // ============================================================
-        // DYNAMIC ISLAND
-        // ============================================================
-
         Rectangle {
             id: islandBackground
 
@@ -821,10 +698,6 @@ ShellRoot {
             anchors.horizontalCenter: parent.horizontalCenter
 
             property string islandState: "idle"
-
-            // --------------------------------------------------------
-            // TARGET WIDTH
-            // --------------------------------------------------------
 
             readonly property real targetWidth: {
                 switch (islandState) {
@@ -851,10 +724,6 @@ ShellRoot {
                 }
             }
 
-            // --------------------------------------------------------
-            // TARGET HEIGHT
-            // --------------------------------------------------------
-
             readonly property real targetHeight: {
                 switch (islandState) {
                 case "idle":
@@ -879,10 +748,6 @@ ShellRoot {
                     return 40
                 }
             }
-
-            // --------------------------------------------------------
-            // TARGET RADIUS
-            // --------------------------------------------------------
 
             readonly property real targetRadius: {
                 switch (islandState) {
@@ -961,7 +826,6 @@ ShellRoot {
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
 
-                    // Only expand music automatically on hover
                     if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
                 }
@@ -1017,7 +881,6 @@ ShellRoot {
                     swipeEligible = false
                 }
                 
-                // New click handler to specifically open the dashboard or notification pill
                 onClicked: function(mouse) {
                     if (horizontalSwipe) return
 
@@ -1036,10 +899,6 @@ ShellRoot {
                     swipeEligible = false
                 }
             }
-
-            // ========================================================
-            // CONTENT
-            // ========================================================
 
             Item {
                 anchors.fill: parent
