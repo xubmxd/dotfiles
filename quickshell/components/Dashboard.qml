@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import "../services"
 
 Item {
     id: dashboardRoot
@@ -22,6 +23,7 @@ Item {
             wifiConnectionState = "password"
             targetWifiSsid = ""
             wifiConnectionStatus = ""
+            selectedBtDevice = null
         }
     }
 
@@ -30,16 +32,28 @@ Item {
     // ============================================================
     // STATE PROPERTIES & SIGNALS
     // ============================================================
-    property string currentSubView: "main" // "main", "wifi", "bt", "wifi-password"
+    property string currentSubView: "main" // "main", "wifi", "wifi-password", "wifi-detail", "bt", "bt-detail"
     property string wifiConnectionState: "password" // "password", "connecting", "success", "error"
     property string targetWifiSsid: ""
     property string wifiConnectionStatus: ""
 
     property bool wifiEnabled: false
     property string wifiSsid: "Disconnected"
-    
-    property bool btEnabled: false
-    property string btDevice: "Disconnected"
+
+    // Bluetooth is fully event-driven via BluetoothService (BlueZ/DBus) —
+    // no polling needed. These simply mirror the service for the compact
+    // card on the main view.
+    readonly property bool btEnabled: BluetoothService.powered
+    readonly property string btDevice: BluetoothService.summaryLabel
+    property var selectedBtDevice: null
+
+    // Turn Bluetooth discovery on only while the Bluetooth sub-view (or a
+    // device's detail sheet) is actually open — mirrors macOS/iOS, which
+    // only scans while the Bluetooth settings screen is visible.
+    onCurrentSubViewChanged: {
+        BluetoothService.setDiscovering(
+            currentSubView === "bt" || currentSubView === "bt-detail")
+    }
 
     property string batteryPercent: "100%"
     property bool isCharging: false
@@ -51,7 +65,43 @@ Item {
     // DATA MODELS
     // ============================================================
     ListModel { id: wifiModel }
-    ListModel { id: btModel }
+
+    // Parses a single line of `nmcli -t` terse output into fields,
+    // respecting nmcli's backslash-escaping of ":" inside field values
+    // (e.g. SSIDs that themselves contain a colon). A naive split(':')
+    // breaks on those — this doesn't.
+    function nmcliSplit(line) {
+        var fields = []
+        var current = ""
+        for (var i = 0; i < line.length; i++) {
+            var ch = line[i]
+            if (ch === '\\' && i + 1 < line.length) {
+                current += line[i + 1]
+                i++
+            } else if (ch === ':') {
+                fields.push(current)
+                current = ""
+            } else {
+                current += ch
+            }
+        }
+        fields.push(current)
+        return fields
+    }
+
+    // Signal strength is communicated with opacity on the same verified
+    // Wi-Fi glyph rather than swapping in separate "1/2/3 bar" icons —
+    // Nerd Font codepoints for those vary by font version/build, so we
+    // stick to the one glyph already confirmed to render in this project
+    // (the same one used for the Wi-Fi card icon) to avoid tofu glyphs.
+    readonly property string wifiGlyph: "\u{f0928}"
+
+    function wifiSignalOpacity(signal) {
+        if (signal >= 80) return 1.0
+        if (signal >= 55) return 0.75
+        if (signal >= 30) return 0.5
+        return 0.35
+    }
 
     // ============================================================
     // SYSTEM POLLING PROCESSES
@@ -69,18 +119,6 @@ Item {
     }
 
     Process {
-        id: btProc
-        command: ["sh", "-c", "echo \"$(bluetoothctl show 2>/dev/null | grep -q 'Powered: yes' && echo 'enabled' || echo 'disabled'):$(bluetoothctl info 2>/dev/null | grep 'Name:' | cut -d: -f2 | xargs)\""]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var res = String(text).trim().split(":");
-                dashboardRoot.btEnabled = (res[0] === "enabled");
-                dashboardRoot.btDevice = (res[1] && res[1] !== "") ? res[1] : "Disconnected";
-            }
-        }
-    }
-
-    Process {
         id: batProc
         command: ["sh", "-c", "awk '{print int($0)}' /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n 1 && cat /sys/class/power_supply/BAT*/status | head -n 1"]
         stdout: StdioCollector {
@@ -92,57 +130,96 @@ Item {
         }
     }
 
+    // Lists nearby networks, de-duplicated by SSID (nmcli reports one row
+    // per BSSID, so a single access point with multiple radios shows up
+    // multiple times) keeping the strongest signal seen for each SSID —
+    // matching how macOS/iOS present exactly one row per network.
     Process {
         id: wifiListProc
-        command: ["sh", "-c", "nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL dev wifi list | grep -v '^:$' | head -n 15"]
+        command: ["sh", "-c", "nmcli -t -f IN-USE,SSID,SECURITY,SIGNAL dev wifi list"]
         stdout: StdioCollector {
             onStreamFinished: {
+                var lines = String(text).trim().split('\n')
+                var bySsid = {}
+                var order = []
+
+                for (var i = 0; i < lines.length; i++) {
+                    if (!lines[i]) continue;
+                    var parts = dashboardRoot.nmcliSplit(lines[i]);
+                    if (parts.length < 4 || parts[1] === "") continue;
+
+                    var ssid = parts[1];
+                    var inUse = parts[0] === "*";
+                    var secured = parts[2] !== "" && parts[2] !== "--";
+                    var signal = parseInt(parts[3]) || 0;
+
+                    var existing = bySsid[ssid];
+                    if (!existing) {
+                        order.push(ssid);
+                        bySsid[ssid] = { inUse: inUse, ssid: ssid, secured: secured, signal: signal };
+                    } else {
+                        existing.inUse = existing.inUse || inUse;
+                        existing.secured = existing.secured || secured;
+                        if (signal > existing.signal) existing.signal = signal;
+                    }
+                }
+
+                // Strongest signal first, but the connected network always leads.
+                order.sort(function (a, b) {
+                    var ea = bySsid[a], eb = bySsid[b];
+                    if (ea.inUse !== eb.inUse) return ea.inUse ? -1 : 1;
+                    return eb.signal - ea.signal;
+                });
+
                 wifiModel.clear()
-                var lines = String(text).trim().split('\n')
-                for (var i = 0; i < lines.length; i++) {
-                    if (!lines[i]) continue;
-                    var parts = lines[i].split(':');
-                    if (parts.length >= 4 && parts[1] !== "") {
-                        var isSecured = parts[2] !== "" && parts[2] !== "--";
-                        wifiModel.append({ 
-                            "inUse": parts[0] === "*", 
-                            "ssid": parts[1], 
-                            "secured": isSecured,
-                            "signal": parseInt(parts[3]) || 0 
-                        })
-                    }
+                for (var j = 0; j < order.length; j++) {
+                    wifiModel.append(bySsid[order[j]]);
                 }
             }
         }
     }
 
+    // First connection attempt for a tapped network: no password supplied.
+    // This lets already-known/saved networks (and open networks) connect
+    // silently, exactly like macOS/iOS — the password form only appears
+    // when the system actually needs a secret.
     Process {
-        id: btListProc
-        command: ["sh", "-c", "bluetoothctl devices | head -n 15"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                btModel.clear()
-                var lines = String(text).trim().split('\n')
-                for (var i = 0; i < lines.length; i++) {
-                    if (!lines[i]) continue;
-                    var parts = lines[i].split(' ');
-                    if (parts.length >= 3) {
-                        var name = parts.slice(2).join(' ');
-                        var mac = parts[1];
-                        btModel.append({ "mac": mac, "name": name, "connected": dashboardRoot.btDevice === name })
-                    }
-                }
+        id: wifiQuickConnectProc
+        property string ssidName: ""
+        command: ["nmcli", "device", "wifi", "connect", ssidName]
+
+        stdout: StdioCollector { id: quickConnectStdout }
+        stderr: StdioCollector { id: quickConnectStderr }
+
+        onExited: (exitCode, exitStatus) => {
+            wifiProc.running = true;
+            if (exitCode === 0) {
+                dashboardRoot.wifiConnectionState = "success";
+                successTimer.restart();
+                return;
+            }
+
+            var output = (String(quickConnectStdout.text) + " " + String(quickConnectStderr.text)).toLowerCase();
+            var needsSecret = output.indexOf("secret") !== -1
+                || output.indexOf("password") !== -1
+                || output.indexOf("key required") !== -1
+                || output.indexOf("802-1x") !== -1;
+
+            if (needsSecret) {
+                dashboardRoot.wifiConnectionState = "password";
+            } else {
+                dashboardRoot.wifiConnectionState = "error";
             }
         }
     }
 
-    // Real Connection Process with Exit Code Detection
+    // Explicit connection attempt with a password the user just typed.
     Process {
         id: wifiConnectProc
         property string ssidName: ""
         property string wifiPassword: ""
         command: wifiPassword !== "" ? ["nmcli", "device", "wifi", "connect", ssidName, "password", wifiPassword] : ["nmcli", "device", "wifi", "connect", ssidName]
-        
+
         onExited: (exitCode, exitStatus) => {
             dashboardRoot.wifiConnectionStatus = "";
             wifiProc.running = true;
@@ -152,6 +229,30 @@ Item {
             } else {
                 dashboardRoot.wifiConnectionState = "error";
             }
+        }
+    }
+
+    // Disconnects the active Wi-Fi connection without forgetting it.
+    Process {
+        id: wifiDisconnectProc
+        property string ssidName: ""
+        command: ["nmcli", "connection", "down", ssidName]
+        onExited: {
+            wifiProc.running = true;
+            wifiListProc.running = true;
+            dashboardRoot.currentSubView = "wifi";
+        }
+    }
+
+    // Forgets a saved network's credentials entirely.
+    Process {
+        id: wifiForgetProc
+        property string ssidName: ""
+        command: ["nmcli", "connection", "delete", ssidName]
+        onExited: {
+            wifiProc.running = true;
+            wifiListProc.running = true;
+            dashboardRoot.currentSubView = "wifi";
         }
     }
 
@@ -167,17 +268,23 @@ Item {
     }
 
     Process { id: wifiToggleProc; property bool targetState: false; command: ["nmcli", "radio", "wifi", targetState ? "on" : "off"]; onExited: wifiProc.running = true }
-    Process { id: btToggleProc; property bool targetState: false; command: ["rfkill", targetState ? "unblock" : "block", "bluetooth"]; onExited: btProc.running = true }
-    Process { id: btConnectProc; property string macAddress: ""; command: ["bluetoothctl", "connect", macAddress]; onExited: btProc.running = true }
 
     Timer { interval: 5000; running: true; repeat: true; onTriggered: wifiProc.running = true; Component.onCompleted: wifiProc.running = true }
-    Timer { interval: 5000; running: true; repeat: true; onTriggered: btProc.running = true; Component.onCompleted: btProc.running = true }
     Timer { interval: 10000; running: true; repeat: true; onTriggered: batProc.running = true; Component.onCompleted: batProc.running = true }
-    
-    Timer { interval: 5000; running: dashboardRoot.currentSubView === "wifi"; repeat: true; onTriggered: wifiListProc.running = true; onRunningChanged: { if(running) { nmcliScanProc.running = true; wifiListProc.running = true } } }
-    Process { id: nmcliScanProc; command: ["nmcli", "device", "wifi", "rescan"] }
 
-    Timer { interval: 5000; running: dashboardRoot.currentSubView === "bt"; repeat: true; onTriggered: btListProc.running = true; onRunningChanged: { if(running) btListProc.running = true } }
+    property bool wifiScanning: false
+    Timer {
+        interval: 6000
+        running: dashboardRoot.currentSubView === "wifi"
+        repeat: true
+        onTriggered: { nmcliScanProc.running = true; wifiListProc.running = true }
+        onRunningChanged: if (running) { nmcliScanProc.running = true; wifiListProc.running = true }
+    }
+    Process {
+        id: nmcliScanProc
+        command: ["nmcli", "device", "wifi", "rescan"]
+        onRunningChanged: dashboardRoot.wifiScanning = running
+    }
 
     // ============================================================
     // VIEW CONTROLLER
@@ -295,11 +402,7 @@ Item {
                                 }
                                 MouseArea {
                                     anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        dashboardRoot.btEnabled = !dashboardRoot.btEnabled;
-                                        btToggleProc.targetState = dashboardRoot.btEnabled;
-                                        btToggleProc.running = true;
-                                    }
+                                    onClicked: BluetoothService.setPowered(!BluetoothService.powered)
                                 }
                             }
                         }
@@ -388,41 +491,139 @@ Item {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
                     Text { text: "Wi-Fi Networks"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+
+                    Rectangle {
+                        width: 14; height: 14; radius: 7; color: "transparent"
+                        border.color: dashboardRoot.subtleColor; border.width: 2
+                        visible: dashboardRoot.wifiScanning
+                        RotationAnimator on rotation {
+                            running: dashboardRoot.wifiScanning
+                            from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    Layout.alignment: Qt.AlignCenter
+                    visible: !dashboardRoot.wifiEnabled || wifiModel.count === 0
+                    spacing: 6
+
+                    Item { Layout.fillHeight: true }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: dashboardRoot.wifiGlyph
+                        opacity: !dashboardRoot.wifiEnabled ? 1 : 0.35
+                        color: dashboardRoot.subtleColor
+                        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 30
+                    }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: !dashboardRoot.wifiEnabled ? "Wi-Fi is Off" : "No Networks Found"
+                        color: dashboardRoot.subtleColor
+                        font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                    }
+                    Item { Layout.fillHeight: true }
                 }
 
                 ListView {
-                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true; model: wifiModel; spacing: 8
+                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true; spacing: 8
+                    model: dashboardRoot.wifiEnabled ? wifiModel : null
+                    visible: dashboardRoot.wifiEnabled && wifiModel.count > 0
+
                     delegate: Rectangle {
                         width: ListView.view.width; height: 44; radius: 12
                         color: inUse ? Qt.rgba(0.2, 0.5, 1.0, 0.2) : Qt.rgba(1, 1, 1, 0.05)
-                        
+
                         MouseArea {
                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                if (secured && !inUse) {
+                                if (inUse) {
                                     dashboardRoot.targetWifiSsid = ssid;
-                                    dashboardRoot.wifiConnectionState = "password";
-                                    dashboardRoot.currentSubView = "wifi-password";
-                                } else {
-                                    dashboardRoot.wifiConnectionState = "connecting";
-                                    dashboardRoot.targetWifiSsid = ssid;
-                                    dashboardRoot.currentSubView = "wifi-password";
-                                    wifiConnectProc.ssidName = ssid;
-                                    wifiConnectProc.wifiPassword = "";
-                                    wifiConnectProc.running = true;
+                                    dashboardRoot.currentSubView = "wifi-detail";
+                                    return;
                                 }
+
+                                dashboardRoot.targetWifiSsid = ssid;
+                                dashboardRoot.wifiConnectionState = "connecting";
+                                dashboardRoot.currentSubView = "wifi-password";
+                                wifiQuickConnectProc.ssidName = ssid;
+                                wifiQuickConnectProc.running = true;
                             }
                         }
 
                         RowLayout {
-                            anchors.fill: parent; anchors.margins: 12
-                            Text { text: secured ? "󰌾" : "󰤨"; color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font" }
+                            anchors.fill: parent; anchors.margins: 12; spacing: 10
+                            Text { text: dashboardRoot.wifiGlyph; opacity: dashboardRoot.wifiSignalOpacity(signal); color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 15 }
                             Text { text: ssid; color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: inUse ? Font.Bold : Font.Medium; Layout.fillWidth: true; elide: Text.ElideRight }
-                            Text { text: ""; color: "#3b82f6"; font.family: "JetBrainsMono Nerd Font"; visible: inUse }
+                            Text { text: "\u{f033e}"; color: dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 11; visible: secured && !inUse }
+                            Text { text: inUse ? "\uf00c" : "\u{f0142}"; color: inUse ? "#3b82f6" : dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: inUse ? 14 : 12 }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------
+        // WI-FI NETWORK DETAIL SUB-VIEW (connected network)
+        // ------------------------------------------------------------
+        Rectangle {
+            id: wifiDetailView
+            width: parent.width; height: parent.height; color: "transparent"
+            visible: dashboardRoot.currentSubView === "wifi-detail"
+            x: dashboardRoot.currentSubView === "wifi-detail" ? 0 : width
+            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.margins: 16; spacing: 16
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Rectangle {
+                        width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
+                    }
+                    Text { text: "Network Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                }
+
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 12
+                    spacing: 6
+                    Text { Layout.alignment: Qt.AlignHCenter; text: "\u{f1eb}"; color: "#3b82f6"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 34 }
+                    Text { Layout.alignment: Qt.AlignHCenter; text: dashboardRoot.targetWifiSsid; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold }
+                    Text { Layout.alignment: Qt.AlignHCenter; text: "Connected"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 12 }
+                }
+
+                Item { Layout.fillHeight: true }
+
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                    color: Qt.rgba(1, 1, 1, 0.08)
+                    Text { anchors.centerIn: parent; text: "Disconnect"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            wifiDisconnectProc.ssidName = dashboardRoot.targetWifiSsid;
+                            wifiDisconnectProc.running = true;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                    color: Qt.rgba(0.94, 0.27, 0.27, 0.15)
+                    Text { anchors.centerIn: parent; text: "Forget This Network"; color: "#ef4444"; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            wifiForgetProc.ssidName = dashboardRoot.targetWifiSsid;
+                            wifiForgetProc.running = true;
                         }
                     }
                 }
@@ -655,37 +856,275 @@ Item {
             Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
             ColumnLayout {
-                anchors.fill: parent; anchors.margins: 16; spacing: 16
+                anchors.fill: parent; anchors.margins: 16; spacing: 12
 
                 RowLayout {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
-                    Text { text: "Bluetooth Devices"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                    Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+
+                    // "Now Discovering" indicator — same visual language
+                    // as the Wi-Fi scanning spinner, mirroring macOS/iOS'
+                    // Bluetooth settings screen.
+                    Rectangle {
+                        width: 14; height: 14; radius: 7; color: "transparent"
+                        border.color: dashboardRoot.subtleColor; border.width: 2
+                        visible: BluetoothService.discovering
+                        RotationAnimator on rotation {
+                            running: BluetoothService.discovering
+                            from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                        }
+                    }
                 }
 
-                ListView {
-                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true; model: btModel; spacing: 8
-                    delegate: Rectangle {
-                        width: ListView.view.width; height: 44; radius: 12
-                        color: connected ? Qt.rgba(0.2, 0.5, 1.0, 0.2) : Qt.rgba(1, 1, 1, 0.05)
-                        
-                        MouseArea {
-                            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                btConnectProc.macAddress = mac;
-                                btConnectProc.running = true;
+                // Empty / off states
+                ColumnLayout {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    Layout.alignment: Qt.AlignCenter
+                    visible: !BluetoothService.available
+                        || !BluetoothService.powered
+                        || (BluetoothService.connectedDevices.length === 0
+                            && BluetoothService.myDevices.length === 0
+                            && BluetoothService.otherDevices.length === 0)
+                    spacing: 6
+
+                    Item { Layout.fillHeight: true }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "\u{f00af}"
+                        opacity: (BluetoothService.available && BluetoothService.powered) ? 0.35 : 1
+                        color: dashboardRoot.subtleColor
+                        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 30
+                    }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: {
+                            if (!BluetoothService.available) return "Bluetooth Unavailable"
+                            if (!BluetoothService.powered) return "Bluetooth is Off"
+                            return "No Devices Found"
+                        }
+                        color: dashboardRoot.subtleColor
+                        font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                    }
+                    Item { Layout.fillHeight: true }
+                }
+
+                // Device sections
+                Flickable {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    clip: true
+                    contentWidth: width
+                    contentHeight: sectionColumn.implicitHeight
+                    visible: BluetoothService.available && BluetoothService.powered
+                        && (BluetoothService.connectedDevices.length > 0
+                            || BluetoothService.myDevices.length > 0
+                            || BluetoothService.otherDevices.length > 0)
+
+                    ColumnLayout {
+                        id: sectionColumn
+                        width: parent.width
+                        spacing: 14
+
+                        // ---- CONNECTED --------------------------------
+                        ColumnLayout {
+                            Layout.fillWidth: true; spacing: 8
+                            visible: BluetoothService.connectedDevices.length > 0
+                            Text { text: "CONNECTED"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Repeater {
+                                model: BluetoothService.connectedDevices
+                                delegate: BluetoothDeviceRow {
+                                    Layout.fillWidth: true
+                                    device: modelData
+                                    textColor: dashboardRoot.textColor
+                                    subtleColor: dashboardRoot.subtleColor
+                                    accentColor: dashboardRoot.activeColor
+                                    onOpenDetail: {
+                                        dashboardRoot.selectedBtDevice = modelData
+                                        dashboardRoot.currentSubView = "bt-detail"
+                                    }
+                                }
                             }
                         }
 
-                        RowLayout {
-                            anchors.fill: parent; anchors.margins: 12
-                            Text { text: "󰂯"; color: connected ? "#3b82f6" : dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font" }
-                            Text { text: name; color: connected ? "#3b82f6" : dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: connected ? Font.Bold : Font.Medium; Layout.fillWidth: true; elide: Text.ElideRight }
-                            Text { text: ""; color: "#3b82f6"; font.family: "JetBrainsMono Nerd Font"; visible: connected }
+                        // ---- MY DEVICES --------------------------------
+                        ColumnLayout {
+                            Layout.fillWidth: true; spacing: 8
+                            visible: BluetoothService.myDevices.length > 0
+                            Text { text: "MY DEVICES"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Repeater {
+                                model: BluetoothService.myDevices
+                                delegate: BluetoothDeviceRow {
+                                    Layout.fillWidth: true
+                                    device: modelData
+                                    textColor: dashboardRoot.textColor
+                                    subtleColor: dashboardRoot.subtleColor
+                                    accentColor: dashboardRoot.activeColor
+                                    onOpenDetail: {
+                                        dashboardRoot.selectedBtDevice = modelData
+                                        dashboardRoot.currentSubView = "bt-detail"
+                                    }
+                                }
+                            }
+                        }
+
+                        // ---- OTHER DEVICES ------------------------------
+                        ColumnLayout {
+                            Layout.fillWidth: true; spacing: 8
+                            visible: BluetoothService.otherDevices.length > 0
+                            Text { text: "OTHER DEVICES"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Repeater {
+                                model: BluetoothService.otherDevices
+                                delegate: BluetoothDeviceRow {
+                                    Layout.fillWidth: true
+                                    device: modelData
+                                    textColor: dashboardRoot.textColor
+                                    subtleColor: dashboardRoot.subtleColor
+                                    accentColor: dashboardRoot.activeColor
+                                    onOpenDetail: {
+                                        dashboardRoot.selectedBtDevice = modelData
+                                        dashboardRoot.currentSubView = "bt-detail"
+                                    }
+                                }
+                            }
+                        }
+
+                        Item { Layout.preferredHeight: 4 }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------
+        // BLUETOOTH DEVICE DETAIL SUB-VIEW
+        // ------------------------------------------------------------
+        Rectangle {
+            id: btDetailView
+            width: parent.width; height: parent.height; color: "transparent"
+            visible: dashboardRoot.currentSubView === "bt-detail"
+            x: dashboardRoot.currentSubView === "bt-detail" ? 0 : width
+            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            property var device: dashboardRoot.selectedBtDevice
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.margins: 16; spacing: 16
+                visible: btDetailView.device !== null
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Rectangle {
+                        width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "bt" }
+                    }
+                    Text { text: "Device Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                }
+
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 8
+                    spacing: 6
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: btDetailView.device ? BluetoothService.glyphFor(btDetailView.device) : ""
+                        color: (btDetailView.device && btDetailView.device.connected) ? dashboardRoot.activeColor : dashboardRoot.subtleColor
+                        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 34
+                    }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: btDetailView.device ? btDetailView.device.name : ""
+                        color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold
+                    }
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: btDetailView.device ? BluetoothService.statusFor(btDetailView.device) : ""
+                        color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 12
+                    }
+                }
+
+                // Battery level, when the device reports one.
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 52; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.08)
+                    visible: btDetailView.device && btDetailView.device.batteryAvailable
+                    RowLayout {
+                        anchors.fill: parent; anchors.margins: 14; spacing: 10
+                        Text { text: "\u{f00af}"; color: dashboardRoot.activeColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 15 }
+                        Text { text: "Battery"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                        Text {
+                            text: btDetailView.device ? Math.round(btDetailView.device.battery * 100) + "%" : ""
+                            color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                        }
+                    }
+                }
+
+                // Trusted toggle — trusted devices reconnect automatically
+                // without a prompt, same meaning as on macOS/iOS.
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 52; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.08)
+                    visible: btDetailView.device && btDetailView.device.paired
+                    RowLayout {
+                        anchors.fill: parent; anchors.margins: 14
+                        Text { text: "Trusted"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                        Rectangle {
+                            Layout.preferredWidth: 38; Layout.preferredHeight: 22; radius: 11
+                            color: (btDetailView.device && btDetailView.device.trusted) ? "#34c759" : Qt.rgba(1, 1, 1, 0.2)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Rectangle {
+                                width: 18; height: 18; radius: 9; color: "white"; anchors.verticalCenter: parent.verticalCenter
+                                x: (btDetailView.device && btDetailView.device.trusted) ? 18 : 2
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+                            MouseArea {
+                                anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (btDetailView.device)
+                                        BluetoothService.setTrusted(btDetailView.device, !btDetailView.device.trusted)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Item { Layout.fillHeight: true }
+
+                // Connect / Disconnect
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                    color: (btDetailView.device && btDetailView.device.connected) ? Qt.rgba(1, 1, 1, 0.08) : "#3b82f6"
+                    Text {
+                        anchors.centerIn: parent
+                        text: (btDetailView.device && btDetailView.device.connected) ? "Disconnect" : "Connect"
+                        color: (btDetailView.device && btDetailView.device.connected) ? dashboardRoot.textColor : "white"
+                        font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Bold
+                    }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!btDetailView.device) return
+                            BluetoothService.toggleDevice(btDetailView.device)
+                        }
+                    }
+                }
+
+                // Forget This Device
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
+                    color: Qt.rgba(0.94, 0.27, 0.27, 0.15)
+                    visible: btDetailView.device && btDetailView.device.paired
+                    Text { anchors.centerIn: parent; text: "Forget This Device"; color: "#ef4444"; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!btDetailView.device) return
+                            BluetoothService.forgetDevice(btDetailView.device)
+                            dashboardRoot.selectedBtDevice = null
+                            dashboardRoot.currentSubView = "bt"
                         }
                     }
                 }

@@ -278,31 +278,37 @@ Item {
                 }
 
                 // Animated Visualizer
-                Row {
+                Item {
                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    spacing: 3
+                    Layout.preferredHeight: 24
+                    Layout.preferredWidth: 32
                     visible: root.playerData && root.playerData.hasTrack
                     
-                    Timer {
-                        id: visTimer
-                        interval: 100
-                        running: root.isExpanded && root.playerData && root.playerData.isPlaying
-                        repeat: true
-                        property real phase: 0
-                        onTriggered: phase += 0.4
-                    }
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 3
+                        
+                        Timer {
+                            id: visTimer
+                            interval: 100
+                            running: root.isExpanded && root.playerData && root.playerData.isPlaying
+                            repeat: true
+                            property real phase: 0
+                            onTriggered: phase += 0.4
+                        }
 
-                    Repeater {
-                        model: 5
-                        Rectangle {
-                            width: 4
-                            radius: 2
-                            color: root.accentColor
-                            height: root.playerData && root.playerData.isPlaying
-                                    ? 6 + Math.abs(Math.sin(visTimer.phase + index * 0.8)) * 12
-                                    : 6
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on height { NumberAnimation { duration: 100 } }
+                        Repeater {
+                            model: 5
+                            Rectangle {
+                                width: 4
+                                radius: 2
+                                color: root.accentColor
+                                height: root.playerData && root.playerData.isPlaying
+                                        ? 6 + Math.abs(Math.sin(visTimer.phase + index * 0.8)) * 12
+                                        : 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on height { NumberAnimation { duration: 100 } }
+                            }
                         }
                     }
                 }

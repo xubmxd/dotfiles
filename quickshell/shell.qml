@@ -719,11 +719,11 @@ ShellRoot {
                 if (islandMouseArea.containsMouse)
                     return
 
-                if (islandBackground.islandState === "hover") {
-                    islandBackground.islandState =
-                        islandWindow.restingState
-                    return
-                }
+                // if (islandBackground.islandState === "hover") {
+                //     islandBackground.islandState =
+                //         islandWindow.restingState
+                //     return
+                // }
 
                 if (islandWindow.hoverExpandedActive
                     && islandBackground.islandState
