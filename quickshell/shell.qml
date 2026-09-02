@@ -16,9 +16,14 @@ ShellRoot {
         WlrLayershell.namespace: "custom-island"
         WlrLayershell.exclusiveZone: 40
 
+        // Dynamically request keyboard focus from Hyprland only when entering a password
         focusable: dashboardComponent.currentSubView === "wifi-password"
 
         color: "transparent"
+
+        // ============================================================
+        // TIDE-STYLE SURFACE ARCHITECTURE
+        // ============================================================
 
         anchors {
             top: true
@@ -37,10 +42,21 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // SURFACE HEIGHT MANAGEMENT
+        // ============================================================
+
         readonly property real requestedWindowHeight:
             Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
+        // Instantly expand the Wayland surface when opening to prevent clipping,
+        // but smoothly shrink it exactly in sync with the visual animation to 
+        // completely eliminate QtWayland snapping artifacts (the "bounce").
         implicitHeight: Math.max(requestedWindowHeight, Math.ceil(islandBackground.y + islandBackground.height + 12))
+
+        // ============================================================
+        // PYWAL COLORS
+        // ============================================================
 
         FileView {
             id: pywal
@@ -77,9 +93,17 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // MUSIC
+        // ============================================================
+
         CustomComponents.MusicPlayerData {
             id: musicData
         }
+
+        // ============================================================
+        // ISLAND NAVIGATOR
+        // ============================================================
 
         property var islandOrder: {
             var islands = ["clock"]
@@ -87,166 +111,18 @@ ShellRoot {
             if (musicData.hasTrack)
                 islands.push("music")
 
-            if (NotificationService.latestNotification)
+            if (NotificationService.notifications.length > 0)
                 islands.push("notifications")
 
             return islands
         }
-
         property int selectedIslandIndex: 0
 
-        property string selectedIsland: {
-            if (islandOrder.length === 0)
-                return "clock"
+        property bool restoreMusicAfterTrackChange: false
 
-            const index = Math.max(
-                0,
-                Math.min(selectedIslandIndex, islandOrder.length - 1)
-            )
-
-            return islandOrder[index]
-        }
-
-        property string restingState: {
-            switch (selectedIsland) {
-            case "music":
-                return musicData.hasTrack
-                    ? "music-compact"
-                    : "idle"
-
-            case "notifications":
-                return NotificationService.latestNotification
-                    ? "notification-pill"
-                    : "idle"
-
-            default:
-                return "idle"
-            }
-        }
-
-        function islandIndex(name) {
-            return islandOrder.indexOf(name)
-        }
-
-        function selectIsland(name) {
-            const index = islandIndex(name)
-
-            if (index >= 0)
-                selectedIslandIndex = index
-        }
-
-        function selectMusicIsland() {
-            if (!musicData.hasTrack)
-                return false
-
-            const index = islandIndex("music")
-
-            if (index < 0)
-                return false
-
-            selectedIslandIndex = index
-            return true
-        }
-
-        function selectClockIsland() {
-            const index = islandIndex("clock")
-
-            selectedIslandIndex = index >= 0 ? index : 0
-        }
-
-        function normalizeIslandIndex(index) {
-            const count = islandOrder.length
-
-            if (count <= 0)
-                return 0
-
-            return ((index % count) + count) % count
-        }
-
-        function showSelectedIsland() {
-            if (selectedIslandIndex >= islandOrder.length)
-                selectedIslandIndex = 0
-
-            if (selectedIslandIndex < 0)
-                selectedIslandIndex = 0
-
-            hoverExpandDelayTimer.stop()
-            hoverCollapseDelayTimer.stop()
-            osdTimer.stop()
-            wsOsdTimer.stop()
-            notificationAutoHideTimer.stop()
-
-            hoverExpandedActive = false
-
-            islandBackground.islandState = restingState
-        }
-
-        function nextIsland() {
-            if (islandOrder.length <= 1) {
-                showSelectedIsland()
-                return
-            }
-
-            selectedIslandIndex =
-                normalizeIslandIndex(selectedIslandIndex + 1)
-
-            showSelectedIsland()
-        }
-
-        function previousIsland() {
-            if (islandOrder.length <= 1) {
-                showSelectedIsland()
-                return
-            }
-
-            selectedIslandIndex =
-                normalizeIslandIndex(selectedIslandIndex - 1)
-
-            showSelectedIsland()
-        }
-
-        Connections {
-            target: musicData
-
-            function onHasTrackChanged() {
-                const currentState = islandBackground.islandState
-
-                if (!musicData.hasTrack) {
-                    if (islandWindow.selectedIsland === "music")
-                        islandWindow.selectClockIsland()
-
-                    if (currentState === "music-compact"
-                            || currentState === "music-expanded") {
-
-                        islandBackground.islandState =
-                            islandWindow.restingState
-                    }
-
-                    return
-                }
-            }
-        }
-
-        Connections {
-            target: NotificationService
-
-            function onNotificationsChanged() {
-                if (NotificationService.notifications.length === 0) {
-
-                    if (islandWindow.selectedIsland === "notifications") {
-                        islandWindow.selectClockIsland()
-                    }
-
-                    if (islandBackground.islandState === "notifications"
-                            || islandBackground.islandState === "notification-pill"
-                            || islandBackground.islandState === "notification-expanded") {
-
-                        islandBackground.islandState =
-                            islandWindow.restingState
-                    }
-                }
-            }
-        }
+        // ============================================================
+        // TRANSIENT NOTIFICATION PILL
+        // ============================================================
 
         property string notificationReturnState: "idle"
 
@@ -304,6 +180,137 @@ ShellRoot {
                 restoreFromNotification()
         }
 
+        property string selectedIsland:
+            islandOrder.length > 0
+            ? islandOrder[selectedIslandIndex]
+            : "clock"
+
+        property string restingState: {
+            if (selectedIsland === "music" && musicData.hasTrack)
+                return "music-compact"
+
+            if (selectedIsland === "notifications") {
+                if (NotificationService.latestNotification)
+                    return "notification-pill"
+
+                return "idle"
+            }
+
+            return "idle"
+        }
+
+        function normalizeIslandIndex(index) {
+            const count = islandOrder.length
+            if (count <= 0)
+                return 0
+
+            return ((index % count) + count) % count
+        }
+
+        function showSelectedIsland() {
+            if (selectedIsland === "music" && !musicData.hasTrack)
+                selectedIslandIndex = 0
+
+            hoverExpandDelayTimer.stop()
+            hoverCollapseDelayTimer.stop()
+            osdTimer.stop()
+            wsOsdTimer.stop()
+            notificationAutoHideTimer.stop()
+
+            islandWindow.hoverExpandedActive = false
+            islandBackground.islandState = islandWindow.restingState
+        }
+
+        function nextIsland() {
+            if (islandOrder.length <= 0)
+                return
+
+            let next = normalizeIslandIndex(selectedIslandIndex + 1)
+
+            while (islandOrder[next] === "music"
+                   && !musicData.hasTrack
+                   && next !== selectedIslandIndex) {
+                next = normalizeIslandIndex(next + 1)
+            }
+
+            selectedIslandIndex = next
+            showSelectedIsland()
+        }
+
+        function previousIsland() {
+            if (islandOrder.length <= 0)
+                return
+
+            let previous = normalizeIslandIndex(selectedIslandIndex - 1)
+
+            while (islandOrder[previous] === "music"
+                   && !musicData.hasTrack
+                   && previous !== selectedIslandIndex) {
+                previous = normalizeIslandIndex(previous - 1)
+            }
+
+            selectedIslandIndex = previous
+            showSelectedIsland()
+        }
+
+        Connections {
+            target: NotificationService
+
+            function onNotificationsChanged() {
+                if (NotificationService.notifications.length === 0) {
+
+                    const notificationIndex =
+                        islandWindow.islandOrder.indexOf("notifications")
+
+                    if (islandWindow.selectedIsland === "notifications") {
+                        islandWindow.selectedIslandIndex = 0
+
+                        if (islandBackground.islandState === "notification-pill")
+                            islandBackground.islandState = "idle"
+                    }
+                }
+            }
+        }
+
+        Connections {
+            target: musicData
+
+            function onHasTrackChanged() {
+                const current = islandBackground.islandState
+
+                if (!musicData.hasTrack
+                    && islandWindow.selectedIsland === "music") {
+
+                    islandWindow.restoreMusicAfterTrackChange = true
+                    islandWindow.selectedIslandIndex = 0
+                }
+
+                if (musicData.hasTrack
+                    && islandWindow.restoreMusicAfterTrackChange) {
+
+                    const musicIndex =
+                        islandWindow.islandOrder.indexOf("music")
+
+                    if (musicIndex >= 0)
+                        islandWindow.selectedIslandIndex = musicIndex
+
+                    islandWindow.restoreMusicAfterTrackChange = false
+                }
+
+                if (current === "idle"
+                    || current === "music-compact"
+                    || current === "music-expanded") {
+
+                    islandBackground.islandState =
+                        islandWindow.restingState
+                }
+            }
+        }
+
+        // ============================================================
+        // NOTIFICATIONS SERVER
+        // ============================================================
+
         NotificationServer {
             id: notificationServer
 
@@ -335,6 +342,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // IPC / KEYBINDS
+        // ============================================================
+
         IpcHandler {
             target: "island"
 
@@ -355,8 +366,6 @@ ShellRoot {
 
                 islandWindow.hoverExpandedActive = false
 
-                islandWindow.selectMusicIsland()
-
                 if (islandBackground.islandState === "music-expanded") {
                     islandBackground.islandState = "music-compact"
                 } else {
@@ -365,34 +374,17 @@ ShellRoot {
             }
 
             function openMusic(): void {
-                if (!musicData.hasTrack)
-                    return
-
+                if (!musicData.hasTrack) return
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
-
                 islandWindow.hoverExpandedActive = false
-
-                islandWindow.selectMusicIsland()
-
                 islandBackground.islandState = "music-expanded"
             }
 
             function closeMusic(): void {
+                if (!musicData.hasTrack) return
                 hoverExpandDelayTimer.stop()
-                hoverCollapseDelayTimer.stop()
-
                 islandWindow.hoverExpandedActive = false
-
-                if (!musicData.hasTrack) {
-                    islandWindow.selectClockIsland()
-                    islandBackground.islandState =
-                        islandWindow.restingState
-                    return
-                }
-
-                islandWindow.selectMusicIsland()
-
                 islandBackground.islandState = "music-compact"
             }
 
@@ -479,6 +471,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // AUDIO
+        // ============================================================
+
         PwObjectTracker {
             id: audioTracker
             objects: [ Pipewire.defaultAudioSink ]
@@ -504,6 +500,10 @@ ShellRoot {
             return false
         }
 
+        // ============================================================
+        // GLOBAL STATE
+        // ============================================================
+
         property real trackedBrightness: -1
         property real pendingBrightness: -1
         property string currentOsd: "volume"
@@ -521,6 +521,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // WORKSPACE OSD
+        // ============================================================
+
         onFocusedWorkspaceChanged: {
             if (suppressWsOsd)
                 return
@@ -532,6 +536,10 @@ ShellRoot {
                 wsOsdTimer.restart()
             }
         }
+
+        // ============================================================
+        // VOLUME OSD
+        // ============================================================
 
         onTrackedVolumeChanged: {
             if (suppressOsd)
@@ -556,6 +564,10 @@ ShellRoot {
                 osdTimer.restart()
             }
         }
+
+        // ============================================================
+        // BRIGHTNESS
+        // ============================================================
 
         Process {
             id: brightnessProc
@@ -618,6 +630,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // OSD TIMERS
+        // ============================================================
+
         Timer {
             id: osdTimer
             interval: 2000
@@ -639,6 +655,10 @@ ShellRoot {
                 }
             }
         }
+
+        // ============================================================
+        // HOVER LOGIC
+        // ============================================================
 
         property bool hoverExpandedActive: false
 
@@ -670,6 +690,14 @@ ShellRoot {
                 if (islandMouseArea.containsMouse)
                     return
 
+                // The auto-collapse logic is cleanly removed below, so leaving the dashboard 
+                // area with your mouse will no longer force it closed.
+                // if (islandBackground.islandState === "hover") {
+                //     islandBackground.islandState =
+                //         islandWindow.restingState
+                //     return
+                // }
+
                 if (islandWindow.hoverExpandedActive
                     && islandBackground.islandState
                     === "music-expanded") {
@@ -691,6 +719,10 @@ ShellRoot {
             }
         }
 
+        // ============================================================
+        // DYNAMIC ISLAND
+        // ============================================================
+
         Rectangle {
             id: islandBackground
 
@@ -698,6 +730,10 @@ ShellRoot {
             anchors.horizontalCenter: parent.horizontalCenter
 
             property string islandState: "idle"
+
+            // --------------------------------------------------------
+            // TARGET WIDTH
+            // --------------------------------------------------------
 
             readonly property real targetWidth: {
                 switch (islandState) {
@@ -724,6 +760,10 @@ ShellRoot {
                 }
             }
 
+            // --------------------------------------------------------
+            // TARGET HEIGHT
+            // --------------------------------------------------------
+
             readonly property real targetHeight: {
                 switch (islandState) {
                 case "idle":
@@ -748,6 +788,10 @@ ShellRoot {
                     return 40
                 }
             }
+
+            // --------------------------------------------------------
+            // TARGET RADIUS
+            // --------------------------------------------------------
 
             readonly property real targetRadius: {
                 switch (islandState) {
@@ -785,24 +829,34 @@ ShellRoot {
             border.width: 1
             clip: true
 
+            // High tension + heavy-but-underdamped spring: the frame snaps
+            // open fast and overshoots into a small organic wobble before
+            // settling. No delay here — this is what "leads" the animation,
+            // with inner content staggered in behind it (see content items).
             Behavior on width {
-                NumberAnimation {
-                    duration: 350
-                    easing.type: Easing.OutQuint
+                SpringAnimation {
+                    spring: 6.8
+                    damping: 0.5
+                    mass: 1.0
+                    epsilon: 0.25
                 }
             }
 
             Behavior on height {
-                NumberAnimation {
-                    duration: 350
-                    easing.type: Easing.OutQuint
+                SpringAnimation {
+                    spring: 6.8
+                    damping: 0.5
+                    mass: 1.0
+                    epsilon: 0.25
                 }
             }
 
             Behavior on radius {
-                NumberAnimation {
-                    duration: 350
-                    easing.type: Easing.OutQuint
+                SpringAnimation {
+                    spring: 6.8
+                    damping: 0.5
+                    mass: 1.0
+                    epsilon: 0.25
                 }
             }
 
@@ -826,6 +880,7 @@ ShellRoot {
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
 
+                    // Only expand music automatically on hover
                     if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
                 }
@@ -881,6 +936,7 @@ ShellRoot {
                     swipeEligible = false
                 }
                 
+                // New click handler to specifically open the dashboard or notification pill
                 onClicked: function(mouse) {
                     if (horizontalSwipe) return
 
@@ -900,6 +956,10 @@ ShellRoot {
                 }
             }
 
+            // ========================================================
+            // CONTENT
+            // ========================================================
+
             Item {
                 anchors.fill: parent
 
@@ -907,10 +967,15 @@ ShellRoot {
                     anchors.fill: parent
                     textColor: islandWindow.colors.color15
                     opacity: islandBackground.islandState === "idle" ? 1 : 0
-                    visible: opacity > 0
+                    scale: islandBackground.islandState === "idle" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
@@ -925,10 +990,15 @@ ShellRoot {
                         : (islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness)
                     isMuted: islandWindow.isMuted
                     opacity: islandBackground.islandState === "osd" ? 1 : 0
-                    visible: opacity > 0
+                    scale: islandBackground.islandState === "osd" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
@@ -941,7 +1011,9 @@ ShellRoot {
                     subtleColor: islandWindow.colors.color8
                     
                     opacity: islandBackground.islandState === "hover" ? 1 : 0
-                    visible: opacity > 0
+                    scale: islandBackground.islandState === "hover" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
                     
                     onRequestClose: {
                         islandBackground.islandState = islandWindow.restingState;
@@ -960,7 +1032,10 @@ ShellRoot {
                     }
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
@@ -971,10 +1046,15 @@ ShellRoot {
                     backgroundColor: islandWindow.colors.color0
                     subtleColor: islandWindow.colors.color8
                     opacity: islandBackground.islandState === "workspace-osd" ? 1 : 0
-                    visible: opacity > 0
+                    scale: islandBackground.islandState === "workspace-osd" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 200 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
@@ -991,20 +1071,30 @@ ShellRoot {
 
                     opacity: (islandBackground.islandState === "notification-pill"
                               || islandBackground.islandState === "notification-expanded") ? 1 : 0
-                    visible: opacity > 0
+                    scale: (islandBackground.islandState === "notification-pill" || islandBackground.islandState === "notification-expanded") ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
                 CustomComponents.NotificationCenter {
                     anchors.fill: parent
                     opacity: islandBackground.islandState === "notifications" ? 1 : 0
-                    visible: opacity > 0
+                    scale: islandBackground.islandState === "notifications" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
 
@@ -1025,10 +1115,15 @@ ShellRoot {
 
                     opacity: (islandBackground.islandState === "music-compact"
                               || islandBackground.islandState === "music-expanded") ? 1 : 0
-                    visible: opacity > 0
+                    scale: (islandBackground.islandState === "music-compact" || islandBackground.islandState === "music-expanded") ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 250 }
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
 
                     onRequestExpand: {

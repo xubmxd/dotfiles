@@ -33,6 +33,18 @@ Item {
     // STATE PROPERTIES & SIGNALS
     // ============================================================
     property string currentSubView: "main" // "main", "wifi", "wifi-password", "wifi-detail", "bt", "bt-detail"
+
+    // Z-depth of each sub-view for the 3D pop/push transition — views
+    // deeper than the active one swallow toward the center, views
+    // shallower than the active one push back.
+    function depthFor(state) {
+        switch (state) {
+        case "wifi": case "bt": return 1
+        case "wifi-detail": case "wifi-password": case "bt-detail": return 2
+        default: return 0
+        }
+    }
+    readonly property int activeDepth: depthFor(currentSubView)
     property string wifiConnectionState: "password" // "password", "connecting", "success", "error"
     property string targetWifiSsid: ""
     property string wifiConnectionStatus: ""
@@ -299,9 +311,30 @@ Item {
         Item {
             id: mainView
             width: parent.width; height: parent.height
-            visible: dashboardRoot.currentSubView === "main" || x > -width
-            x: dashboardRoot.currentSubView === "main" ? 0 : -width
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "main"
+            readonly property int myDepth: 0
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
+
+            transform: Rotation {
+                origin.x: mainView.width / 2; origin.y: mainView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: mainView.isActive ? 0 : (mainView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 16; spacing: 0
@@ -480,9 +513,30 @@ Item {
         Rectangle {
             id: wifiView
             width: parent.width; height: parent.height; color: "transparent"
-            visible: dashboardRoot.currentSubView === "wifi"
-            x: dashboardRoot.currentSubView === "wifi" ? 0 : width
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "wifi"
+            readonly property int myDepth: 1
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
+
+            transform: Rotation {
+                origin.x: wifiView.width / 2; origin.y: wifiView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: wifiView.isActive ? 0 : (wifiView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 16; spacing: 16
@@ -574,9 +628,30 @@ Item {
         Rectangle {
             id: wifiDetailView
             width: parent.width; height: parent.height; color: "transparent"
-            visible: dashboardRoot.currentSubView === "wifi-detail"
-            x: dashboardRoot.currentSubView === "wifi-detail" ? 0 : width
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "wifi-detail"
+            readonly property int myDepth: 2
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
+
+            transform: Rotation {
+                origin.x: wifiDetailView.width / 2; origin.y: wifiDetailView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: wifiDetailView.isActive ? 0 : (wifiDetailView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 16; spacing: 16
@@ -636,10 +711,31 @@ Item {
         FocusScope {
             id: wifiFlowView
             width: parent.width; height: parent.height
-            visible: dashboardRoot.currentSubView === "wifi-password"
-            x: dashboardRoot.currentSubView === "wifi-password" ? 0 : width
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "wifi-password"
+            readonly property int myDepth: 2
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
             focus: visible && dashboardRoot.wifiConnectionState === "password"
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            transform: Rotation {
+                origin.x: wifiFlowView.width / 2; origin.y: wifiFlowView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: wifiFlowView.isActive ? 0 : (wifiFlowView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             onVisibleChanged: {
                 if (visible && dashboardRoot.wifiConnectionState === "password") {
@@ -851,9 +947,30 @@ Item {
         Rectangle {
             id: btView
             width: parent.width; height: parent.height; color: "transparent"
-            visible: dashboardRoot.currentSubView === "bt"
-            x: dashboardRoot.currentSubView === "bt" ? 0 : width
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "bt"
+            readonly property int myDepth: 1
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
+
+            transform: Rotation {
+                origin.x: btView.width / 2; origin.y: btView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: btView.isActive ? 0 : (btView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 16; spacing: 12
@@ -1004,9 +1121,30 @@ Item {
         Rectangle {
             id: btDetailView
             width: parent.width; height: parent.height; color: "transparent"
-            visible: dashboardRoot.currentSubView === "bt-detail"
-            x: dashboardRoot.currentSubView === "bt-detail" ? 0 : width
-            Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            readonly property bool isActive: dashboardRoot.currentSubView === "bt-detail"
+            readonly property int myDepth: 2
+
+            opacity: isActive ? 1.0 : 0.0
+            scale: isActive ? 1.0 : (myDepth < dashboardRoot.activeDepth ? 0.88 : 0.5)
+            visible: opacity > 0.01
+            transformOrigin: Item.Center
+
+            transform: Rotation {
+                origin.x: btDetailView.width / 2; origin.y: btDetailView.height / 2
+                axis { x: 1; y: 0; z: 0 }
+                angle: btDetailView.isActive ? 0 : (btDetailView.myDepth < dashboardRoot.activeDepth ? -10 : 14)
+                Behavior on angle {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.01 }
+            }
+            }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 230; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                SpringAnimation { spring: 7.0; damping: 0.48; mass: 0.85; epsilon: 0.001 }
+            }
 
             property var device: dashboardRoot.selectedBtDevice
 
