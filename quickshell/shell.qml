@@ -823,7 +823,7 @@ ShellRoot {
             radius: targetRadius
 
             color: islandWindow.colors.color0
-            opacity: 0.85
+            opacity: 1.0
 
             border.color: Qt.rgba(1, 1, 1, 0.08)
             border.width: 1

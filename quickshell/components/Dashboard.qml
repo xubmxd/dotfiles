@@ -545,7 +545,7 @@ Item {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
                     Text { text: "Wi-Fi Networks"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
@@ -660,7 +660,7 @@ Item {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
                     }
                     Text { text: "Network Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
@@ -979,7 +979,7 @@ Item {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
                     Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
@@ -1156,7 +1156,7 @@ Item {
                     Layout.fillWidth: true
                     Rectangle {
                         width: 32; height: 32; radius: 16; color: Qt.rgba(1, 1, 1, 0.1)
-                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
+                        Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "bt" }
                     }
                     Text { text: "Device Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
