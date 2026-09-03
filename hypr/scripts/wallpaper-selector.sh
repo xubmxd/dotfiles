@@ -9,27 +9,57 @@ reindex_wallpapers() {
     local dir="$1"
     cd "$dir" || return
 
-    local folder_name=$(basename "$dir")
-    local prefix=$(echo "$folder_name" | tr ' ' '_')
-    local count=1
+    local folder_name
+    folder_name=$(basename "$dir")
 
+    local prefix
+    prefix=$(echo "$folder_name" | tr ' ' '_')
+
+    # Convert non-PNG wallpapers to PNG without overwriting
     for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do
         [ -e "$f" ] || continue
+
         local ext="${f##*.}"
-        ffmpeg -y -i "$f" "${f%.$ext}.png" &>/dev/null && rm -- "$f"
+        local output="${f%.$ext}.png"
+
+        # If the PNG already exists, don't overwrite it
+        if [ -e "$output" ]; then
+            echo "Skipping conversion: $output already exists"
+            continue
+        fi
+
+        if ffmpeg -y -i "$f" "$output" &>/dev/null; then
+            rm -- "$f"
+        fi
     done
+
+    # First rename EVERYTHING to temporary names
+    local count=1
+    local tmp_files=()
 
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        
-        local new_name=$(printf "%s%02d.png" "$prefix" "$count")
 
-        if [ "$file" != "$new_name" ]; then
-            mv -- "$file" "$new_name"
-        fi
+        local tmp_name
+        tmp_name=".reindex_tmp_$(printf '%04d' "$count").png"
+
+        mv -- "$file" "$tmp_name"
+
+        tmp_files+=("$tmp_name")
+        ((count++))
+    done < <(find . -maxdepth 1 -type f -name "*.png" -printf "%f\n" | sort)
+
+    # Now rename temporary files to final sequential names
+    count=1
+
+    for file in "${tmp_files[@]}"; do
+        local new_name
+        new_name=$(printf "%s%02d.png" "$prefix" "$count")
+
+        mv -- "$file" "$new_name"
 
         ((count++))
-    done < <(find . -maxdepth 1 -type f -name "*.png" | sort)
+    done
 }
 
 for category_dir in "$WALL_ROOT"/*/; do
