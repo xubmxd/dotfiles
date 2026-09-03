@@ -322,7 +322,9 @@ Item {
                 spacing: 12
 
                 Text {
-                    text: root.playerData ? root.playerData.timePlayed : "0:00"
+                    text: progressTrack.seekOverrideActive
+                        ? progressTrack.seekOverrideTimeText
+                        : (root.playerData ? root.playerData.timePlayed : "0:00")
                     color: root.subtleColor
                     font.family: "sans-serif"
                     font.pixelSize: 11
@@ -336,16 +338,75 @@ Item {
                     radius: 3
                     color: Qt.rgba(root.subtleColor.r, root.subtleColor.g, root.subtleColor.b, 0.2)
 
+                    property bool dragging: false
+                    property real dragPercentage: 0
+
+                    // The backend player applies seeks asynchronously over
+                    // DBus. If the position poller reads back the OLD
+                    // position before that lands, it snaps the bar back to
+                    // the pre-seek spot and keeps ticking from there, then
+                    // jerks forward once the real seek finally arrives -
+                    // looking exactly like the bar "skipping ahead" on its
+                    // own. Hold our optimistic value for a beat so the
+                    // stale poll can't clobber it.
+                    property bool seekOverrideActive: false
+                    property real seekOverridePercentage: 0
+                    property string seekOverrideTimeText: "0:00"
+
+                    Timer {
+                        id: seekOverrideTimer
+                        interval: 1500
+                        onTriggered: progressTrack.seekOverrideActive = false
+                    }
+
+                    function seekTo(percentage) {
+                        if (!root.playerData || !root.playerData.activePlayer || !root.playerData.activePlayer.canSeek) return
+
+                        const player = root.playerData.activePlayer
+                        const lengthSec = root.playerData.toSeconds(player.length) || 0
+                        const targetSec = Math.max(0, Math.min(lengthSec, lengthSec * percentage))
+
+                        // Quickshell's MprisPlayer reports position/length in
+                        // seconds (not raw MPRIS microseconds), and its
+                        // position property is directly writable when
+                        // positionSupported is true - so set it absolutely
+                        // instead of computing a relative offset.
+                        if (player.positionSupported) {
+                            player.position = targetSec
+                        } else if (typeof player.seek === "function") {
+                            const currentSec = root.playerData.toSeconds(player.position) || 0
+                            player.seek(targetSec - currentSec)
+                        }
+
+                        seekOverridePercentage = percentage
+                        seekOverrideTimeText = root.playerData.formatTime(targetSec)
+                        seekOverrideActive = true
+                        seekOverrideTimer.restart()
+
+                        root.playerData.trackProgress = percentage
+                        root.playerData.timePlayed = root.playerData.formatTime(targetSec)
+
+                        if (root.playerData.progressPoller) {
+                            root.playerData.progressPoller.restart()
+                        }
+                    }
+
                     Rectangle {
                         height: parent.height
                         width: {
                             if (!root.playerData) return 0
-                            return parent.width * Math.max(0, Math.min(1, root.playerData.trackProgress))
+                            const pct = progressTrack.dragging
+                                ? progressTrack.dragPercentage
+                                : (progressTrack.seekOverrideActive
+                                    ? progressTrack.seekOverridePercentage
+                                    : root.playerData.trackProgress)
+                            return parent.width * Math.max(0, Math.min(1, pct))
                         }
                         radius: parent.radius
                         color: root.activeColor
 
                         Behavior on width {
+                            enabled: !progressTrack.dragging && !progressTrack.seekOverrideActive
                             NumberAnimation {
                                 duration: 500
                                 easing.type: Easing.OutCubic
@@ -353,17 +414,56 @@ Item {
                         }
                     }
 
+                    // scrub handle, visible while dragging - matches the tactile
+                    // "grab and drag" feel of Apple's now-playing scrubber
+                    Rectangle {
+                        visible: progressTrack.dragging
+                        width: 12; height: 12; radius: 6
+                        color: root.activeColor
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: Math.max(0, Math.min(parent.width, parent.width * progressTrack.dragPercentage)) - width / 2
+                        scale: progressTrack.dragging ? 1 : 0.6
+                        Behavior on scale { SpringAnimation { spring: 6; damping: 0.5; mass: 0.6 } }
+                    }
+
                     MouseArea {
+                        id: scrubArea
                         anchors.fill: parent
                         anchors.margins: -10
                         cursorShape: Qt.PointingHandCursor
+                        enabled: root.playerData && root.playerData.activePlayer && root.playerData.activePlayer.canSeek
+
+                        function percentageFor(mx) {
+                            // MouseArea is expanded 10px past progressTrack on every side
+                            // (anchors.margins: -10), so its local (0,0) sits 10px before
+                            // progressTrack's own origin - subtract that back out or every
+                            // click/drag lands 10px off from where the finger actually is.
+                            return Math.max(0, Math.min(1, (mx - 10) / progressTrack.width))
+                        }
+
+                        onPressed: function(mouse) {
+                            progressTrack.dragging = true
+                            progressTrack.dragPercentage = percentageFor(mouse.x)
+                        }
+
+                        onPositionChanged: function(mouse) {
+                            if (!progressTrack.dragging) return
+                            progressTrack.dragPercentage = percentageFor(mouse.x)
+                        }
+
+                        onReleased: function(mouse) {
+                            if (!progressTrack.dragging) return
+                            progressTrack.dragging = false
+                            progressTrack.seekTo(percentageFor(mouse.x))
+                        }
+
+                        onCanceled: {
+                            progressTrack.dragging = false
+                        }
 
                         onClicked: function(mouse) {
-                            if (!root.playerData || !root.playerData.activePlayer || !root.playerData.activePlayer.canSeek) return
-                            const percentage = Math.max(0, Math.min(1, mouse.x / progressTrack.width))
-                            const length = Number(root.playerData.activePlayer.length) || 0
-                            root.playerData.activePlayer.position = length * percentage
-                            root.playerData.syncProgress()
+                            // plain tap (no drag) still seeks straight to that point
+                            progressTrack.seekTo(percentageFor(mouse.x))
                         }
                     }
                 }

@@ -47,8 +47,18 @@ QtObject {
         return null;
     }
 
-    function formatTime(microseconds) {
-        const totalSeconds = Math.max(0, Math.floor((Number(microseconds) || 0) / 1000000));
+    // --- THE FIX ---
+    // Automatically detect if the player is emitting seconds, milliseconds, or microseconds
+    function toSeconds(rawValue) {
+        const v = Number(rawValue) || 0;
+        if (v <= 0) return 0;
+        if (v < 10000) return v;                   // It's in Seconds
+        if (v < 10000000) return v / 1000;         // It's in Milliseconds
+        return v / 1000000;                        // It's in Microseconds
+    }
+
+    function formatTime(rawValue) {
+        const totalSeconds = Math.max(0, Math.floor(toSeconds(rawValue)));
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = Math.floor(totalSeconds % 60);
         return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
@@ -66,6 +76,7 @@ QtObject {
         const totalLength = Number(activePlayer.length) || 0;
 
         if (totalLength > 0) {
+            // The division works perfectly regardless of unit, as long as both match
             trackProgress = Math.max(0, Math.min(1, currentPos / totalLength));
             timePlayed = formatTime(currentPos);
             timeTotal = formatTime(totalLength);

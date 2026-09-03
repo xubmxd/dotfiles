@@ -24,7 +24,7 @@ Item {
     // Increased to make room for the 32px visualizer and 18px gap
     readonly property real fixedHorizontalSpace: 125
     readonly property real minWidth: 200
-    readonly property real maxWidth: 500
+    readonly property real maxWidth: 1000
     readonly property real compactImplicitWidth:
         Math.max(minWidth, Math.min(maxWidth, fixedHorizontalSpace + lyricMeasure.implicitWidth))
 
