@@ -896,8 +896,8 @@ ShellRoot {
 
             Behavior on width {
                 SpringAnimation {
-                    spring: 6.8
-                    damping: 0.5
+                    spring: 8.2
+                    damping: 0.55
                     mass: 1.0
                     epsilon: 0.25
                 }
@@ -905,8 +905,8 @@ ShellRoot {
 
             Behavior on height {
                 SpringAnimation {
-                    spring: 6.8
-                    damping: 0.5
+                    spring: 5.8
+                    damping: 0.42
                     mass: 1.0
                     epsilon: 0.25
                 }
@@ -1037,10 +1037,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1060,10 +1060,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1097,10 +1097,10 @@ ShellRoot {
                     }
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1116,10 +1116,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1141,10 +1141,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1156,10 +1156,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
 
@@ -1185,10 +1185,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
 
                     onRequestExpand: {
@@ -1223,10 +1223,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
+                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
                     }
                 }
                 CustomComponents.OmniPill {
@@ -1252,8 +1252,8 @@ ShellRoot {
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
-                    Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                    Behavior on scale { SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 } }
+                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    Behavior on scale { SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 } }
                 }
             }
         }
