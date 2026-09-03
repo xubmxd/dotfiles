@@ -111,7 +111,7 @@ ShellRoot {
         // ============================================================
 
         property var islandOrder: {
-            var islands = ["clock"]
+            var islands = ["clock","omni"]
 
             if (musicData.hasTrack)
                 islands.push("music")
@@ -207,6 +207,9 @@ ShellRoot {
 
                 return "idle"
             }
+
+            if (selectedIsland === "omni")
+                return "omni"
 
             return "idle"
         }
@@ -807,6 +810,8 @@ ShellRoot {
                     return notificationPill.implicitWidth
                 case "notification-expanded":
                     return notificationPill.implicitWidth
+                case "omni":
+                    return omniPillItem.compactImplicitWidth
                 default:
                     return 120
                 }
@@ -838,6 +843,8 @@ ShellRoot {
                     return notificationPill.implicitHeight
                 case "notification-expanded":
                     return notificationPill.implicitHeight
+                case "omni":
+                    return 40
                 default:
                     return 40
                 }
@@ -869,6 +876,8 @@ ShellRoot {
                     return 38
                 case "notification-expanded":
                     return 28
+                case "omni":
+                    return 20
                 default:
                     return 20
                 }
@@ -1219,6 +1228,32 @@ ShellRoot {
                     Behavior on scale {
                         SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
+                }
+                CustomComponents.OmniPill {
+                    id: omniPillItem
+                    anchors.fill: parent
+                    
+                    // Passing Data
+                    playerData: musicData
+                    workspaceName: islandWindow.focusedWorkspace ? islandWindow.focusedWorkspace.name : "1"
+                    
+                    // Colors
+                    textColor: islandWindow.colors.color15
+                    subtleColor: islandWindow.colors.color8
+                    accentColor: islandWindow.colors.color5
+                    
+                    // Setup time strings (you can bind these to your existing clock logic)
+                    timeText: Qt.formatDateTime(new Date(), "hh:mm ap")
+                    dateText: Qt.formatDate(new Date(), "MMM d")
+
+                    // Animations
+                    opacity: islandBackground.islandState === "omni" ? 1 : 0
+                    scale: islandBackground.islandState === "omni" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                    Behavior on scale { SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 } }
                 }
             }
         }
