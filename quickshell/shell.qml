@@ -116,7 +116,7 @@ ShellRoot {
             if (musicData.hasTrack)
                 islands.push("music")
 
-            if (musicData.hasTrack && lyricsService.hasLyrics)
+            if (musicData.hasTrack && (lyricsService.hasLyrics || lyricsService.loading))
                 islands.push("lyrics")
 
             if (NotificationService.notifications.length > 0)
@@ -127,6 +127,7 @@ ShellRoot {
         property int selectedIslandIndex: 0
 
         property bool restoreMusicAfterTrackChange: false
+        property bool restoreLyricsAfterTrackChange: false
 
         // ============================================================
         // TRANSIENT NOTIFICATION PILL
@@ -197,7 +198,7 @@ ShellRoot {
             if (selectedIsland === "music" && musicData.hasTrack)
                 return "music-compact"
 
-            if (selectedIsland === "lyrics" && musicData.hasTrack && lyricsService.hasLyrics)
+            if (selectedIsland === "lyrics" && musicData.hasTrack && (lyricsService.hasLyrics || lyricsService.loading))
                 return "lyrics"
 
             if (selectedIsland === "notifications") {
@@ -222,7 +223,7 @@ ShellRoot {
             if (selectedIsland === "music" && !musicData.hasTrack)
                 selectedIslandIndex = 0
 
-            if (selectedIsland === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics))
+            if (selectedIsland === "lyrics" && (!musicData.hasTrack || (!lyricsService.hasLyrics && !lyricsService.loading)))
                 selectedIslandIndex = 0
 
             hoverExpandDelayTimer.stop()
@@ -243,7 +244,7 @@ ShellRoot {
 
             while (next !== selectedIslandIndex
                    && ((islandOrder[next] === "music" && !musicData.hasTrack)
-                       || (islandOrder[next] === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics)))) {
+                       || (islandOrder[next] === "lyrics" && (!musicData.hasTrack || (!lyricsService.hasLyrics && !lyricsService.loading))))) {
                 next = normalizeIslandIndex(next + 1)
             }
 
@@ -259,12 +260,54 @@ ShellRoot {
 
             while (previous !== selectedIslandIndex
                    && ((islandOrder[previous] === "music" && !musicData.hasTrack)
-                       || (islandOrder[previous] === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics)))) {
+                       || (islandOrder[previous] === "lyrics" && (!musicData.hasTrack || (!lyricsService.hasLyrics && !lyricsService.loading))))) {
                 previous = normalizeIslandIndex(previous - 1)
             }
 
             selectedIslandIndex = previous
             showSelectedIsland()
+        }
+
+        // ============================================================
+        // ANTI-JITTER EVICTION TIMERS
+        // ============================================================
+
+        Timer {
+            id: musicEvictionTimer
+            interval: 150 
+            onTriggered: {
+                if (musicData.hasTrack) return; 
+
+                const current = islandBackground.islandState
+
+                if (islandWindow.selectedIsland === "lyrics") {
+                    islandWindow.restoreLyricsAfterTrackChange = true
+                    islandWindow.restoreMusicAfterTrackChange = false
+                    islandWindow.selectedIslandIndex = 0
+                } else if (islandWindow.selectedIsland === "music") {
+                    islandWindow.restoreMusicAfterTrackChange = true
+                    islandWindow.restoreLyricsAfterTrackChange = false
+                    islandWindow.selectedIslandIndex = 0
+                }
+
+                if (current === "idle" || current === "music-compact" || current === "music-expanded" || current === "lyrics") {
+                    islandBackground.islandState = islandWindow.restingState
+                }
+            }
+        }
+
+        Timer {
+            id: lyricsEvictionTimer
+            interval: 150 
+            onTriggered: {
+                if (lyricsService.hasLyrics || lyricsService.loading) return;
+
+                if (islandWindow.selectedIsland === "lyrics")
+                    islandWindow.selectedIslandIndex = 0
+
+                if (islandBackground.islandState === "lyrics")
+                    islandBackground.islandState = islandWindow.restingState
+            }
         }
 
         Connections {
@@ -290,35 +333,27 @@ ShellRoot {
             target: musicData
 
             function onHasTrackChanged() {
-                const current = islandBackground.islandState
-
-                if (!musicData.hasTrack
-                    && (islandWindow.selectedIsland === "music"
-                        || islandWindow.selectedIsland === "lyrics")) {
-
-                    islandWindow.restoreMusicAfterTrackChange = true
-                    islandWindow.selectedIslandIndex = 0
-                }
-
-                if (musicData.hasTrack
-                    && islandWindow.restoreMusicAfterTrackChange) {
-
-                    const musicIndex =
-                        islandWindow.islandOrder.indexOf("music")
-
-                    if (musicIndex >= 0)
-                        islandWindow.selectedIslandIndex = musicIndex
-
-                    islandWindow.restoreMusicAfterTrackChange = false
-                }
-
-                if (current === "idle"
-                    || current === "music-compact"
-                    || current === "music-expanded"
-                    || current === "lyrics") {
-
-                    islandBackground.islandState =
-                        islandWindow.restingState
+                if (!musicData.hasTrack) {
+                    musicEvictionTimer.restart()
+                } else {
+                    musicEvictionTimer.stop()
+                    
+                    if (islandWindow.restoreLyricsAfterTrackChange) {
+                        Qt.callLater(() => {
+                            const lyricsIndex = islandWindow.islandOrder.indexOf("lyrics")
+                            if (lyricsIndex >= 0) islandWindow.selectedIslandIndex = lyricsIndex
+                        })
+                        islandWindow.restoreLyricsAfterTrackChange = false
+                    } else if (islandWindow.restoreMusicAfterTrackChange) {
+                        const musicIndex = islandWindow.islandOrder.indexOf("music")
+                        if (musicIndex >= 0) islandWindow.selectedIslandIndex = musicIndex
+                        islandWindow.restoreMusicAfterTrackChange = false
+                    }
+                    
+                    const current = islandBackground.islandState
+                    if (current === "idle" || current === "music-compact" || current === "music-expanded" || current === "lyrics") {
+                        islandBackground.islandState = islandWindow.restingState
+                    }
                 }
             }
         }
@@ -326,16 +361,8 @@ ShellRoot {
         Connections {
             target: lyricsService
 
-            function onHasLyricsChanged() {
-                if (lyricsService.hasLyrics)
-                    return
-
-                if (islandWindow.selectedIsland === "lyrics")
-                    islandWindow.selectedIslandIndex = 0
-
-                if (islandBackground.islandState === "lyrics")
-                    islandBackground.islandState = islandWindow.restingState
-            }
+            function onHasLyricsChanged() { lyricsEvictionTimer.restart() }
+            function onLoadingChanged() { lyricsEvictionTimer.restart() }
         }
 
         // ============================================================
@@ -721,14 +748,6 @@ ShellRoot {
                 if (islandMouseArea.containsMouse)
                     return
 
-                // The auto-collapse logic is cleanly removed below, so leaving the dashboard 
-                // area with your mouse will no longer force it closed.
-                // if (islandBackground.islandState === "hover") {
-                //     islandBackground.islandState =
-                //         islandWindow.restingState
-                //     return
-                // }
-
                 if (islandWindow.hoverExpandedActive
                     && islandBackground.islandState
                     === "music-expanded") {
@@ -866,10 +885,6 @@ ShellRoot {
             border.width: 1
             clip: true
 
-            // High tension + heavy-but-underdamped spring: the frame snaps
-            // open fast and overshoots into a small organic wobble before
-            // settling. No delay here — this is what "leads" the animation,
-            // with inner content staggered in behind it (see content items).
             Behavior on width {
                 SpringAnimation {
                     spring: 6.8
@@ -917,7 +932,6 @@ ShellRoot {
                 onEntered: {
                     hoverCollapseDelayTimer.stop()
 
-                    // Only expand music automatically on hover
                     if (islandBackground.islandState === "music-compact")
                         hoverExpandDelayTimer.restart()
                 }
@@ -974,7 +988,6 @@ ShellRoot {
                     swipeEligible = false
                 }
                 
-                // New click handler to specifically open the dashboard or notification pill
                 onClicked: function(mouse) {
                     if (horizontalSwipe) return
 

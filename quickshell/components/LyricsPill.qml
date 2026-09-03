@@ -1,7 +1,6 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
-// 7. LYRICS PILL UI (Purely Presentational)
 Item {
     id: root
 
@@ -16,7 +15,7 @@ Item {
         visible: false
         text: root.lyricsService ? root.lyricsService.currentLine : ""
         font.family: "sans-serif"
-        font.pixelSize: 11
+        font.pixelSize: 13
         font.weight: Font.Medium
     }
 
@@ -94,12 +93,12 @@ Item {
 
         Text {
             id: labelA
-            width: parent.width
+            width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "sans-serif"
-            font.pixelSize: 11
+            font.pixelSize: 13
             font.weight: Font.Medium
             elide: Text.ElideRight
             maximumLineCount: 1
@@ -120,12 +119,12 @@ Item {
 
         Text {
             id: labelB
-            width: parent.width
+            width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "sans-serif"
-            font.pixelSize: 11
+            font.pixelSize: 13
             font.weight: Font.Medium
             elide: Text.ElideRight
             maximumLineCount: 1
