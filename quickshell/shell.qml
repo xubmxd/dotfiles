@@ -101,6 +101,11 @@ ShellRoot {
             id: musicData
         }
 
+        LyricsService {
+            id: lyricsService
+            musicData: musicData
+        }
+
         // ============================================================
         // ISLAND NAVIGATOR
         // ============================================================
@@ -110,6 +115,9 @@ ShellRoot {
 
             if (musicData.hasTrack)
                 islands.push("music")
+
+            if (musicData.hasTrack && lyricsService.hasLyrics)
+                islands.push("lyrics")
 
             if (NotificationService.notifications.length > 0)
                 islands.push("notifications")
@@ -189,6 +197,9 @@ ShellRoot {
             if (selectedIsland === "music" && musicData.hasTrack)
                 return "music-compact"
 
+            if (selectedIsland === "lyrics" && musicData.hasTrack && lyricsService.hasLyrics)
+                return "lyrics"
+
             if (selectedIsland === "notifications") {
                 if (NotificationService.latestNotification)
                     return "notification-pill"
@@ -211,6 +222,9 @@ ShellRoot {
             if (selectedIsland === "music" && !musicData.hasTrack)
                 selectedIslandIndex = 0
 
+            if (selectedIsland === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics))
+                selectedIslandIndex = 0
+
             hoverExpandDelayTimer.stop()
             hoverCollapseDelayTimer.stop()
             osdTimer.stop()
@@ -227,9 +241,9 @@ ShellRoot {
 
             let next = normalizeIslandIndex(selectedIslandIndex + 1)
 
-            while (islandOrder[next] === "music"
-                   && !musicData.hasTrack
-                   && next !== selectedIslandIndex) {
+            while (next !== selectedIslandIndex
+                   && ((islandOrder[next] === "music" && !musicData.hasTrack)
+                       || (islandOrder[next] === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics)))) {
                 next = normalizeIslandIndex(next + 1)
             }
 
@@ -243,9 +257,9 @@ ShellRoot {
 
             let previous = normalizeIslandIndex(selectedIslandIndex - 1)
 
-            while (islandOrder[previous] === "music"
-                   && !musicData.hasTrack
-                   && previous !== selectedIslandIndex) {
+            while (previous !== selectedIslandIndex
+                   && ((islandOrder[previous] === "music" && !musicData.hasTrack)
+                       || (islandOrder[previous] === "lyrics" && (!musicData.hasTrack || !lyricsService.hasLyrics)))) {
                 previous = normalizeIslandIndex(previous - 1)
             }
 
@@ -279,7 +293,8 @@ ShellRoot {
                 const current = islandBackground.islandState
 
                 if (!musicData.hasTrack
-                    && islandWindow.selectedIsland === "music") {
+                    && (islandWindow.selectedIsland === "music"
+                        || islandWindow.selectedIsland === "lyrics")) {
 
                     islandWindow.restoreMusicAfterTrackChange = true
                     islandWindow.selectedIslandIndex = 0
@@ -299,11 +314,27 @@ ShellRoot {
 
                 if (current === "idle"
                     || current === "music-compact"
-                    || current === "music-expanded") {
+                    || current === "music-expanded"
+                    || current === "lyrics") {
 
                     islandBackground.islandState =
                         islandWindow.restingState
                 }
+            }
+        }
+
+        Connections {
+            target: lyricsService
+
+            function onHasLyricsChanged() {
+                if (lyricsService.hasLyrics)
+                    return
+
+                if (islandWindow.selectedIsland === "lyrics")
+                    islandWindow.selectedIslandIndex = 0
+
+                if (islandBackground.islandState === "lyrics")
+                    islandBackground.islandState = islandWindow.restingState
             }
         }
 
@@ -749,6 +780,8 @@ ShellRoot {
                     return musicPlayerItem.compactImplicitWidth
                 case "music-expanded":
                     return 380
+                case "lyrics":
+                    return lyricsPillItem.compactImplicitWidth
                 case "notifications":
                     return 430
                 case "notification-pill":
@@ -778,6 +811,8 @@ ShellRoot {
                     return 40
                 case "music-expanded":
                     return 200
+                case "lyrics":
+                    return 40
                 case "notifications":
                     return 500
                 case "notification-pill":
@@ -807,6 +842,8 @@ ShellRoot {
                     return 20
                 case "music-expanded":
                     return 32
+                case "lyrics":
+                    return 20
                 case "notifications":
                     return 28
                 case "notification-pill":
@@ -898,6 +935,7 @@ ShellRoot {
                     swipeEligible =
                         islandBackground.islandState === "idle"
                         || islandBackground.islandState === "music-compact"
+                        || islandBackground.islandState === "lyrics"
                         || islandBackground.islandState === "notification-pill"
                 }
 
@@ -1137,6 +1175,29 @@ ShellRoot {
                         hoverExpandDelayTimer.stop()
                         islandWindow.hoverExpandedActive = false
                         islandBackground.islandState = "music-compact"
+                    }
+                }
+
+                CustomComponents.LyricsPill {
+                    id: lyricsPillItem
+
+                    anchors.fill: parent
+                    playerData: musicData
+                    lyricsService: lyricsService
+
+                    textColor: islandWindow.colors.color15
+                    subtleColor: islandWindow.colors.color8
+
+                    opacity: islandBackground.islandState === "lyrics" ? 1 : 0
+                    scale: islandBackground.islandState === "lyrics" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on scale {
+                        SpringAnimation { spring: 6.8; damping: 0.5; mass: 1.0; epsilon: 0.001 }
                     }
                 }
             }
