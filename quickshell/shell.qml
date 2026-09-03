@@ -425,7 +425,7 @@ ShellRoot {
                 islandWindow.hoverExpandedActive = false
 
                 if (islandBackground.islandState === "music-expanded") {
-                    islandBackground.islandState = "music-compact"
+                    islandBackground.islandState = islandWindow.restingState
                 } else {
                     islandBackground.islandState = "music-expanded"
                 }
@@ -443,7 +443,7 @@ ShellRoot {
                 if (!musicData.hasTrack) return
                 hoverExpandDelayTimer.stop()
                 islandWindow.hoverExpandedActive = false
-                islandBackground.islandState = "music-compact"
+                islandBackground.islandState = islandWindow.restingState
             }
 
             function expandNotification(): void {
@@ -998,6 +998,11 @@ ShellRoot {
                         islandBackground.islandState = islandWindow.restingState
                     } else if (islandBackground.islandState === "notification-pill") {
                         islandWindow.expandNotificationPill()
+                    } else if (islandBackground.islandState === "lyrics" || islandBackground.islandState === "music-compact") {
+                        islandWindow.hoverExpandedActive = false
+                        islandBackground.islandState = "music-expanded"
+                    } else if (islandBackground.islandState === "music-expanded") {
+                        islandBackground.islandState = islandWindow.restingState
                     }
                 }
 
@@ -1187,7 +1192,7 @@ ShellRoot {
                     onRequestCompact: {
                         hoverExpandDelayTimer.stop()
                         islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = "music-compact"
+                        islandBackground.islandState = islandWindow.restingState
                     }
                 }
 
@@ -1200,6 +1205,8 @@ ShellRoot {
 
                     textColor: islandWindow.colors.color15
                     subtleColor: islandWindow.colors.color8
+
+                    accentColor: islandWindow.colors.color5
 
                     opacity: islandBackground.islandState === "lyrics" ? 1 : 0
                     scale: islandBackground.islandState === "lyrics" ? 1.0 : 0.45

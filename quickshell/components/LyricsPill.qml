@@ -1,6 +1,7 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
+// 7. LYRICS PILL UI (Purely Presentational)
 Item {
     id: root
 
@@ -9,6 +10,7 @@ Item {
 
     property color textColor: "#ffffff"
     property color subtleColor: "#888888"
+    property color accentColor: "#a855f7" // Fallback color, can be mapped in shell.qml
 
     Text {
         id: lyricMeasure
@@ -19,9 +21,10 @@ Item {
         font.weight: Font.Medium
     }
 
-    readonly property real fixedHorizontalSpace: 73
+    // Increased to make room for the 32px visualizer and 18px gap
+    readonly property real fixedHorizontalSpace: 125
     readonly property real minWidth: 200
-    readonly property real maxWidth: 420
+    readonly property real maxWidth: 500
     readonly property real compactImplicitWidth:
         Math.max(minWidth, Math.min(maxWidth, fixedHorizontalSpace + lyricMeasure.implicitWidth))
 
@@ -78,13 +81,62 @@ Item {
         }
     }
 
+    // ==========================================
+    // AUDIO VISUALIZER 
+    // ==========================================
+    Item {
+        id: visualizerContainer
+        
+        width: 32
+        height: 24
+        
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        anchors.verticalCenter: parent.verticalCenter
+        
+        // Hide it cleanly if the music pauses
+        opacity: (root.playerData && root.playerData.isPlaying) ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+        Row {
+            anchors.centerIn: parent
+            spacing: 3
+            
+            Timer {
+                id: visTimer
+                interval: 100
+                running: root.playerData && root.playerData.isPlaying
+                repeat: true
+                property real phase: 0
+                onTriggered: phase += 0.4
+            }
+
+            Repeater {
+                model: 5
+                Rectangle {
+                    width: 4
+                    radius: 2
+                    color: root.accentColor
+                    height: root.playerData && root.playerData.isPlaying
+                            ? 6 + Math.abs(Math.sin(visTimer.phase + index * 0.8)) * 12
+                            : 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    Behavior on height { NumberAnimation { duration: 100 } }
+                }
+            }
+        }
+    }
+
     Item {
         id: stack
 
         anchors.left: art.right
         anchors.leftMargin: 9
-        anchors.right: parent.right
-        anchors.rightMargin: 16
+        
+        // Bound to the visualizer instead of the parent edge
+        anchors.right: visualizerContainer.left
+        anchors.rightMargin: 18
+        
         anchors.verticalCenter: parent.verticalCenter
         height: 16
         clip: true
@@ -93,6 +145,7 @@ Item {
 
         Text {
             id: labelA
+            // Fixes the text cut-off during spring animations
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
@@ -119,6 +172,7 @@ Item {
 
         Text {
             id: labelB
+            // Fixes the text cut-off during spring animations
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
