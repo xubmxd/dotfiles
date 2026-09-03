@@ -17,12 +17,12 @@ Item {
         visible: false
         text: root.lyricsService ? root.lyricsService.currentLine : ""
         font.family: "sans-serif"
-        font.pixelSize: 13
+        font.pixelSize: 15
         font.weight: Font.Medium
     }
 
-    // Increased to make room for the 32px visualizer and 18px gap
-    readonly property real fixedHorizontalSpace: 125
+    // Increased slightly to accommodate larger font metrics
+    readonly property real fixedHorizontalSpace: 138
     readonly property real minWidth: 200
     readonly property real maxWidth: 1000
     readonly property real compactImplicitWidth:
@@ -131,27 +131,26 @@ Item {
         id: stack
 
         anchors.left: art.right
-        anchors.leftMargin: 9
+        anchors.leftMargin: 18
         
-        // Bound to the visualizer instead of the parent edge
         anchors.right: visualizerContainer.left
         anchors.rightMargin: 18
         
         anchors.verticalCenter: parent.verticalCenter
-        height: 16
+        // Increased from 16 to 22 to prevent descenders (g, j, p, q, y) from cutting off
+        height: 22
         clip: true
 
         property bool aFront: true
 
         Text {
             id: labelA
-            // Fixes the text cut-off during spring animations
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "sans-serif"
-            font.pixelSize: 13
+            font.pixelSize: 15
             font.weight: Font.Medium
             elide: Text.ElideRight
             maximumLineCount: 1
@@ -172,13 +171,12 @@ Item {
 
         Text {
             id: labelB
-            // Fixes the text cut-off during spring animations
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "sans-serif"
-            font.pixelSize: 13
+            font.pixelSize: 15
             font.weight: Font.Medium
             elide: Text.ElideRight
             maximumLineCount: 1
@@ -198,7 +196,6 @@ Item {
         }
 
         function showLyric(text) {
-            // Do not animate if the identical string was requested
             if (text === (aFront ? labelA.text : labelB.text)) return
 
             const incoming = aFront ? labelB : labelA
