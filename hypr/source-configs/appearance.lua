@@ -27,7 +27,7 @@ local c = get_pywal_colors()
 hl.config({
     general = {
         gaps_in = 2,
-        gaps_out = 5,
+        gaps_out = 3,
         border_size = 0,
         col = {
             -- Gradient format updated to the new Lua table structure

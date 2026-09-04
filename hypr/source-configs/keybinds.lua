@@ -12,13 +12,11 @@ hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + U", hl.dsp.layout("togglesplit"))
 hl.bind("CTRL + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/waybar-selector.sh"))
+hl.bind(mainMod .. " + CTRL + A", hl.dsp.exec_cmd("~/.config/hypr/scripts/animation_selector.sh"))
 
 -- wallpaper - scripts
-hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/wallpaper-selector.sh"))
 hl.bind(mainMod .. " + SHIFT + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/gif-selector.sh"))
-hl.bind(mainMod .. " + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-wallpaper.sh"))
-hl.bind(mainMod .. " + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-gif.sh"))
-hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
+hl.bind(mainMod .. " + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-gif.sh")) hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
 
 -- Emoji
 hl.bind(mainMod .. " + Period", hl.dsp.exec_cmd("~/.config/hypr/scripts/emoji-picker"))
@@ -129,3 +127,12 @@ hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
+
+-- Dynamic Island keybinds
+
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("quickshell ipc call island toggleDashboard"), { locked = true })
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("quickshell ipc call island toggleMusic"), { locked = true })
+hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("quickshell ipc call island close"), { locked = true })
+hl.bind(mainMod .. " + DOWN", hl.dsp.exec_cmd("quickshell ipc call island nextIsland"), { locked = true })
+hl.bind(mainMod .. " + UP", hl.dsp.exec_cmd("quickshell ipc call island previousIsland"), { locked = true })
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call island toggleNotifications"), { locked = true })

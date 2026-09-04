@@ -74,13 +74,15 @@ hl.window_rule({
 })
 
 -- #### Brave ####
---
--- windowrule {
---     name = brave-blur
---
---     match:class = brave-browser
---     opacity = 0.8
--- }
+
+hl.window_rule({
+    name = "brave-blur",
+    match = {
+        class = "brave-browser",
+    },
+    opacity = 0.95,
+})
+
 
 --### Brave ####
 
