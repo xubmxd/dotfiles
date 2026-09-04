@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 
 Item {
     id: root
 
     // ============================================================
-    // PUBLIC API (matches the rest of your island components)
+    // PUBLIC API
     // ============================================================
 
     property color textColor: "white"
@@ -14,8 +15,6 @@ Item {
     property color subtleColor: "#a0a0a0"
     property color backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-    // Root wallpaper directories. Each root's immediate subfolders
-    // (2D, anime, lofi, pixel, rice, ...) become selectable categories.
     property var folders: [
         "~/Pictures/wallpapers"
     ]
@@ -24,24 +23,29 @@ Item {
 
     signal requestClose()
 
-    // Sizing hint for islandBackground.targetWidth/targetHeight, same
-    // pattern as MusicPlayer.compactImplicitWidth / LyricsPill etc.
     readonly property real pickerWidth: 620
     readonly property real pickerHeight: 220
 
-    // "categories" -> pick a subfolder first, "wallpapers" -> pick an image
     property string viewMode: "categories"
     property string selectedCategoryPath: ""
     property string selectedCategoryName: ""
 
-    // Grabs keyboard the moment this pill becomes visible, and always
-    // reopens at the category list rather than wherever it was left.
+    // Deletion State
+    property bool deletePromptActive: false
+    property string pendingDeletePath: ""
+
     onVisibleChanged: {
         if (visible) {
             viewMode = "categories"
             searchActive = false
             searchQuery = ""
+            deletePromptActive = false
             forceActiveFocus()
+            
+            // Trigger automatic backend reindexing of all folders
+            reindexAllProc.running = false
+            reindexAllProc.running = true
+            
             root.refresh()
         }
     }
@@ -55,6 +59,23 @@ Item {
     function fileName(path) {
         const parts = path.split("/")
         return parts[parts.length - 1]
+    }
+
+    function displayCategoryName(rawName) {
+        switch (rawName.toLowerCase()) {
+            case "anime":   return "▷  Anime"
+            case "scenic":  return "⌇  Scenic"
+            case "2d":      return "◇  2D"
+            case "lofi":    return "☾  Lofi"
+            case "space":   return "✧  Space"
+            case "gaming":  return "󰊗  Gaming"
+            case "rice":    return "󰣇  Rice"
+            case "cars":    return "󰭮  Cars"
+            case "pixel":   return "▦  Pixel"
+            case "minimal": return "□  Minimal"
+            case "nature":  return "♧  Nature"
+            default:        return "󰉋  " + rawName.charAt(0).toUpperCase() + rawName.slice(1)
+        }
     }
 
     function refresh() {
@@ -79,7 +100,7 @@ Item {
     }
 
     // ============================================================
-    // HOME DIR (needed to expand "~" for the shell commands)
+    // BACKGROUND PROCESSES
     // ============================================================
 
     Process {
@@ -96,10 +117,10 @@ Item {
         }
     }
 
-    // ============================================================
-    // STEP 1 — CATEGORY SCAN (immediate subfolders of each root,
-    // with one sample image per folder for a thumbnail preview)
-    // ============================================================
+    Process {
+        id: reindexAllProc
+        command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-backend.sh", "reindex_all"]
+    }
 
     ListModel {
         id: categoryModel
@@ -132,7 +153,7 @@ Item {
                     const parts = line.split("|")
                     categoryModel.append({
                         path: parts[0] || "",
-                        name: parts[1] || "",
+                        name: root.displayCategoryName(parts[1] || ""),
                         sample: parts[2] || ""
                     })
                 }
@@ -141,10 +162,6 @@ Item {
             }
         }
     }
-
-    // ============================================================
-    // STEP 2 — WALLPAPER SCAN (scoped to the selected category)
-    // ============================================================
 
     property var allWallpapers: []
     property string searchQuery: ""
@@ -172,17 +189,11 @@ Item {
 
     Process {
         id: scanWallpapersProc
-
         command: [
             "find", root.selectedCategoryPath,
-            "-maxdepth", "2",
-            "-type", "f",
-            "(",
-            "-iname", "*.jpg", "-o",
-            "-iname", "*.jpeg", "-o",
-            "-iname", "*.png", "-o",
-            "-iname", "*.webp",
-            ")"
+            "-maxdepth", "2", "-type", "f", "(",
+            "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o",
+            "-iname", "*.png", "-o", "-iname", "*.webp", ")"
         ]
 
         stdout: StdioCollector {
@@ -193,23 +204,28 @@ Item {
         }
     }
 
-    // ============================================================
-    // APPLY WALLPAPER (awww — drop-in rename of swww)
-    // ============================================================
-
+    // Single unified background process for applying AND deleting
     Process {
-        id: applyProc
+        id: backendProc
         property string targetPath: ""
-        command: ["awww", "img", targetPath, "--transition-type", "fade"]
+        property string mode: "apply" // "apply" or "delete"
+        
+        command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-backend.sh", mode, targetPath]
 
         onExited: {
-            root.currentWallpaper = targetPath
+            if (mode === "apply") {
+                root.currentWallpaper = targetPath
+            } else if (mode === "delete") {
+                scanWallpapersProc.running = false
+                scanWallpapersProc.running = true
+            }
         }
     }
 
     function applyWallpaper(path) {
-        applyProc.targetPath = path
-        applyProc.running = true
+        backendProc.mode = "apply"
+        backendProc.targetPath = path
+        backendProc.running = true
     }
 
     // ============================================================
@@ -218,31 +234,54 @@ Item {
 
     focus: true
 
-    Keys.onLeftPressed: {
-        if (viewMode === "categories")
-            categoryCarousel.decrementCurrentIndex()
-        else
-            wallpaperCarousel.decrementCurrentIndex()
-    }
+    Keys.onPressed: (event) => {
+        // Intercept all inputs if delete prompt is active
+        if (deletePromptActive) {
+            if (event.key === Qt.Key_Escape) {
+                deletePromptActive = false
+                event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                backendProc.mode = "delete"
+                backendProc.targetPath = pendingDeletePath
+                backendProc.running = true
+                deletePromptActive = false
+                event.accepted = true
+            }
+            return
+        }
 
-    Keys.onRightPressed: {
-        if (viewMode === "categories")
-            categoryCarousel.incrementCurrentIndex()
-        else
-            wallpaperCarousel.incrementCurrentIndex()
-    }
+        // Shift+Delete to trigger deletion prompt
+        if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
+            if (viewMode === "wallpapers" && wallpaperCarousel.currentIndex >= 0 && wallpaperModel.count > 0) {
+                pendingDeletePath = wallpaperModel.get(wallpaperCarousel.currentIndex).path
+                deletePromptActive = true
+                event.accepted = true
+            }
+            return
+        }
 
-    Keys.onReturnPressed: activateCurrent()
-    Keys.onEnterPressed: activateCurrent()
-
-    Keys.onEscapePressed: {
-        if (searchActive) {
-            searchActive = false
-            searchQuery = ""
-        } else if (viewMode === "wallpapers") {
-            backToCategories()
-        } else {
-            root.requestClose()
+        // Standard Navigation
+        if (event.key === Qt.Key_Left) {
+            if (viewMode === "categories") categoryCarousel.decrementCurrentIndex()
+            else wallpaperCarousel.decrementCurrentIndex()
+            event.accepted = true
+        } else if (event.key === Qt.Key_Right) {
+            if (viewMode === "categories") categoryCarousel.incrementCurrentIndex()
+            else wallpaperCarousel.incrementCurrentIndex()
+            event.accepted = true
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            activateCurrent()
+            event.accepted = true
+        } else if (event.key === Qt.Key_Escape) {
+            if (searchActive) {
+                searchActive = false
+                searchQuery = ""
+            } else if (viewMode === "wallpapers") {
+                backToCategories()
+            } else {
+                root.requestClose()
+            }
+            event.accepted = true
         }
     }
 
@@ -263,14 +302,52 @@ Item {
     // UI
     // ============================================================
 
-    // Back button, top-left — only in the wallpapers view
+    // Deletion Prompt Overlay
+    Rectangle {
+        id: deleteOverlay
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.85)
+        z: 100
+        visible: opacity > 0
+        opacity: deletePromptActive ? 1.0 : 0.0
+
+        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 12
+
+            Text {
+                text: "Delete Wallpaper?"
+                color: "#ef4444"
+                font.pixelSize: 18
+                font.weight: Font.Bold
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            Text {
+                text: root.fileName(pendingDeletePath)
+                color: root.textColor
+                font.pixelSize: 12
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            Text {
+                text: "Press [Enter] to confirm or [Esc] to cancel"
+                color: root.subtleColor
+                font.pixelSize: 11
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+        }
+    }
+
     Row {
         visible: viewMode === "wallpapers"
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 10
         spacing: 4
-        z: 2
+        z: 20
 
         MouseArea {
             width: backLabel.implicitWidth + 8
@@ -288,7 +365,6 @@ Item {
         }
     }
 
-    // Search toggle, top-right
     Rectangle {
         id: searchButton
         width: 26
@@ -298,7 +374,7 @@ Item {
         anchors.right: parent.right
         anchors.margins: 10
         color: Qt.rgba(1, 1, 1, searchActive ? 0.14 : 0.07)
-        z: 2
+        z: 20
 
         Text {
             anchors.centerIn: parent
@@ -333,7 +409,7 @@ Item {
         font.pixelSize: 12
         text: root.searchQuery
         clip: true
-        z: 2
+        z: 20
 
         onTextChanged: root.searchQuery = text
         Keys.onEscapePressed: {
@@ -345,9 +421,9 @@ Item {
     }
 
     // ------------------------------------------------------------
-    // Category carousel (step 1)
+    // Infinite Category Carousel (Cover Flow)
     // ------------------------------------------------------------
-    ListView {
+    PathView {
         id: categoryCarousel
         visible: viewMode === "categories"
 
@@ -355,48 +431,79 @@ Item {
         anchors.topMargin: 36
         anchors.bottomMargin: 10
 
-        orientation: ListView.Horizontal
         model: categoryModel
-        clip: false
-        spacing: 14
+        clip: true
 
-        highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: width / 2 - 90
-        preferredHighlightEnd: width / 2 + 90
-        highlightMoveDuration: 220
+        pathItemCount: 5
+        preferredHighlightBegin: 0.5
+        preferredHighlightEnd: 0.5
+        highlightMoveDuration: 300
+        dragMargin: width / 2
+
+        path: Path {
+            startX: -categoryCarousel.width * 0.1
+            startY: categoryCarousel.height / 2 - 10
+            
+            PathAttribute { name: "itemZ"; value: 0 }
+            PathAttribute { name: "itemScale"; value: 0.5 }
+            PathAttribute { name: "itemOpacity"; value: 0.1 }
+
+            PathLine { x: categoryCarousel.width * 0.2; y: categoryCarousel.height / 2 - 10 }
+            PathPercent { value: 0.25 }
+            PathAttribute { name: "itemZ"; value: 1 }
+            PathAttribute { name: "itemScale"; value: 0.75 }
+            PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+            PathLine { x: categoryCarousel.width * 0.5; y: categoryCarousel.height / 2 - 10 }
+            PathPercent { value: 0.5 }
+            PathAttribute { name: "itemZ"; value: 2 }
+            PathAttribute { name: "itemScale"; value: 1.15 }
+            PathAttribute { name: "itemOpacity"; value: 1.0 }
+
+            PathLine { x: categoryCarousel.width * 0.8; y: categoryCarousel.height / 2 - 10 }
+            PathPercent { value: 0.75 }
+            PathAttribute { name: "itemZ"; value: 1 }
+            PathAttribute { name: "itemScale"; value: 0.75 }
+            PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+            PathLine { x: categoryCarousel.width * 1.1; y: categoryCarousel.height / 2 - 10 }
+            PathPercent { value: 1.0 }
+            PathAttribute { name: "itemZ"; value: 0 }
+            PathAttribute { name: "itemScale"; value: 0.5 }
+            PathAttribute { name: "itemOpacity"; value: 0.1 }
+        }
 
         delegate: Item {
             id: catCardRoot
-            width: 130
+            width: 180
             height: categoryCarousel.height
 
-            readonly property bool isCurrent: ListView.isCurrentItem
+            readonly property bool isCurrent: PathView.isCurrentItem
+            
+            z: PathView.itemZ !== undefined ? PathView.itemZ : 0
+            scale: PathView.itemScale !== undefined ? PathView.itemScale : 1.0
+            opacity: PathView.itemOpacity !== undefined ? PathView.itemOpacity : 1.0
 
             Column {
                 anchors.centerIn: parent
-                spacing: 6
+                spacing: 10
 
                 Rectangle {
-                    width: catCardRoot.isCurrent ? 150 : 118
-                    height: catCardRoot.isCurrent ? 150 : 118
+                    width: 180
+                    height: 110
                     anchors.horizontalCenter: parent.horizontalCenter
-                    radius: 14
+                    radius: 12
                     color: root.backgroundColor
-                    border.width: catCardRoot.isCurrent ? 2 : 0
-                    border.color: root.activeColor
-                    opacity: catCardRoot.isCurrent ? 1.0 : 0.55
+                    border.width: isCurrent ? 2 : 0
+                    border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
-
-                    Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                     Image {
                         anchors.fill: parent
                         source: model.sample.length > 0 ? ("file://" + model.sample) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize.width: 220
+                        sourceSize.width: 360
                         sourceSize.height: 220
                         visible: model.sample.length > 0
                     }
@@ -411,7 +518,7 @@ Item {
                         anchors.centerIn: parent
                         text: model.name
                         color: root.textColor
-                        font.pixelSize: catCardRoot.isCurrent ? 14 : 12
+                        font.pixelSize: 14
                         font.weight: Font.DemiBold
                     }
 
@@ -419,8 +526,11 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            categoryCarousel.currentIndex = index
-                            root.openCategory(model.path, model.name)
+                            if (isCurrent) {
+                                root.openCategory(model.path, model.name)
+                            } else {
+                                categoryCarousel.currentIndex = index
+                            }
                         }
                     }
                 }
@@ -429,9 +539,9 @@ Item {
     }
 
     // ------------------------------------------------------------
-    // Wallpaper carousel (step 2)
+    // Infinite Wallpaper Carousel (Cover Flow)
     // ------------------------------------------------------------
-    ListView {
+    PathView {
         id: wallpaperCarousel
         visible: viewMode === "wallpapers"
 
@@ -439,48 +549,79 @@ Item {
         anchors.topMargin: 36
         anchors.bottomMargin: 10
 
-        orientation: ListView.Horizontal
         model: wallpaperModel
-        clip: false
-        spacing: 14
+        clip: true
 
-        highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: width / 2 - 90
-        preferredHighlightEnd: width / 2 + 90
-        highlightMoveDuration: 220
+        pathItemCount: 5
+        preferredHighlightBegin: 0.5
+        preferredHighlightEnd: 0.5
+        highlightMoveDuration: 300
+        dragMargin: width / 2
+
+        path: Path {
+            startX: -wallpaperCarousel.width * 0.1
+            startY: wallpaperCarousel.height / 2 - 10
+            
+            PathAttribute { name: "itemZ"; value: 0 }
+            PathAttribute { name: "itemScale"; value: 0.5 }
+            PathAttribute { name: "itemOpacity"; value: 0.1 }
+
+            PathLine { x: wallpaperCarousel.width * 0.2; y: wallpaperCarousel.height / 2 - 10 }
+            PathPercent { value: 0.25 }
+            PathAttribute { name: "itemZ"; value: 1 }
+            PathAttribute { name: "itemScale"; value: 0.75 }
+            PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+            PathLine { x: wallpaperCarousel.width * 0.5; y: wallpaperCarousel.height / 2 - 10 }
+            PathPercent { value: 0.5 }
+            PathAttribute { name: "itemZ"; value: 2 }
+            PathAttribute { name: "itemScale"; value: 1.15 }
+            PathAttribute { name: "itemOpacity"; value: 1.0 }
+
+            PathLine { x: wallpaperCarousel.width * 0.8; y: wallpaperCarousel.height / 2 - 10 }
+            PathPercent { value: 0.75 }
+            PathAttribute { name: "itemZ"; value: 1 }
+            PathAttribute { name: "itemScale"; value: 0.75 }
+            PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+            PathLine { x: wallpaperCarousel.width * 1.1; y: wallpaperCarousel.height / 2 - 10 }
+            PathPercent { value: 1.0 }
+            PathAttribute { name: "itemZ"; value: 0 }
+            PathAttribute { name: "itemScale"; value: 0.5 }
+            PathAttribute { name: "itemOpacity"; value: 0.1 }
+        }
 
         delegate: Item {
             id: cardRoot
-            width: 130
+            width: 180
             height: wallpaperCarousel.height
 
-            readonly property bool isCurrent: ListView.isCurrentItem
+            readonly property bool isCurrent: PathView.isCurrentItem
+            
+            z: PathView.itemZ !== undefined ? PathView.itemZ : 0
+            scale: PathView.itemScale !== undefined ? PathView.itemScale : 1.0
+            opacity: PathView.itemOpacity !== undefined ? PathView.itemOpacity : 1.0
 
             Column {
                 anchors.centerIn: parent
-                spacing: 6
+                spacing: 10
 
                 Rectangle {
-                    width: cardRoot.isCurrent ? 150 : 118
-                    height: cardRoot.isCurrent ? 150 : 118
+                    width: 180
+                    height: 110
                     anchors.horizontalCenter: parent.horizontalCenter
-                    radius: 14
+                    radius: 12
                     color: root.backgroundColor
-                    border.width: cardRoot.isCurrent ? 2 : 0
-                    border.color: root.activeColor
-                    opacity: cardRoot.isCurrent ? 1.0 : 0.55
+                    border.width: isCurrent ? 2 : 0
+                    border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
-
-                    Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                     Image {
                         anchors.fill: parent
                         source: "file://" + model.path
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize.width: 220
+                        sourceSize.width: 360
                         sourceSize.height: 220
                     }
 
@@ -488,8 +629,11 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            wallpaperCarousel.currentIndex = index
-                            root.applyWallpaper(model.path)
+                            if (isCurrent) {
+                                root.applyWallpaper(model.path)
+                            } else {
+                                wallpaperCarousel.currentIndex = index
+                            }
                         }
                     }
                 }
@@ -497,11 +641,11 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.fileName(model.path)
-                    color: cardRoot.isCurrent ? root.textColor : root.subtleColor
-                    font.pixelSize: cardRoot.isCurrent ? 12 : 10
-                    font.weight: cardRoot.isCurrent ? Font.DemiBold : Font.Normal
+                    color: isCurrent ? root.textColor : root.subtleColor
+                    font.pixelSize: 11
+                    font.weight: isCurrent ? Font.DemiBold : Font.Normal
                     elide: Text.ElideMiddle
-                    width: 130
+                    width: 160
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
