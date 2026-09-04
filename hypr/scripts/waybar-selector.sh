@@ -2,174 +2,221 @@
 
 WAYBAR_DIR="$HOME/.config/waybar"
 THEMES_DIR="$WAYBAR_DIR/themes"
-HYPR_ANIM_FILE="$HOME/.config/hypr/source-configs/waybar_anim.lua"
+
+HYPR_CONFIG_DIR="$HOME/.config/hypr/source-configs"
+HYPR_ANIM_FILE="$HYPR_CONFIG_DIR/waybar_anim.lua"
+STATUSBAR_FILE="$HYPR_CONFIG_DIR/statusbar.lua"
+DYNAMIC_KEYBIND_FILE="$HYPR_CONFIG_DIR/dynamic_keybinds.lua"
 
 ROFI_THEME="$HOME/.config/rofi/launcher.rasi"
 
 
 # ============================================================
-# MAIN BAR SELECTOR LOOP
+# STATUS BAR PROCESS MANAGEMENT
 # ============================================================
 
-while true; do
-
-    # --------------------------------------------------------
-    # SELECT BAR
-    # --------------------------------------------------------
-
-    bar_choice=$(printf "Waybar\nQuickshell" | rofi -dmenu -i \
-        -theme "$ROFI_THEME" \
-        -theme-str 'window {width: 300px;}' \
-        -theme-str 'textbox-prompt-colon { str: "󰖲 "; }')
-
-
-    # ESC from main menu = exit script
-    if [[ -z "$bar_choice" ]]; then
-        exit 0
-    fi
-
-
-    # ========================================================
-    # QUICKSHELL
-    # ========================================================
-
-    if [[ "$bar_choice" == "Quickshell" ]]; then
-
-        # Stop Waybar
+stop_waybar() {
+    if pgrep -x waybar >/dev/null; then
         killall waybar 2>/dev/null
 
-        # Start Quickshell only if it isn't already running
-        if ! pgrep -x quickshell >/dev/null; then
-            quickshell &
-        fi
-
-        notify-send "Bar Selector" "Quickshell activated"
-
-        exit 0
+        while pgrep -x waybar >/dev/null; do
+            sleep 0.1
+        done
     fi
+}
 
 
-    # ========================================================
-    # WAYBAR
-    # ========================================================
-
-    if [[ "$bar_choice" == "Waybar" ]]; then
-
-        # Get only directories from themes folder
-        themes=$(find "$THEMES_DIR" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -printf '%f\n' | sort)
-
-
-        if [[ -z "$themes" ]]; then
-            notify-send "Waybar Selector" \
-                "No themes found in $THEMES_DIR"
-
-            # Return to main selector
-            continue
-        fi
-
-
-        # ----------------------------------------------------
-        # SELECT WAYBAR THEME
-        # ----------------------------------------------------
-
-        choice=$(printf "%s\n" "$themes" | rofi -dmenu -i \
-            -theme "$ROFI_THEME" \
-            -theme-str 'window {width: 300px;}' \
-            -theme-str 'textbox-prompt-colon { str: " "; }')
-
-
-        # ESC from theme selector = back to main selector
-        if [[ -z "$choice" ]]; then
-            continue
-        fi
-
-
-        SELECTED_DIR="$THEMES_DIR/$choice"
-        CONFIG_FILE="$SELECTED_DIR/config.jsonc"
-        STYLE_FILE="$SELECTED_DIR/style.css"
-
-
-        # ----------------------------------------------------
-        # VALIDATE THEME
-        # ----------------------------------------------------
-
-        if [[ ! -f "$CONFIG_FILE" ]] || [[ ! -f "$STYLE_FILE" ]]; then
-
-            notify-send "Waybar Selector" \
-                "Missing config.jsonc or style.css in $choice"
-
-            # Return to main selector
-            continue
-        fi
-
-
-        # ====================================================
-        # STOP QUICKSHELL
-        # ====================================================
-
+stop_quickshell() {
+    if pgrep -x quickshell >/dev/null; then
         killall quickshell 2>/dev/null
 
-
-        # ====================================================
-        # APPLY WAYBAR THEME
-        # ====================================================
-
-        cp "$CONFIG_FILE" "$WAYBAR_DIR/config.jsonc"
-        cp "$STYLE_FILE" "$WAYBAR_DIR/style.css"
+        while pgrep -x quickshell >/dev/null; do
+            sleep 0.1
+        done
+    fi
+}
 
 
-        # ====================================================
-        # APPLY HYPRLAND WORKSPACE ANIMATION
-        # ====================================================
+# ============================================================
+# SELECT STATUS BAR
+# ============================================================
 
-        mkdir -p "$(dirname "$HYPR_ANIM_FILE")"
-
-        choice_lower=$(printf "%s" "$choice" | tr '[:upper:]' '[:lower:]')
-
-
-        if [[ "$choice_lower" == *"vertical"* ]]; then
-
-            echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })' \
-                > "$HYPR_ANIM_FILE"
-
-            hyprctl eval \
-                'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })'
+bar_choice=$(printf "Waybar\nQuickshell" | rofi -dmenu -i \
+    -theme "$ROFI_THEME" \
+    -theme-str 'window {width: 300px;}' \
+    -theme-str 'textbox-prompt-colon { str: "󰖲 "; }')
 
 
-        elif [[ "$choice_lower" == *"horizontal"* ]]; then
-
-            echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })' \
-                > "$HYPR_ANIM_FILE"
-
-            hyprctl eval \
-                'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })'
-
-        fi
+# User cancelled
+if [[ -z "$bar_choice" ]]; then
+    exit 0
+fi
 
 
-        # ====================================================
-        # RESTART WAYBAR
-        # ====================================================
-
-        killall waybar 2>/dev/null
-
-        sleep 0.2
-
-        waybar &
+# Ensure config directory exists
+mkdir -p "$HYPR_CONFIG_DIR"
 
 
-        notify-send \
-            "Bar Selector" \
-            "Waybar activated: $choice"
+# ============================================================
+# QUICKSHELL
+# ============================================================
+
+if [[ "$bar_choice" == "Quickshell" ]]; then
+
+    # Stop existing bars
+    stop_waybar
+    stop_quickshell
 
 
-        # Theme successfully selected → exit selector
-        exit 0
+    # Persist selected status bar.
+    # Do NOT launch Quickshell here.
+    cat > "$STATUSBAR_FILE" << EOF
+-- Generated by waybar-selector.sh
+hl.exec_cmd("quickshell")
+EOF
 
+
+    # Persist Quickshell wallpaper toggle keybind.
+    cat > "$DYNAMIC_KEYBIND_FILE" << EOF
+local mainMod = "SUPER"
+hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.exec_cmd("quickshell ipc call island toggleWallpaper"))
+EOF
+
+
+    notify-send "Status Bar" "Quickshell selected"
+
+    exit 0
+fi
+
+
+# ============================================================
+# WAYBAR
+# ============================================================
+
+if [[ "$bar_choice" == "Waybar" ]]; then
+
+    # --------------------------------------------------------
+    # FIND WAYBAR THEMES FIRST
+    #
+    # Don't kill the currently active bar until the user has
+    # successfully selected a Waybar theme.
+    # --------------------------------------------------------
+
+    themes=$(find "$THEMES_DIR" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -type d \
+        -printf '%f\n' | sort)
+
+
+    if [[ -z "$themes" ]]; then
+        notify-send "Waybar Selector" \
+            "No themes found in $THEMES_DIR"
+
+        exit 1
     fi
 
-done
+
+    # ========================================================
+    # SELECT WAYBAR THEME
+    # ========================================================
+
+    choice=$(echo "$themes" | rofi -dmenu -i \
+        -theme "$ROFI_THEME" \
+        -theme-str 'window {width: 300px;}' \
+        -theme-str 'textbox-prompt-colon { str: " "; }')
+
+
+    # User cancelled
+    if [[ -z "$choice" ]]; then
+        exit 0
+    fi
+
+
+    SELECTED_DIR="$THEMES_DIR/$choice"
+    CONFIG_FILE="$SELECTED_DIR/config.jsonc"
+    STYLE_FILE="$SELECTED_DIR/style.css"
+
+
+    # ========================================================
+    # VALIDATE THEME
+    # ========================================================
+
+    if [[ ! -f "$CONFIG_FILE" ]] || [[ ! -f "$STYLE_FILE" ]]; then
+
+        notify-send "Waybar Selector" \
+            "Missing config.jsonc or style.css in $choice"
+
+        exit 1
+    fi
+
+
+    # ========================================================
+    # STOP EXISTING STATUS BARS
+    # ========================================================
+
+    stop_waybar
+    stop_quickshell
+
+
+    # ========================================================
+    # APPLY WAYBAR THEME
+    # ========================================================
+
+    cp "$CONFIG_FILE" "$WAYBAR_DIR/config.jsonc"
+    cp "$STYLE_FILE" "$WAYBAR_DIR/style.css"
+
+
+    # ========================================================
+    # PERSIST SELECTED STATUS BAR
+    #
+    # Do NOT launch Waybar here.
+    # ========================================================
+
+    cat > "$STATUSBAR_FILE" << EOF
+-- Generated by waybar-selector.sh
+hl.exec_cmd("waybar")
+EOF
+
+
+    # ========================================================
+    # PERSIST WAYBAR WALLPAPER SELECTOR KEYBIND
+    # ========================================================
+
+    cat > "$DYNAMIC_KEYBIND_FILE" << EOF
+local mainMod = "SUPER"
+hl.bind(mainMod .. " + SHIFT + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/wallpaper-selector.sh"))
+EOF
+
+
+    # ========================================================
+    # APPLY WORKSPACE ANIMATION
+    # ========================================================
+
+    choice_lower=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
+
+
+    if [[ "$choice_lower" == *"vertical"* ]]; then
+
+        echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })' \
+            > "$HYPR_ANIM_FILE"
+
+        hyprctl eval \
+            'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })'
+
+
+    elif [[ "$choice_lower" == *"horizontal"* ]]; then
+
+        echo 'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })' \
+            > "$HYPR_ANIM_FILE"
+
+        hyprctl eval \
+            'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })'
+    fi
+
+
+    notify-send "Status Bar" \
+        "Waybar selected: $choice"
+
+    exit 0
+fi

@@ -32,8 +32,7 @@ fi
 # ---------------------------------------------------------
 
 # 1. Start the visualizer and lyrics widgets
-eww -c "$HOME/.config/eww/visualizer" open cava_visualizer
-# eww -c "$HOME/.config/eww/lyrics" open mewsic_lyrics
+# eww -c "$HOME/.config/eww/visualizer" open cava_visualizer
 
 # 2. Launch Foot
 "$TERMINAL" \
