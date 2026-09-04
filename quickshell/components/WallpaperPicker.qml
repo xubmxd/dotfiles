@@ -23,8 +23,9 @@ Item {
 
     signal requestClose()
 
-    readonly property real pickerWidth: 620
-    readonly property real pickerHeight: 220
+    // Increased overall dimensions for a bigger picker
+    readonly property real pickerWidth: 800
+    readonly property real pickerHeight: 280
 
     property string viewMode: "categories"
     property string selectedCategoryPath: ""
@@ -204,7 +205,6 @@ Item {
         }
     }
 
-    // Single unified background process for applying AND deleting
     Process {
         id: backendProc
         property string targetPath: ""
@@ -310,6 +310,7 @@ Item {
         z: 100
         visible: opacity > 0
         opacity: deletePromptActive ? 1.0 : 0.0
+        radius: 28 // Match the island radius
 
         Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
@@ -320,7 +321,7 @@ Item {
             Text {
                 text: "Delete Wallpaper?"
                 color: "#ef4444"
-                font.pixelSize: 18
+                font.pixelSize: 20
                 font.weight: Font.Bold
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -328,14 +329,14 @@ Item {
             Text {
                 text: root.fileName(pendingDeletePath)
                 color: root.textColor
-                font.pixelSize: 12
+                font.pixelSize: 14
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
             Text {
                 text: "Press [Enter] to confirm or [Esc] to cancel"
                 color: root.subtleColor
-                font.pixelSize: 11
+                font.pixelSize: 13
                 anchors.horizontalCenter: parent.horizontalCenter
             }
         }
@@ -345,7 +346,7 @@ Item {
         visible: viewMode === "wallpapers"
         anchors.top: parent.top
         anchors.left: parent.left
-        anchors.margins: 10
+        anchors.margins: 16
         spacing: 4
         z: 20
 
@@ -360,26 +361,26 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "\u2039 " + root.selectedCategoryName
                 color: root.subtleColor
-                font.pixelSize: 12
+                font.pixelSize: 14
             }
         }
     }
 
     Rectangle {
         id: searchButton
-        width: 26
-        height: 26
-        radius: 13
+        width: 32
+        height: 32
+        radius: 16
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.margins: 10
+        anchors.margins: 12
         color: Qt.rgba(1, 1, 1, searchActive ? 0.14 : 0.07)
         z: 20
 
         Text {
             anchors.centerIn: parent
             text: "\u{1F50D}"
-            font.pixelSize: 12
+            font.pixelSize: 14
             color: root.textColor
         }
 
@@ -402,11 +403,11 @@ Item {
         id: searchField
         visible: searchActive
         anchors.right: searchButton.left
-        anchors.rightMargin: 8
+        anchors.rightMargin: 10
         anchors.verticalCenter: searchButton.verticalCenter
-        width: 140
+        width: 160
         color: root.textColor
-        font.pixelSize: 12
+        font.pixelSize: 14
         text: root.searchQuery
         clip: true
         z: 20
@@ -428,8 +429,8 @@ Item {
         visible: viewMode === "categories"
 
         anchors.fill: parent
-        anchors.topMargin: 36
-        anchors.bottomMargin: 10
+        anchors.topMargin: 40
+        anchors.bottomMargin: 14
 
         model: categoryModel
         clip: true
@@ -442,31 +443,31 @@ Item {
 
         path: Path {
             startX: -categoryCarousel.width * 0.1
-            startY: categoryCarousel.height / 2 - 10
+            startY: categoryCarousel.height / 2 - 15
             
             PathAttribute { name: "itemZ"; value: 0 }
             PathAttribute { name: "itemScale"; value: 0.5 }
             PathAttribute { name: "itemOpacity"; value: 0.1 }
 
-            PathLine { x: categoryCarousel.width * 0.2; y: categoryCarousel.height / 2 - 10 }
+            PathLine { x: categoryCarousel.width * 0.2; y: categoryCarousel.height / 2 - 15 }
             PathPercent { value: 0.25 }
             PathAttribute { name: "itemZ"; value: 1 }
             PathAttribute { name: "itemScale"; value: 0.75 }
             PathAttribute { name: "itemOpacity"; value: 0.6 }
 
-            PathLine { x: categoryCarousel.width * 0.5; y: categoryCarousel.height / 2 - 10 }
+            PathLine { x: categoryCarousel.width * 0.5; y: categoryCarousel.height / 2 - 15 }
             PathPercent { value: 0.5 }
             PathAttribute { name: "itemZ"; value: 2 }
             PathAttribute { name: "itemScale"; value: 1.15 }
             PathAttribute { name: "itemOpacity"; value: 1.0 }
 
-            PathLine { x: categoryCarousel.width * 0.8; y: categoryCarousel.height / 2 - 10 }
+            PathLine { x: categoryCarousel.width * 0.8; y: categoryCarousel.height / 2 - 15 }
             PathPercent { value: 0.75 }
             PathAttribute { name: "itemZ"; value: 1 }
             PathAttribute { name: "itemScale"; value: 0.75 }
             PathAttribute { name: "itemOpacity"; value: 0.6 }
 
-            PathLine { x: categoryCarousel.width * 1.1; y: categoryCarousel.height / 2 - 10 }
+            PathLine { x: categoryCarousel.width * 1.1; y: categoryCarousel.height / 2 - 15 }
             PathPercent { value: 1.0 }
             PathAttribute { name: "itemZ"; value: 0 }
             PathAttribute { name: "itemScale"; value: 0.5 }
@@ -475,7 +476,7 @@ Item {
 
         delegate: Item {
             id: catCardRoot
-            width: 180
+            width: 220  // Increased width
             height: categoryCarousel.height
 
             readonly property bool isCurrent: PathView.isCurrentItem
@@ -486,13 +487,13 @@ Item {
 
             Column {
                 anchors.centerIn: parent
-                spacing: 10
+                spacing: 12
 
                 Rectangle {
-                    width: 180
-                    height: 110
+                    width: 220
+                    height: 135  // Increased height
                     anchors.horizontalCenter: parent.horizontalCenter
-                    radius: 12
+                    radius: 14
                     color: root.backgroundColor
                     border.width: isCurrent ? 2 : 0
                     border.color: Qt.rgba(255, 255, 255, 0.1)
@@ -503,8 +504,8 @@ Item {
                         source: model.sample.length > 0 ? ("file://" + model.sample) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize.width: 360
-                        sourceSize.height: 220
+                        sourceSize.width: 440  // Crisp resolution scaling
+                        sourceSize.height: 270
                         visible: model.sample.length > 0
                     }
 
@@ -518,7 +519,7 @@ Item {
                         anchors.centerIn: parent
                         text: model.name
                         color: root.textColor
-                        font.pixelSize: 14
+                        font.pixelSize: 16
                         font.weight: Font.DemiBold
                     }
 
@@ -546,8 +547,8 @@ Item {
         visible: viewMode === "wallpapers"
 
         anchors.fill: parent
-        anchors.topMargin: 36
-        anchors.bottomMargin: 10
+        anchors.topMargin: 40
+        anchors.bottomMargin: 14
 
         model: wallpaperModel
         clip: true
@@ -560,31 +561,31 @@ Item {
 
         path: Path {
             startX: -wallpaperCarousel.width * 0.1
-            startY: wallpaperCarousel.height / 2 - 10
+            startY: wallpaperCarousel.height / 2 - 15
             
             PathAttribute { name: "itemZ"; value: 0 }
             PathAttribute { name: "itemScale"; value: 0.5 }
             PathAttribute { name: "itemOpacity"; value: 0.1 }
 
-            PathLine { x: wallpaperCarousel.width * 0.2; y: wallpaperCarousel.height / 2 - 10 }
+            PathLine { x: wallpaperCarousel.width * 0.2; y: wallpaperCarousel.height / 2 - 15 }
             PathPercent { value: 0.25 }
             PathAttribute { name: "itemZ"; value: 1 }
             PathAttribute { name: "itemScale"; value: 0.75 }
             PathAttribute { name: "itemOpacity"; value: 0.6 }
 
-            PathLine { x: wallpaperCarousel.width * 0.5; y: wallpaperCarousel.height / 2 - 10 }
+            PathLine { x: wallpaperCarousel.width * 0.5; y: wallpaperCarousel.height / 2 - 15 }
             PathPercent { value: 0.5 }
             PathAttribute { name: "itemZ"; value: 2 }
             PathAttribute { name: "itemScale"; value: 1.15 }
             PathAttribute { name: "itemOpacity"; value: 1.0 }
 
-            PathLine { x: wallpaperCarousel.width * 0.8; y: wallpaperCarousel.height / 2 - 10 }
+            PathLine { x: wallpaperCarousel.width * 0.8; y: wallpaperCarousel.height / 2 - 15 }
             PathPercent { value: 0.75 }
             PathAttribute { name: "itemZ"; value: 1 }
             PathAttribute { name: "itemScale"; value: 0.75 }
             PathAttribute { name: "itemOpacity"; value: 0.6 }
 
-            PathLine { x: wallpaperCarousel.width * 1.1; y: wallpaperCarousel.height / 2 - 10 }
+            PathLine { x: wallpaperCarousel.width * 1.1; y: wallpaperCarousel.height / 2 - 15 }
             PathPercent { value: 1.0 }
             PathAttribute { name: "itemZ"; value: 0 }
             PathAttribute { name: "itemScale"; value: 0.5 }
@@ -593,7 +594,7 @@ Item {
 
         delegate: Item {
             id: cardRoot
-            width: 180
+            width: 220
             height: wallpaperCarousel.height
 
             readonly property bool isCurrent: PathView.isCurrentItem
@@ -604,13 +605,13 @@ Item {
 
             Column {
                 anchors.centerIn: parent
-                spacing: 10
+                spacing: 12
 
                 Rectangle {
-                    width: 180
-                    height: 110
+                    width: 220
+                    height: 135
                     anchors.horizontalCenter: parent.horizontalCenter
-                    radius: 12
+                    radius: 14
                     color: root.backgroundColor
                     border.width: isCurrent ? 2 : 0
                     border.color: Qt.rgba(255, 255, 255, 0.1)
@@ -621,8 +622,8 @@ Item {
                         source: "file://" + model.path
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize.width: 360
-                        sourceSize.height: 220
+                        sourceSize.width: 440
+                        sourceSize.height: 270
                     }
 
                     MouseArea {
@@ -642,10 +643,10 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.fileName(model.path)
                     color: isCurrent ? root.textColor : root.subtleColor
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     font.weight: isCurrent ? Font.DemiBold : Font.Normal
                     elide: Text.ElideMiddle
-                    width: 160
+                    width: 190
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
