@@ -16,8 +16,10 @@ ShellRoot {
         WlrLayershell.namespace: "custom-island"
         WlrLayershell.exclusiveZone: 40
 
-        // Dynamically request keyboard focus from Hyprland only when entering a password
-        focusable: dashboardComponent.currentSubView === "wifi-password"
+        // Force Hyprland to instantly route all keyboard input to the island
+        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper") 
+                                     ? WlrKeyboardFocus.Exclusive 
+                                     : WlrKeyboardFocus.None
 
         color: "transparent"
 
@@ -529,7 +531,33 @@ ShellRoot {
                 islandWindow.hoverExpandedActive = false
                 islandBackground.islandState =
                     islandWindow.restingState
+                }
+            function toggleWallpaper(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "wallpaper") {
+                    islandBackground.islandState = islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "wallpaper"
+                }
             }
+
+            function openWallpaper(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+                islandBackground.islandState = "wallpaper"
+            }
+
+            function closeWallpaper(): void {
+                if (islandBackground.islandState === "wallpaper") {
+                    islandBackground.islandState = islandWindow.restingState
+                }
+            }
+
         }
 
         // ============================================================
@@ -812,6 +840,8 @@ ShellRoot {
                     return notificationPill.implicitWidth
                 case "omni":
                     return omniPillItem.compactImplicitWidth
+                case "wallpaper":
+                    return wallpaperPickerItem.pickerWidth
                 default:
                     return 120
                 }
@@ -845,6 +875,8 @@ ShellRoot {
                     return notificationPill.implicitHeight
                 case "omni":
                     return 40
+                case "wallpaper":
+                    return wallpaperPickerItem.pickerHeight
                 default:
                     return 40
                 }
@@ -878,6 +910,8 @@ ShellRoot {
                     return 28
                 case "omni":
                     return 20
+                case "wallpaper":
+                    return 28
                 default:
                     return 20
                 }
@@ -895,29 +929,23 @@ ShellRoot {
             clip: true
 
             Behavior on width {
-                SpringAnimation {
-                    spring: 8.2
-                    damping: 0.55
-                    mass: 1.0
-                    epsilon: 0.25
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutQuint
                 }
             }
 
             Behavior on height {
-                SpringAnimation {
-                    spring: 5.8
-                    damping: 0.42
-                    mass: 1.0
-                    epsilon: 0.25
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutQuint
                 }
             }
 
             Behavior on radius {
-                SpringAnimation {
-                    spring: 6.8
-                    damping: 0.5
-                    mass: 1.0
-                    epsilon: 0.25
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutQuint
                 }
             }
 
@@ -928,7 +956,7 @@ ShellRoot {
                 z: -1
 
                 hoverEnabled: true
-                acceptedButtons: Qt.LeftButton
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
 
                 property real pressX: 0
                 property real pressY: 0
@@ -1000,6 +1028,16 @@ ShellRoot {
                 onClicked: function(mouse) {
                     if (horizontalSwipe) return
 
+                    if (mouse.button === Qt.RightButton) {
+                        if (islandBackground.islandState === "wallpaper") {
+                            islandBackground.islandState = islandWindow.restingState
+                        } else {
+                            islandWindow.hoverExpandedActive = false
+                            islandBackground.islandState = "wallpaper"
+                        }
+                        return
+                    }
+
                     if (islandBackground.islandState === "idle") {
                         islandWindow.hoverExpandedActive = false
                         islandBackground.islandState = "hover"
@@ -1026,7 +1064,10 @@ ShellRoot {
             // ========================================================
 
             Item {
-                anchors.fill: parent
+                // Instantly snap to target sizes to prevent squishing layout during animation
+                width: islandBackground.targetWidth
+                height: islandBackground.targetHeight
+                anchors.centerIn: parent
 
                 CustomComponents.Clock {
                     anchors.fill: parent
@@ -1037,10 +1078,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1060,10 +1101,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1097,10 +1138,10 @@ ShellRoot {
                     }
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1116,10 +1157,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1141,10 +1182,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1156,10 +1197,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
 
@@ -1185,10 +1226,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
 
                     onRequestExpand: {
@@ -1223,10 +1264,10 @@ ShellRoot {
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                     Behavior on scale {
-                        SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 }
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
                 CustomComponents.OmniPill {
@@ -1252,8 +1293,34 @@ ShellRoot {
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on scale { SpringAnimation { spring: 9.0; damping: 0.55; mass: 0.9; epsilon: 0.001 } }
+                    Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                    Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                }
+
+                CustomComponents.WallpaperPicker {
+                    id: wallpaperPickerItem
+                    anchors.fill: parent
+
+                    textColor: islandWindow.colors.color15
+                    activeColor: islandWindow.colors.color4
+                    subtleColor: islandWindow.colors.color8
+                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                    opacity: islandBackground.islandState === "wallpaper" ? 1 : 0
+                    scale: islandBackground.islandState === "wallpaper" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    onRequestClose: {
+                        islandBackground.islandState = islandWindow.restingState
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
                 }
             }
         }
