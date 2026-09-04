@@ -31,6 +31,7 @@ require("source-configs.enviornment-variables")
 --### AUTOSTART ###
 --#################
 require("source-configs.autostarts")
+require("source-configs.statusbar")
 
 --###################
 --### Appearance  ###
@@ -57,6 +58,7 @@ require("source-configs.input")
 --### KEYBINDINGS ###
 --###################
 require("source-configs.keybinds")
+require("source-configs.dynamic_keybinds")
 
 --##############################
 --### WINDOWS AND WORKSPACES ###
