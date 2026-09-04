@@ -736,7 +736,7 @@ ShellRoot {
 
         Timer {
             id: wsOsdTimer
-            interval: 1500
+            interval: 500
             onTriggered: {
                 if (!islandMouseArea.containsMouse) {
                     islandBackground.islandState =
