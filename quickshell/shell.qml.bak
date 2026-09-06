@@ -17,7 +17,7 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power") 
+        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper") 
                                      ? WlrKeyboardFocus.Exclusive 
                                      : WlrKeyboardFocus.None
 
@@ -558,32 +558,6 @@ ShellRoot {
                 }
             }
 
-            function togglePower(): void {
-                hoverExpandDelayTimer.stop()
-                hoverCollapseDelayTimer.stop()
-
-                islandWindow.hoverExpandedActive = false
-
-                if (islandBackground.islandState === "power") {
-                    islandBackground.islandState = islandWindow.restingState
-                } else {
-                    islandBackground.islandState = "power"
-                }
-            }
-
-            function openPower(): void {
-                hoverExpandDelayTimer.stop()
-                hoverCollapseDelayTimer.stop()
-                islandWindow.hoverExpandedActive = false
-                islandBackground.islandState = "power"
-            }
-
-            function closePower(): void {
-                if (islandBackground.islandState === "power") {
-                    islandBackground.islandState = islandWindow.restingState
-                }
-            }
-
         }
 
         // ============================================================
@@ -868,8 +842,6 @@ ShellRoot {
                     return omniPillItem.compactImplicitWidth
                 case "wallpaper":
                     return wallpaperPickerItem.pickerWidth
-                case "power":
-                    return powerMenuItem.menuWidth
                 default:
                     return 120
                 }
@@ -905,8 +877,6 @@ ShellRoot {
                     return 40
                 case "wallpaper":
                     return wallpaperPickerItem.pickerHeight
-                case "power":
-                    return powerMenuItem.menuHeight
                 default:
                     return 40
                 }
@@ -942,8 +912,6 @@ ShellRoot {
                     return 20
                 case "wallpaper":
                     return 28
-                case "power":
-                    return 26
                 default:
                     return 20
                 }
@@ -1340,33 +1308,6 @@ ShellRoot {
 
                     opacity: islandBackground.islandState === "wallpaper" ? 1 : 0
                     scale: islandBackground.islandState === "wallpaper" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
-
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                }
-
-                CustomComponents.PowerMenu {
-                    id: powerMenuItem
-                    anchors.fill: parent
-
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    dangerColor: islandWindow.colors.color1
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
-
-                    opacity: islandBackground.islandState === "power" ? 1 : 0
-                    scale: islandBackground.islandState === "power" ? 1.0 : 0.45
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 

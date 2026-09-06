@@ -23,7 +23,6 @@ Item {
 
     signal requestClose()
 
-    // Increased overall dimensions for a bigger picker
     readonly property real pickerWidth: 800
     readonly property real pickerHeight: 280
 
@@ -43,7 +42,6 @@ Item {
             deletePromptActive = false
             forceActiveFocus()
             
-            // Trigger automatic backend reindexing of all folders
             reindexAllProc.running = false
             reindexAllProc.running = true
             
@@ -235,7 +233,6 @@ Item {
     focus: true
 
     Keys.onPressed: (event) => {
-        // Intercept all inputs if delete prompt is active
         if (deletePromptActive) {
             if (event.key === Qt.Key_Escape) {
                 deletePromptActive = false
@@ -250,7 +247,6 @@ Item {
             return
         }
 
-        // Shift+Delete to trigger deletion prompt
         if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
             if (viewMode === "wallpapers" && wallpaperCarousel.currentIndex >= 0 && wallpaperModel.count > 0) {
                 pendingDeletePath = wallpaperModel.get(wallpaperCarousel.currentIndex).path
@@ -260,7 +256,6 @@ Item {
             return
         }
 
-        // Standard Navigation
         if (event.key === Qt.Key_Left) {
             if (viewMode === "categories") categoryCarousel.decrementCurrentIndex()
             else wallpaperCarousel.decrementCurrentIndex()
@@ -308,11 +303,11 @@ Item {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.85)
         z: 100
-        visible: opacity > 0
+        visible: opacity > 0.01
         opacity: deletePromptActive ? 1.0 : 0.0
-        radius: 28 // Match the island radius
+        radius: 28 
 
-        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
         Column {
             anchors.centerIn: parent
@@ -342,13 +337,17 @@ Item {
         }
     }
 
+    // Top Bar (Back Button)
     Row {
-        visible: viewMode === "wallpapers"
+        visible: opacity > 0.01
+        opacity: viewMode === "wallpapers" ? 1.0 : 0.0
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 16
         spacing: 4
         z: 20
+
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         MouseArea {
             width: backLabel.implicitWidth + 8
@@ -366,6 +365,7 @@ Item {
         }
     }
 
+    // Search toggle
     Rectangle {
         id: searchButton
         width: 32
@@ -426,7 +426,11 @@ Item {
     // ------------------------------------------------------------
     PathView {
         id: categoryCarousel
-        visible: viewMode === "categories"
+        
+        // Smooth crossfade transition
+        visible: opacity > 0.01
+        opacity: viewMode === "categories" ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         anchors.fill: parent
         anchors.topMargin: 40
@@ -438,7 +442,7 @@ Item {
         pathItemCount: 5
         preferredHighlightBegin: 0.5
         preferredHighlightEnd: 0.5
-        highlightMoveDuration: 300
+        highlightMoveDuration: 400
         dragMargin: width / 2
 
         path: Path {
@@ -476,7 +480,7 @@ Item {
 
         delegate: Item {
             id: catCardRoot
-            width: 220  // Increased width
+            width: 220  
             height: categoryCarousel.height
 
             readonly property bool isCurrent: PathView.isCurrentItem
@@ -490,21 +494,26 @@ Item {
                 spacing: 12
 
                 Rectangle {
+                    id: catInnerCard
                     width: 220
-                    height: 135  // Increased height
+                    height: 135
                     anchors.horizontalCenter: parent.horizontalCenter
                     radius: 14
                     color: root.backgroundColor
                     border.width: isCurrent ? 2 : 0
                     border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
+                    
+                    // Tactile Press & Hover Lift animation
+                    scale: catMouseArea.pressed && isCurrent ? 0.95 : (isCurrent && catMouseArea.containsMouse ? 1.03 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
                     Image {
                         anchors.fill: parent
                         source: model.sample.length > 0 ? ("file://" + model.sample) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        sourceSize.width: 440  // Crisp resolution scaling
+                        sourceSize.width: 440
                         sourceSize.height: 270
                         visible: model.sample.length > 0
                     }
@@ -512,7 +521,21 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         color: "black"
-                        opacity: 0.28
+                        // Subtle brightness flash on hover
+                        opacity: isCurrent && catMouseArea.containsMouse ? 0.35 : 0.55
+                        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
+                    }
+
+                    // Drop shadow effect
+                    Text {
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: 2
+                        anchors.verticalCenterOffset: 2
+                        text: model.name
+                        color: "black"
+                        font.pixelSize: 16
+                        font.weight: Font.DemiBold
+                        opacity: 0.9
                     }
 
                     Text {
@@ -524,7 +547,9 @@ Item {
                     }
 
                     MouseArea {
+                        id: catMouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (isCurrent) {
@@ -544,7 +569,11 @@ Item {
     // ------------------------------------------------------------
     PathView {
         id: wallpaperCarousel
-        visible: viewMode === "wallpapers"
+        
+        // Smooth crossfade transition
+        visible: opacity > 0.01
+        opacity: viewMode === "wallpapers" ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         anchors.fill: parent
         anchors.topMargin: 40
@@ -556,7 +585,7 @@ Item {
         pathItemCount: 5
         preferredHighlightBegin: 0.5
         preferredHighlightEnd: 0.5
-        highlightMoveDuration: 300
+        highlightMoveDuration: 400
         dragMargin: width / 2
 
         path: Path {
@@ -608,6 +637,7 @@ Item {
                 spacing: 12
 
                 Rectangle {
+                    id: wallInnerCard
                     width: 220
                     height: 135
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -616,6 +646,10 @@ Item {
                     border.width: isCurrent ? 2 : 0
                     border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
+                    
+                    // Tactile Press & Hover Lift animation
+                    scale: wallMouseArea.pressed && isCurrent ? 0.95 : (isCurrent && wallMouseArea.containsMouse ? 1.03 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
                     Image {
                         anchors.fill: parent
@@ -625,9 +659,19 @@ Item {
                         sourceSize.width: 440
                         sourceSize.height: 270
                     }
+                    
+                    // Subtle white glow overlay on hover
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "white"
+                        opacity: isCurrent && wallMouseArea.containsMouse ? 0.1 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
+                    }
 
                     MouseArea {
+                        id: wallMouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (isCurrent) {
