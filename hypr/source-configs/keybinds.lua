@@ -4,7 +4,8 @@ local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + space", hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager)) -- or dolphin, nautilus, etc.
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+hl.bind("CTRL + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind("CTRL + SHIFT + RETURN", hl.dsp.exec_cmd("env -u QT_STYLE_OVERRIDE -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=xcb cool-retro-term"))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))

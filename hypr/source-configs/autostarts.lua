@@ -8,6 +8,5 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("/home/xubm/.config/hypr/scripts/startup.sh")
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
     hl.exec_cmd("/home/xubm/.local/bin/webcam-fix.sh")
-    hl.exec_cmd("~/.scripts/wayclick/wayclick.sh")
 end)
 

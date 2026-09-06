@@ -7,6 +7,8 @@
 WALL_ROOT="/home/xubm/Pictures/wallpapers/"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
+SDDM_FILE="/usr/share/sddm/themes/hyprlock-match/backgrounds/wall.png"
+
 
 # Find a random .png file from any subcategory directory
 wall=$(find "$WALL_ROOT" -mindepth 2 -type f -name "*.png" | shuf -n 1)
@@ -37,6 +39,8 @@ awww img "$wall" --transition-type any --transition-step 90 --transition-fps 60
 # Copying Selected wallpaper to .cache as current wallpaper
 cp "$wall" "$CACHE_FILE"
 cp "$wall" "$BRAVE_FILE"
+cp "$wall" "$SDDM_FILE"
+
 
 # ------Spotify--------
 

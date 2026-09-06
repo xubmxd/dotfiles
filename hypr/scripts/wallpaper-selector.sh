@@ -4,6 +4,7 @@ WALL_ROOT="$HOME/Pictures/wallpapers"
 
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
+SDDM_FILE="/usr/share/sddm/themes/vortex-login/backgrounds/wall.png"
 
 reindex_wallpapers() {
     local dir="$1"
@@ -187,3 +188,4 @@ awww img "$WALL" \
 
 cp "$WALL" "$CACHE_FILE"
 cp "$WALL" "$BRAVE_FILE"
+cp "$WALL" "$SDDM_FILE" 
