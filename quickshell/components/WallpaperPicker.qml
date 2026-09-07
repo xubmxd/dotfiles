@@ -23,8 +23,25 @@ Item {
 
     signal requestClose()
 
-    readonly property real pickerWidth: 800
     readonly property real pickerHeight: 280
+
+    // How many results are on screen right now, in whichever view
+    // is active — used to size the pill so it doesn't sit mostly
+    // empty when there's only 1-2 matches.
+    readonly property int visibleCount: viewMode === "categories" ? categoryModel.count : wallpaperModel.count
+
+    readonly property real minPickerWidth: 420
+    readonly property real maxPickerWidth: 800
+
+    // pathItemCount is 5, so once there are 5+ results the coverflow
+    // is already showing as much as it ever will — no point growing
+    // past maxPickerWidth. Below that, scale linearly so 1 result is
+    // snug (minPickerWidth) and 5 results is full width (maxPickerWidth).
+    readonly property real pickerWidth: {
+        const n = Math.max(1, Math.min(visibleCount, 5))
+        if (visibleCount <= 1) return minPickerWidth
+        return minPickerWidth + (maxPickerWidth - minPickerWidth) * (n - 1) / 4
+    }
 
     property string viewMode: "categories"
     property string selectedCategoryPath: ""
@@ -44,7 +61,6 @@ Item {
             reindexAllProc.running = false
             reindexAllProc.running = true
             
-            root.refresh()
             if (searchField) searchField.forceActiveFocus()
         }
     }
@@ -58,6 +74,15 @@ Item {
     function fileName(path) {
         const parts = path.split("/")
         return parts[parts.length - 1]
+    }
+
+    // Raw "file://" + path breaks the moment a filename has a space,
+    // "#", "%", or other URL-special character — the Image element
+    // just silently fails to load, which is exactly the "sometimes"
+    // symptom. Percent-encode each path segment instead.
+    function toFileUrl(path) {
+        if (!path || path.length === 0) return ""
+        return "file://" + path.split("/").map(encodeURIComponent).join("/")
     }
 
     function displayCategoryName(rawName) {
@@ -133,6 +158,10 @@ Item {
     Process {
         id: reindexAllProc
         command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-backend.sh", "reindex_all"]
+
+        // Only scan after the reindex actually finishes, instead of
+        // firing both at once and reading the folders mid-write.
+        onExited: root.refresh()
     }
 
     property var allCategories: []
@@ -181,7 +210,7 @@ Item {
                 "  for d in \"$root\"/*/; do " +
                 "    [ -d \"$d\" ] || continue; " +
                 "    name=$(basename \"$d\"); " +
-                "    sample=$(find \"$d\" -maxdepth 2 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | head -1); " +
+                "    sample=$(find -L \"$d\" -maxdepth 2 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | head -1); " +
                 "    echo \"$d|$name|$sample\"; " +
                 "  done; " +
                 "done"
@@ -209,7 +238,7 @@ Item {
     Process {
         id: scanWallpapersProc
         command: [
-            "find", root.selectedCategoryPath,
+            "find", "-L", root.selectedCategoryPath,
             "-maxdepth", "2", "-type", "f", "(",
             "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o",
             "-iname", "*.png", "-o", "-iname", "*.webp", ")"
@@ -511,7 +540,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: model.sample.length > 0 ? ("file://" + model.sample) : ""
+                        source: model.sample.length > 0 ? root.toFileUrl(model.sample) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         sourceSize.width: 440
@@ -650,7 +679,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: "file://" + model.path
+                        source: root.toFileUrl(model.path)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         sourceSize.width: 440
