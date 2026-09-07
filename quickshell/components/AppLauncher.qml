@@ -29,13 +29,16 @@ Item {
     readonly property int rowHeight: 44 
     readonly property int maxVisibleRows: 6
 
+    // Buffer to prevent animation stuttering when model clears
+    property int displayCount: 0
+
     // Dynamically calculate the island height based on search results
     readonly property real launcherHeight: {
         // Base UI Height: 16 (top margin) + 36 (search bar) + 12 (spacing) + 16 (bottom margin) = 80
         let baseUIHeight = 80
         
         // Show actual rows, but enforce a minimum of 1 (for "No matches") and a maximum of 6
-        let visibleRowsCount = Math.max(1, Math.min(resultModel.count, maxVisibleRows))
+        let visibleRowsCount = Math.max(1, Math.min(displayCount, maxVisibleRows))
         
         // Add up the row heights plus the 4px spacing between each item
         let totalSpacing = Math.max(0, visibleRowsCount - 1) * 4
@@ -94,6 +97,9 @@ Item {
         }
 
         resultList.currentIndex = resultModel.count > 0 ? 0 : -1
+        
+        // Update display count only after the model is fully populated
+        displayCount = resultModel.count
     }
 
     Process {
@@ -226,7 +232,7 @@ Item {
                 }
 
                 Text {
-                    text: resultModel.count
+                    text: root.displayCount
                     color: root.subtleColor
                     font.pixelSize: 12
                     font.weight: Font.DemiBold
@@ -243,6 +249,7 @@ Item {
             model: resultModel
             spacing: 4
 
+            // Smooth animated highlight "bubble"
             highlight: Rectangle {
                 width: resultList.width
                 height: root.rowHeight
@@ -272,6 +279,7 @@ Item {
                     anchors.rightMargin: 12
                     spacing: 12
 
+                    // iOS Styled Icon Tile
                     Rectangle {
                         width: 30
                         height: 30
@@ -329,7 +337,7 @@ Item {
 
             Text {
                 anchors.centerIn: parent
-                visible: resultModel.count === 0
+                visible: root.displayCount === 0
                 text: "No matches found."
                 color: root.subtleColor
                 font.pixelSize: 14
