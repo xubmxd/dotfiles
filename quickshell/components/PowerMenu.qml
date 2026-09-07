@@ -6,7 +6,7 @@ Item {
     id: root
 
     // ============================================================
-    // PUBLIC API (matches the rest of your island components)
+    // PUBLIC API
     // ============================================================
 
     property color textColor: "white"
@@ -15,31 +15,29 @@ Item {
     property color subtleColor: "#a0a0a0"
     property color backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-    // Override any of these if your setup uses different tools.
+    // hyprctl needs $HYPRLAND_INSTANCE_SIGNATURE to find the compositor's
+    // IPC socket — if quickshell started before that var was set, hyprctl
+    // fails silently. Fall back to loginctl (talks to systemd-logind
+    // instead, doesn't care about Hyprland's env at all) if it does.
     property string lockCommand: "hyprlock"
-    property string logoutCommand: "hyprctl dispatch exit"
     property string suspendCommand: "systemctl suspend"
     property string rebootCommand: "systemctl reboot"
     property string shutdownCommand: "systemctl poweroff"
 
     signal requestClose()
 
-    // Sizing hint for islandBackground.targetWidth/targetHeight
-    readonly property real menuWidth: 400
-    readonly property real menuHeight: 130
+    // Slightly widened to give the Cover Flow breathing room
+    readonly property real menuWidth: 420
+    readonly property real menuHeight: 140
 
-    // Index of the item currently "armed" (needs a second Enter to
-    // actually fire). -1 means nothing armed. Selecting a different
-    // item, or Escape, disarms it.
     property int armedIndex: -1
 
     ListModel {
         id: actionModel
-        ListElement { key: "lock";     label: "Lock";     glyph: "\u{1F512}"; danger: false }
+        ListElement { key: "lock";     label: "Lock";      glyph: "\u{1F512}"; danger: false }
         ListElement { key: "suspend";  label: "Sleep";     glyph: "\u{1F319}"; danger: false }
-        ListElement { key: "logout";   label: "Log Out";  glyph: "\u{23CF}";  danger: false }
-        ListElement { key: "reboot";   label: "Restart";  glyph: "\u{27F3}";  danger: true }
-        ListElement { key: "shutdown"; label: "Shut Down"; glyph: "\u{23FB}"; danger: true }
+        ListElement { key: "reboot";   label: "Restart";   glyph: "\u{27F3}";  danger: true }
+        ListElement { key: "shutdown"; label: "Shut Down"; glyph: "\u{23FB}";  danger: true }
     }
 
     onVisibleChanged: {
@@ -58,13 +56,21 @@ Item {
 
     Process {
         id: runner
+
+        // If a command fails silently (like hyprctl without the right
+        // env), this is where you'll see why — check your quickshell logs.
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (text.length > 0)
+                    console.log("[PowerMenu] command stderr:", text)
+            }
+        }
     }
 
     function commandFor(key) {
         switch (key) {
         case "lock": return root.lockCommand
         case "suspend": return root.suspendCommand
-        case "logout": return root.logoutCommand
         case "reboot": return root.rebootCommand
         case "shutdown": return root.shutdownCommand
         }
@@ -124,72 +130,118 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 14
-        spacing: 10
+        spacing: 12
 
         Text {
             text: "Power"
             color: root.textColor
-            font.pixelSize: 13
+            font.pixelSize: 14
             font.weight: Font.DemiBold
             Layout.alignment: Qt.AlignHCenter
         }
 
-        ListView {
+        // Upgraded from ListView to PathView (Cover Flow)
+        PathView {
             id: row
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            orientation: ListView.Horizontal
             model: actionModel
-            spacing: 10
             clip: false
 
-            highlightRangeMode: ListView.StrictlyEnforceRange
-            preferredHighlightBegin: width / 2 - 38
-            preferredHighlightEnd: width / 2 + 38
-            highlightMoveDuration: 220
+            pathItemCount: 5
+            preferredHighlightBegin: 0.5
+            preferredHighlightEnd: 0.5
+            highlightMoveDuration: 300
+            dragMargin: width / 2
+
+            path: Path {
+                startX: -row.width * 0.05
+                startY: row.height / 2 - 10
+                
+                PathAttribute { name: "itemZ"; value: 0 }
+                PathAttribute { name: "itemScale"; value: 0.6 }
+                PathAttribute { name: "itemOpacity"; value: 0.3 }
+
+                PathLine { x: row.width * 0.25; y: row.height / 2 - 10 }
+                PathPercent { value: 0.25 }
+                PathAttribute { name: "itemZ"; value: 1 }
+                PathAttribute { name: "itemScale"; value: 0.8 }
+                PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+                PathLine { x: row.width * 0.5; y: row.height / 2 - 10 }
+                PathPercent { value: 0.5 }
+                PathAttribute { name: "itemZ"; value: 2 }
+                PathAttribute { name: "itemScale"; value: 1.15 }
+                PathAttribute { name: "itemOpacity"; value: 1.0 }
+
+                PathLine { x: row.width * 0.75; y: row.height / 2 - 10 }
+                PathPercent { value: 0.75 }
+                PathAttribute { name: "itemZ"; value: 1 }
+                PathAttribute { name: "itemScale"; value: 0.8 }
+                PathAttribute { name: "itemOpacity"; value: 0.6 }
+
+                PathLine { x: row.width * 1.05; y: row.height / 2 - 10 }
+                PathPercent { value: 1.0 }
+                PathAttribute { name: "itemZ"; value: 0 }
+                PathAttribute { name: "itemScale"; value: 0.6 }
+                PathAttribute { name: "itemOpacity"; value: 0.3 }
+            }
 
             delegate: Item {
                 id: delegateRoot
                 width: 70
                 height: row.height
 
-                readonly property bool isCurrent: ListView.isCurrentItem
+                readonly property bool isCurrent: PathView.isCurrentItem
                 readonly property bool isArmed: root.armedIndex === index
+
+                z: PathView.itemZ !== undefined ? PathView.itemZ : 0
+                scale: PathView.itemScale !== undefined ? PathView.itemScale : 1.0
+                opacity: PathView.itemOpacity !== undefined ? PathView.itemOpacity : 1.0
 
                 Column {
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 8
 
                     Rectangle {
-                        width: delegateRoot.isCurrent ? 58 : 48
-                        height: delegateRoot.isCurrent ? 58 : 48
+                        width: 52
+                        height: 52
                         radius: width / 2
                         anchors.horizontalCenter: parent.horizontalCenter
+                        
+                        // Smooth color transitions
                         color: delegateRoot.isArmed
                                ? Qt.rgba(root.dangerColor.r, root.dangerColor.g, root.dangerColor.b, 0.22)
                                : root.backgroundColor
                         border.width: delegateRoot.isCurrent ? 2 : 0
-                        border.color: delegateRoot.isArmed ? root.dangerColor : root.activeColor
-                        opacity: delegateRoot.isCurrent ? 1.0 : 0.55
+                        border.color: delegateRoot.isArmed ? root.dangerColor : Qt.rgba(255, 255, 255, 0.1)
 
-                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                        Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        // Tactile hover and click feedback
+                        scale: mouseArea.pressed && isCurrent ? 0.90 : (isCurrent && mouseArea.containsMouse ? 1.05 : 1.0)
+
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                        Behavior on border.color { ColorAnimation { duration: 200 } }
+                        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
                         Text {
                             anchors.centerIn: parent
                             text: model.glyph
-                            font.pixelSize: 20
+                            font.pixelSize: 22
                             color: root.textColor
                         }
 
                         MouseArea {
+                            id: mouseArea
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                row.currentIndex = index
-                                root.activateIndex(index)
+                                if (isCurrent) {
+                                    root.activateIndex(index)
+                                } else {
+                                    row.currentIndex = index
+                                }
                             }
                         }
                     }
@@ -202,6 +254,8 @@ Item {
                                : (delegateRoot.isCurrent ? root.textColor : root.subtleColor)
                         font.pixelSize: 11
                         font.weight: delegateRoot.isCurrent ? Font.DemiBold : Font.Normal
+                        
+                        Behavior on color { ColorAnimation { duration: 200 } }
                     }
                 }
             }

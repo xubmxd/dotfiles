@@ -17,7 +17,7 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power") 
+        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher") 
                                      ? WlrKeyboardFocus.Exclusive 
                                      : WlrKeyboardFocus.None
 
@@ -584,6 +584,32 @@ ShellRoot {
                 }
             }
 
+            function toggleAppLauncher(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "app-launcher") {
+                    islandBackground.islandState = islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "app-launcher"
+                }
+            }
+
+            function openAppLauncher(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+                islandBackground.islandState = "app-launcher"
+            }
+
+            function closeAppLauncher(): void {
+                if (islandBackground.islandState === "app-launcher") {
+                    islandBackground.islandState = islandWindow.restingState
+                }
+            }
+
         }
 
         // ============================================================
@@ -870,6 +896,8 @@ ShellRoot {
                     return wallpaperPickerItem.pickerWidth
                 case "power":
                     return powerMenuItem.menuWidth
+                case "app-launcher":
+                    return appLauncherItem.launcherWidth
                 default:
                     return 120
                 }
@@ -907,6 +935,8 @@ ShellRoot {
                     return wallpaperPickerItem.pickerHeight
                 case "power":
                     return powerMenuItem.menuHeight
+                case "app-launcher":
+                    return appLauncherItem.launcherHeight
                 default:
                     return 40
                 }
@@ -944,6 +974,8 @@ ShellRoot {
                     return 28
                 case "power":
                     return 26
+                case "app-launcher":
+                    return 24
                 default:
                     return 20
                 }
@@ -1367,6 +1399,32 @@ ShellRoot {
 
                     opacity: islandBackground.islandState === "power" ? 1 : 0
                     scale: islandBackground.islandState === "power" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    onRequestClose: {
+                        islandBackground.islandState = islandWindow.restingState
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                }
+
+                CustomComponents.AppLauncher {
+                    id: appLauncherItem
+                    anchors.fill: parent
+
+                    textColor: islandWindow.colors.color15
+                    activeColor: islandWindow.colors.color4
+                    subtleColor: islandWindow.colors.color8
+                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                    opacity: islandBackground.islandState === "app-launcher" ? 1 : 0
+                    scale: islandBackground.islandState === "app-launcher" ? 1.0 : 0.45
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
