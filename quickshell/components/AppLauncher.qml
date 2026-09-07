@@ -26,11 +26,23 @@ Item {
     signal requestClose()
 
     readonly property real launcherWidth: 380 
-    // Increased height to accommodate the taller, more premium rows
-    readonly property real launcherHeight: 360 
-
-    // Taller rows to fit the new iOS-styled app tiles
     readonly property int rowHeight: 44 
+    readonly property int maxVisibleRows: 6
+
+    // Dynamically calculate the island height based on search results
+    readonly property real launcherHeight: {
+        // Base UI Height: 16 (top margin) + 36 (search bar) + 12 (spacing) + 16 (bottom margin) = 80
+        let baseUIHeight = 80
+        
+        // Show actual rows, but enforce a minimum of 1 (for "No matches") and a maximum of 6
+        let visibleRowsCount = Math.max(1, Math.min(resultModel.count, maxVisibleRows))
+        
+        // Add up the row heights plus the 4px spacing between each item
+        let totalSpacing = Math.max(0, visibleRowsCount - 1) * 4
+        let listHeight = (visibleRowsCount * rowHeight) + totalSpacing
+        
+        return baseUIHeight + listHeight
+    }
 
     onVisibleChanged: {
         if (visible) {
@@ -87,7 +99,6 @@ Item {
     Process {
         id: scanProc
 
-        // Upgraded script to extract the "Icon=" line from the .desktop files
         command: {
             const dirs = root.appDirs.map(d => root.expandHome(d))
             const globs = dirs.map(d => "\"" + d + "\"/*.desktop").join(" ")
@@ -115,7 +126,6 @@ Item {
                 const apps = []
 
                 for (const line of lines) {
-                    // Split the 3 parameters we piped out: Name | Exec | Icon
                     const parts = line.split("|")
                     if (parts.length < 2) continue
                     
@@ -233,7 +243,6 @@ Item {
             model: resultModel
             spacing: 4
 
-            // Smooth animated highlight "bubble"
             highlight: Rectangle {
                 width: resultList.width
                 height: root.rowHeight
@@ -263,25 +272,19 @@ Item {
                     anchors.rightMargin: 12
                     spacing: 12
 
-                    // --------------------------------------------------------
-                    // iOS Styled Icon Tile
-                    // --------------------------------------------------------
                     Rectangle {
                         width: 30
                         height: 30
-                        radius: 7 // Classic 22.5% iOS squircle corner ratio
-                        color: Qt.rgba(1, 1, 1, 0.04) // Subtle glassy backdrop
+                        radius: 7 
+                        color: Qt.rgba(1, 1, 1, 0.04) 
                         border.width: 1
                         border.color: Qt.rgba(255, 255, 255, 0.1)
                         clip: true 
 
                         Image {
                             anchors.fill: parent
-                            
-                            // 4px padding so irregular native Linux SVGs breathe inside the squircle mask
                             anchors.margins: 4 
                             
-                            // Let Quickshell securely resolve the icon
                             source: {
                                 if (!model.icon || model.icon.trim() === "") 
                                     return Quickshell.iconPath("application-x-executable", "")
