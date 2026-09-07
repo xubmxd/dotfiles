@@ -1,13 +1,17 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import Quickshell.Io // Required for Process and StdioCollector
 
 Item {
     id: root
 
     property var playerData
     property string workspaceName: "1"
+    
+    // Dynamic Battery Properties
     property int batteryPercent: 100
+    property string batteryStatus: "Unknown"
 
     // Internal live properties updated by the timer
     property string timeText: Qt.formatDateTime(new Date(), "hh:mm ap")
@@ -17,7 +21,9 @@ Item {
     property color subtleColor: "#888888"
     property color accentColor: "#a855f7"
 
-    // Timer to refresh the clock every second
+    // ============================================================
+    // CLOCK ENGINE
+    // ============================================================
     Timer {
         interval: 1000
         running: true
@@ -26,6 +32,60 @@ Item {
             root.timeText = Qt.formatDateTime(new Date(), "hh:mm ap")
             root.dateText = Qt.formatDate(new Date(), "MMM d")
         }
+    }
+
+    // ============================================================
+    // BATTERY ENGINE
+    // ============================================================
+    Process {
+        id: batteryProc
+        
+        // Directly fetch the raw capacity and charging status from the Linux kernel
+        command: [
+            "sh", "-c",
+            "capacity=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1); status=$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1); echo \"${capacity},${status}\""
+        ]
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var raw = String(text).trim().split(",")
+                if (raw.length === 2 && raw[0] !== "") {
+                    root.batteryPercent = parseInt(raw[0])
+                    root.batteryStatus = raw[1]
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 30000 // Poll battery every 30 seconds
+        running: true
+        repeat: true
+        onTriggered: {
+            batteryProc.running = false
+            batteryProc.running = true
+        }
+    }
+
+    // Fetch immediately when the pill first loads
+    Component.onCompleted: {
+        batteryProc.running = true
+    }
+
+    // Determine the precise Nerd Font icon based on charge level and status
+    function getBatteryIcon(percent, status) {
+        if (status === "Charging" || status === "Full") return "󰂄"
+        if (percent >= 95) return "󰁹"
+        if (percent >= 90) return "󰂂"
+        if (percent >= 80) return "󰂁"
+        if (percent >= 70) return "󰂀"
+        if (percent >= 60) return "󰁿"
+        if (percent >= 50) return "󰁾"
+        if (percent >= 40) return "󰁽"
+        if (percent >= 30) return "󰁼"
+        if (percent >= 20) return "󰁻"
+        if (percent >= 10) return "󰁺"
+        return "󰂎"
     }
 
     // Strictly dynamic width depending purely on content + padding
@@ -135,11 +195,14 @@ Item {
 
         // 6. BATTERY
         Text {
-            text: "󰁹 " + root.batteryPercent + "%"
-            color: root.textColor
+            text: root.getBatteryIcon(root.batteryPercent, root.batteryStatus) + " " + root.batteryPercent + "%"
+            // Warn in red if battery is 20% or lower and not charging
+            color: root.batteryPercent <= 20 && root.batteryStatus !== "Charging" ? "#ef4444" : root.textColor
             font.family: "sans-serif"
             font.pixelSize: 13
             font.weight: Font.Bold
+            
+            Behavior on color { ColorAnimation { duration: 300 } }
         }
     }
 }

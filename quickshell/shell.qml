@@ -17,7 +17,7 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher") 
+        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker") 
                                      ? WlrKeyboardFocus.Exclusive 
                                      : WlrKeyboardFocus.None
 
@@ -532,6 +532,7 @@ ShellRoot {
                 islandBackground.islandState =
                     islandWindow.restingState
                 }
+                
             function toggleWallpaper(): void {
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
@@ -606,6 +607,32 @@ ShellRoot {
 
             function closeAppLauncher(): void {
                 if (islandBackground.islandState === "app-launcher") {
+                    islandBackground.islandState = islandWindow.restingState
+                }
+            }
+
+            function toggleGifPicker(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                
+                islandWindow.hoverExpandedActive = false
+                
+                if (islandBackground.islandState === "gif-picker") {
+                    islandBackground.islandState = islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "gif-picker"
+                }
+            }
+
+            function openGifPicker(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+                islandBackground.islandState = "gif-picker"
+            }
+
+            function closeGifPicker(): void {
+                if (islandBackground.islandState === "gif-picker") {
                     islandBackground.islandState = islandWindow.restingState
                 }
             }
@@ -898,6 +925,8 @@ ShellRoot {
                     return powerMenuItem.menuWidth
                 case "app-launcher":
                     return appLauncherItem.launcherWidth
+                case "gif-picker":
+                    return gifPickerItem.pickerWidth
                 default:
                     return 120
                 }
@@ -937,6 +966,8 @@ ShellRoot {
                     return powerMenuItem.menuHeight
                 case "app-launcher":
                     return appLauncherItem.launcherHeight
+                case "gif-picker":
+                    return gifPickerItem.pickerHeight
                 default:
                     return 40
                 }
@@ -976,6 +1007,8 @@ ShellRoot {
                     return 26
                 case "app-launcher":
                     return 24
+                case "gif-picker":
+                    return 28
                 default:
                     return 20
                 }
@@ -1334,6 +1367,7 @@ ShellRoot {
                         NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
                 }
+
                 CustomComponents.OmniPill {
                     id: omniPillItem
                     anchors.fill: parent
@@ -1425,6 +1459,32 @@ ShellRoot {
 
                     opacity: islandBackground.islandState === "app-launcher" ? 1 : 0
                     scale: islandBackground.islandState === "app-launcher" ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    onRequestClose: {
+                        islandBackground.islandState = islandWindow.restingState
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                }
+
+                CustomComponents.GifPicker {
+                    id: gifPickerItem
+                    anchors.fill: parent
+
+                    textColor: islandWindow.colors.color15
+                    activeColor: islandWindow.colors.color4
+                    subtleColor: islandWindow.colors.color8
+                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                    opacity: islandBackground.islandState === "gif-picker" ? 1 : 0
+                    scale: islandBackground.islandState === "gif-picker" ? 1.0 : 0.45
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
