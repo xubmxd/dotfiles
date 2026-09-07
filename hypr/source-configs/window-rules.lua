@@ -169,10 +169,3 @@ hl.window_rule({
     opacity = 0.9,
 })
 
--- #### Mewsic ####
---
--- windowrule {
---     name = mewsic-blur
---     match:class = ^(mewsic)$
---     opacity = 0.80 0.80
--- }

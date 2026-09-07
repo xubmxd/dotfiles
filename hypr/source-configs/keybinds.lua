@@ -3,7 +3,6 @@
 local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + space", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind("CTRL + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind("CTRL + SHIFT + RETURN", hl.dsp.exec_cmd("env -u QT_STYLE_OVERRIDE -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=xcb cool-retro-term"))
