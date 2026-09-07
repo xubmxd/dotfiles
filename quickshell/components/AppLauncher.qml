@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
 
@@ -25,10 +26,32 @@ Item {
 
     signal requestClose()
 
-    readonly property real launcherWidth: 860 
-    readonly property real launcherHeight: 220 
+    readonly property int maxVisibleApps: 7
+    readonly property real itemWidth: 110
+    readonly property real itemSpacing: 12
 
     property int displayCount: 0
+
+    // Dynamically scale width, but enforce a minimum of 560px 
+    readonly property real launcherWidth: {
+        let baseUIWidth = 40 
+        let visibleApps = Math.max(1, Math.min(displayCount, maxVisibleApps))
+        let listWidth = (visibleApps * itemWidth) + (Math.max(0, visibleApps - 1) * itemSpacing)
+        
+        return Math.max(560, baseUIWidth + listWidth) 
+    }
+    
+    readonly property real launcherHeight: 220 
+
+    readonly property bool isSearching: searchField.text.trim().length > 0
+
+    // Width of just the matched-app row (capped to what's actually
+    // visible at once) — used to center the row while searching.
+    readonly property real searchRowWidth: {
+        let n = Math.min(displayCount, maxVisibleApps)
+        if (n <= 0) return 0
+        return n * itemWidth + Math.max(0, n - 1) * itemSpacing
+    }
 
     // ============================================================
     // FAVORITES SYSTEM & REORDERING
@@ -161,7 +184,6 @@ Item {
             }
         }
 
-        // Keep favorites ordered exactly as they are in the cached file
         favs.sort((a, b) => root.favoriteApps.indexOf(a.name) - root.favoriteApps.indexOf(b.name))
 
         for (const app of favs) resultModel.append(app)
@@ -169,6 +191,12 @@ Item {
 
         resultList.currentIndex = resultModel.count > 0 ? 0 : -1
         displayCount = resultModel.count
+        Qt.callLater(root.scrollToCurrent)
+    }
+
+    function scrollToCurrent() {
+        if (resultList.currentIndex >= 0)
+            resultList.positionViewAtIndex(resultList.currentIndex, ListView.Center)
     }
 
     Process {
@@ -252,7 +280,7 @@ Item {
         // ------------------------------------------------------------
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: 500
+            Layout.preferredWidth: 360 
             Layout.preferredHeight: 40
             radius: 20 
             color: Qt.rgba(1, 1, 1, 0.08)
@@ -290,14 +318,14 @@ Item {
                             event.accepted = true; return
                         }
                         
-                        // Infinite Wrap-Around Navigation Math
+                        // Finite Navigation Math
                         if (resultModel.count > 0) {
                             if (event.key === Qt.Key_Down || event.key === Qt.Key_Right || event.key === Qt.Key_Tab) { 
-                                resultList.currentIndex = (resultList.currentIndex + 1) % resultModel.count
+                                if (resultList.currentIndex < resultModel.count - 1) resultList.incrementCurrentIndex()
                                 event.accepted = true; return 
                             }
                             if (event.key === Qt.Key_Up || event.key === Qt.Key_Left || event.key === Qt.Key_Backtab) { 
-                                resultList.currentIndex = (resultList.currentIndex - 1 + resultModel.count) % resultModel.count
+                                if (resultList.currentIndex > 0) resultList.decrementCurrentIndex()
                                 event.accepted = true; return 
                             }
                         }
@@ -311,7 +339,7 @@ Item {
                     }
 
                     Text {
-                        text: "Search apps... (Drag to reorder favorites)"
+                        text: "Search apps..."
                         color: root.subtleColor
                         font.pixelSize: 14
                         visible: searchField.text.length === 0
@@ -322,34 +350,55 @@ Item {
         }
 
         // ------------------------------------------------------------
-        // FAKED INFINITE CAROUSEL LIST
+        // FINITE CAROUSEL LIST
         // ------------------------------------------------------------
-        ListView {
-            id: resultList
+        // When browsing (no search text) the row fills the pill and
+        // stays left-aligned, like before. While searching, if the
+        // matches don't fill the row, it shrinks to fit them and
+        // centers itself in the pill instead of sitting flush left.
+        Item {
+            id: carouselContainer
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
+
+            ListView {
+                id: resultList
+
+                height: parent.height
+                width: root.isSearching
+                       ? Math.min(root.searchRowWidth, parent.width)
+                       : parent.width
+                x: root.isSearching
+                   ? Math.max(0, (parent.width - width) / 2)
+                   : 0
+
+                Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
+                Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
+
+                clip: false 
 
             orientation: ListView.Horizontal
             model: resultModel
-            spacing: 12
+            spacing: root.itemSpacing
 
-            // Disabled default drag-to-scroll to prevent interference with icon reordering
             interactive: false 
 
-            preferredHighlightBegin: width / 2 - 55
-            preferredHighlightEnd: width / 2 + 55
-            highlightRangeMode: ListView.StrictlyEnforceRange
-            highlightMoveDuration: 200
+            // positionViewAtIndex (below) clamps at both ends instead of
+            // force-centering the current item — that's what lets item 0
+            // sit flush against the left edge instead of leaving a gap.
+            onCurrentIndexChanged: root.scrollToCurrent()
 
-            // Infinite Wrap-Around Scrolling
+            Behavior on contentX {
+                NumberAnimation { duration: 200; easing.type: Easing.OutQuint }
+            }
+
             WheelHandler {
                 onWheel: (event) => {
                     if (resultModel.count > 0) {
                         if (event.angleDelta.y > 0 || event.angleDelta.x > 0) {
-                            resultList.currentIndex = (resultList.currentIndex - 1 + resultModel.count) % resultModel.count
+                            if (resultList.currentIndex > 0) resultList.decrementCurrentIndex()
                         } else if (event.angleDelta.y < 0 || event.angleDelta.x < 0) {
-                            resultList.currentIndex = (resultList.currentIndex + 1) % resultModel.count
+                            if (resultList.currentIndex < resultModel.count - 1) resultList.incrementCurrentIndex()
                         }
                     }
                 }
@@ -357,13 +406,14 @@ Item {
 
             delegate: Item {
                 id: delegateRoot
-                width: 110
+                width: root.itemWidth
                 height: resultList.height
-                z: dragArea.drag.active ? 100 : 1
-
+                
                 readonly property bool isCurrent: ListView.isCurrentItem
+                readonly property bool isScrollable: root.displayCount > root.maxVisibleApps
 
-                // Target for Drop Events
+                z: (isCurrent ? 50 : 1) + (dragArea.drag.active ? 100 : 0)
+
                 DropArea {
                     anchors.fill: parent
                     keys: ["favApp"]
@@ -374,10 +424,9 @@ Item {
                     }
                 }
 
-                // The Draggable Visual Container
                 Item {
                     id: visualItem
-                    width: 110
+                    width: root.itemWidth
                     height: resultList.height
 
                     property string appName: model.name
@@ -388,11 +437,10 @@ Item {
                     Drag.hotSpot.x: width / 2
                     Drag.hotSpot.y: height / 2
 
-                    // Snap-back animation when dropped
                     Behavior on x { enabled: !dragArea.drag.active; NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
                     Behavior on y { enabled: !dragArea.drag.active; NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
 
-                    // Dynamic Spatial Math to mimic PathView Cover Flow!
+                    // Dynamic Spatial Math to mimic Cover Flow without the infinite loop
                     readonly property real itemCenter: delegateRoot.x + delegateRoot.width / 2
                     readonly property real listCenter: resultList.contentX + resultList.width / 2
                     readonly property real dist: Math.abs(itemCenter - listCenter)
@@ -401,40 +449,35 @@ Item {
                     scale: {
                         if (dragArea.pressed) return 0.95
                         if (isCurrent) return 1.15
+                        if (!isScrollable) return 1.0 
                         return 1.0 - (normalizedDist * 0.15)
                     }
                     
                     opacity: {
                         if (dragArea.drag.active) return 0.8
                         if (isCurrent) return 1.0
+                        if (!isScrollable) return 1.0 
                         return 1.0 - (normalizedDist * 0.5)
                     }
                     
                     Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
-                    // ========================================================
-                    // Moved to TOP of visualItem so Star button renders ABOVE it
-                    // ========================================================
                     MouseArea {
                         id: dragArea
                         anchors.fill: parent
                         hoverEnabled: true
                         
-                        // Dynamic Cursor depending on state
                         cursorShape: drag.active ? Qt.ClosedHandCursor : (model.isFav ? Qt.OpenHandCursor : Qt.PointingHandCursor)
                         
-                        // Only favorites are draggable!
                         drag.target: model.isFav ? visualItem : null
                         drag.axis: Drag.XAxis
                         
                         onReleased: {
                             if (drag.active) {
                                 visualItem.Drag.drop()
-                                // Instantly snap back to baseline position if drop fails or completes
                                 visualItem.x = 0
                                 visualItem.y = 0
                             } else {
-                                // Handled as a standard click
                                 resultList.currentIndex = index
                                 Qt.callLater(() => root.launch(model.exec))
                             }
@@ -450,31 +493,47 @@ Item {
                             height: 64
                             anchors.horizontalCenter: parent.horizontalCenter
 
+                            // True iOS Opacity Mask
+                            Image {
+                                id: appIcon
+                                anchors.fill: parent
+                                anchors.margins: 2 
+                                
+                                source: {
+                                    if (!model.icon || model.icon.trim() === "") 
+                                        return Quickshell.iconPath("application-x-executable", "")
+                                    if (model.icon.startsWith("/")) 
+                                        return "file://" + model.icon
+                                    return Quickshell.iconPath(model.icon, "application-x-executable")
+                                }
+                                
+                                sourceSize: Qt.size(128, 128)
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                smooth: true
+                                visible: false 
+                            }
+
+                            Rectangle {
+                                id: iconMask
+                                anchors.fill: parent
+                                radius: 16 
+                                color: "black"
+                                visible: false 
+                            }
+
+                            OpacityMask {
+                                anchors.fill: parent
+                                source: appIcon
+                                maskSource: iconMask
+                            }
+
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 16 
                                 color: "transparent"
                                 border.width: isCurrent ? 2 : 0
                                 border.color: Qt.rgba(255, 255, 255, 0.1)
-                                clip: true 
-
-                                Image {
-                                    anchors.fill: parent
-                                    anchors.margins: 2 
-                                    
-                                    source: {
-                                        if (!model.icon || model.icon.trim() === "") 
-                                            return Quickshell.iconPath("application-x-executable", "")
-                                        if (model.icon.startsWith("/")) 
-                                            return "file://" + model.icon
-                                        return Quickshell.iconPath(model.icon, "application-x-executable")
-                                    }
-                                    
-                                    sourceSize: Qt.size(128, 128)
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    smooth: true
-                                }
                             }
 
                             Text {
@@ -489,7 +548,6 @@ Item {
                                 opacity: 0.9
                             }
 
-                            // Interactive Star Toggle (Now correctly clicks!)
                             Text {
                                 id: starIcon
                                 text: model.isFav ? "★" : "☆"
@@ -540,6 +598,7 @@ Item {
                 color: root.subtleColor
                 font.pixelSize: 14
                 font.italic: true
+            }
             }
         }
     }

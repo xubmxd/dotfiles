@@ -37,15 +37,15 @@ Item {
     onVisibleChanged: {
         if (visible) {
             viewMode = "categories"
-            searchActive = false
             searchQuery = ""
+            if (searchField) searchField.text = ""
             deletePromptActive = false
-            forceActiveFocus()
             
             reindexAllProc.running = false
             reindexAllProc.running = true
             
             root.refresh()
+            if (searchField) searchField.forceActiveFocus()
         }
     }
 
@@ -86,20 +86,34 @@ Item {
         selectedCategoryPath = path
         selectedCategoryName = name
         viewMode = "wallpapers"
-        searchActive = false
         searchQuery = ""
+        searchField.text = ""
         scanWallpapersProc.running = false
         scanWallpapersProc.running = true
     }
 
     function backToCategories() {
         viewMode = "categories"
-        searchActive = false
         searchQuery = ""
+        searchField.text = ""
+        rebuildCategoryModel()
+    }
+
+    function activateCurrent() {
+        if (viewMode === "categories") {
+            if (categoryCarousel.currentIndex < 0 || categoryCarousel.currentIndex >= categoryModel.count)
+                return
+            const item = categoryModel.get(categoryCarousel.currentIndex)
+            root.openCategory(item.path, item.name)
+        } else {
+            if (wallpaperCarousel.currentIndex < 0 || wallpaperCarousel.currentIndex >= wallpaperModel.count)
+                return
+            root.applyWallpaper(wallpaperModel.get(wallpaperCarousel.currentIndex).path)
+        }
     }
 
     // ============================================================
-    // BACKGROUND PROCESSES
+    // BACKGROUND PROCESSES & MODELS
     // ============================================================
 
     Process {
@@ -121,8 +135,38 @@ Item {
         command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-backend.sh", "reindex_all"]
     }
 
-    ListModel {
-        id: categoryModel
+    property var allCategories: []
+    property var allWallpapers: []
+    property string searchQuery: ""
+
+    ListModel { id: categoryModel }
+    ListModel { id: wallpaperModel }
+
+    onSearchQueryChanged: {
+        if (viewMode === "categories") rebuildCategoryModel()
+        else if (viewMode === "wallpapers") rebuildWallpaperModel()
+    }
+
+    function rebuildCategoryModel() {
+        categoryModel.clear()
+        const q = searchQuery.toLowerCase().trim()
+        for (const cat of allCategories) {
+            if (q.length === 0 || cat.name.toLowerCase().indexOf(q) !== -1) {
+                categoryModel.append(cat)
+            }
+        }
+        if (categoryModel.count > 0) categoryCarousel.currentIndex = 0
+    }
+
+    function rebuildWallpaperModel() {
+        wallpaperModel.clear()
+        const q = searchQuery.toLowerCase().trim()
+        for (const path of allWallpapers) {
+            if (q.length === 0 || root.fileName(path).toLowerCase().indexOf(q) !== -1) {
+                wallpaperModel.append({ path: path })
+            }
+        }
+        if (wallpaperModel.count > 0) wallpaperCarousel.currentIndex = 0
     }
 
     Process {
@@ -147,43 +191,19 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = String(text).split("\n").filter(l => l.trim().length > 0)
-                categoryModel.clear()
+                const cats = []
                 for (const line of lines) {
                     const parts = line.split("|")
-                    categoryModel.append({
+                    cats.push({
                         path: parts[0] || "",
                         name: root.displayCategoryName(parts[1] || ""),
                         sample: parts[2] || ""
                     })
                 }
-                if (categoryModel.count > 0)
-                    categoryCarousel.currentIndex = 0
+                root.allCategories = cats
+                root.rebuildCategoryModel()
             }
         }
-    }
-
-    property var allWallpapers: []
-    property string searchQuery: ""
-    property bool searchActive: false
-
-    ListModel {
-        id: wallpaperModel
-    }
-
-    function rebuildWallpaperModel() {
-        wallpaperModel.clear()
-        const q = searchQuery.toLowerCase()
-        for (const path of allWallpapers) {
-            if (q.length === 0 || root.fileName(path).toLowerCase().indexOf(q) !== -1)
-                wallpaperModel.append({ path: path })
-        }
-        if (wallpaperModel.count > 0)
-            wallpaperCarousel.currentIndex = 0
-    }
-
-    onSearchQueryChanged: {
-        if (viewMode === "wallpapers")
-            rebuildWallpaperModel()
     }
 
     Process {
@@ -224,73 +244,6 @@ Item {
         backendProc.mode = "apply"
         backendProc.targetPath = path
         backendProc.running = true
-    }
-
-    // ============================================================
-    // KEYBOARD NAVIGATION
-    // ============================================================
-
-    focus: true
-
-    Keys.onPressed: (event) => {
-        if (deletePromptActive) {
-            if (event.key === Qt.Key_Escape) {
-                deletePromptActive = false
-                event.accepted = true
-            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                backendProc.mode = "delete"
-                backendProc.targetPath = pendingDeletePath
-                backendProc.running = true
-                deletePromptActive = false
-                event.accepted = true
-            }
-            return
-        }
-
-        if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
-            if (viewMode === "wallpapers" && wallpaperCarousel.currentIndex >= 0 && wallpaperModel.count > 0) {
-                pendingDeletePath = wallpaperModel.get(wallpaperCarousel.currentIndex).path
-                deletePromptActive = true
-                event.accepted = true
-            }
-            return
-        }
-
-        if (event.key === Qt.Key_Left) {
-            if (viewMode === "categories") categoryCarousel.decrementCurrentIndex()
-            else wallpaperCarousel.decrementCurrentIndex()
-            event.accepted = true
-        } else if (event.key === Qt.Key_Right) {
-            if (viewMode === "categories") categoryCarousel.incrementCurrentIndex()
-            else wallpaperCarousel.incrementCurrentIndex()
-            event.accepted = true
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            activateCurrent()
-            event.accepted = true
-        } else if (event.key === Qt.Key_Escape) {
-            if (searchActive) {
-                searchActive = false
-                searchQuery = ""
-            } else if (viewMode === "wallpapers") {
-                backToCategories()
-            } else {
-                root.requestClose()
-            }
-            event.accepted = true
-        }
-    }
-
-    function activateCurrent() {
-        if (viewMode === "categories") {
-            if (categoryCarousel.currentIndex < 0 || categoryCarousel.currentIndex >= categoryModel.count)
-                return
-            const item = categoryModel.get(categoryCarousel.currentIndex)
-            root.openCategory(item.path, item.name)
-        } else {
-            if (wallpaperCarousel.currentIndex < 0 || wallpaperCarousel.currentIndex >= wallpaperModel.count)
-                return
-            root.applyWallpaper(wallpaperModel.get(wallpaperCarousel.currentIndex).path)
-        }
     }
 
     // ============================================================
@@ -343,7 +296,7 @@ Item {
         opacity: viewMode === "wallpapers" ? 1.0 : 0.0
         anchors.top: parent.top
         anchors.left: parent.left
-        anchors.margins: 16
+        anchors.margins: 22
         spacing: 4
         z: 20
 
@@ -365,60 +318,110 @@ Item {
         }
     }
 
-    // Search toggle
+    // ------------------------------------------------------------
+    // PILL SEARCH BAR
+    // ------------------------------------------------------------
     Rectangle {
-        id: searchButton
-        width: 32
-        height: 32
-        radius: 16
+        id: searchBarContainer
         anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.margins: 12
-        color: Qt.rgba(1, 1, 1, searchActive ? 0.14 : 0.07)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: 14
+        width: 360
+        height: 40
+        radius: 20
+        color: Qt.rgba(1, 1, 1, 0.08)
+        border.width: 1
+        border.color: Qt.rgba(255, 255, 255, 0.04)
         z: 20
 
-        Text {
-            anchors.centerIn: parent
-            text: "\u{1F50D}"
-            font.pixelSize: 14
-            color: root.textColor
-        }
-
-        MouseArea {
+        RowLayout {
             anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                searchActive = !searchActive
-                if (searchActive)
-                    searchField.forceActiveFocus()
-                else {
-                    searchQuery = ""
-                    root.forceActiveFocus()
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            spacing: 10
+
+            Text {
+                text: "\u{1F50D}"
+                font.pixelSize: 14
+                color: root.subtleColor
+            }
+
+            TextInput {
+                id: searchField
+                Layout.fillWidth: true
+                color: root.textColor
+                font.pixelSize: 14
+                font.weight: Font.Medium
+                clip: true
+                verticalAlignment: TextInput.AlignVCenter
+
+                onTextChanged: root.searchQuery = text
+
+                Keys.onPressed: (event) => {
+                    if (deletePromptActive) {
+                        if (event.key === Qt.Key_Escape) {
+                            deletePromptActive = false
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            backendProc.mode = "delete"
+                            backendProc.targetPath = pendingDeletePath
+                            backendProc.running = true
+                            deletePromptActive = false
+                            event.accepted = true
+                        }
+                        return
+                    }
+
+                    if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
+                        if (viewMode === "wallpapers" && wallpaperCarousel.currentIndex >= 0 && wallpaperModel.count > 0) {
+                            pendingDeletePath = wallpaperModel.get(wallpaperCarousel.currentIndex).path
+                            deletePromptActive = true
+                            event.accepted = true
+                        }
+                        return
+                    }
+
+                    // Unified Navigation Mapping
+                    if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
+                        if (viewMode === "categories") categoryCarousel.incrementCurrentIndex()
+                        else wallpaperCarousel.incrementCurrentIndex()
+                        event.accepted = true
+                        return
+                    }
+                    if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
+                        if (viewMode === "categories") categoryCarousel.decrementCurrentIndex()
+                        else wallpaperCarousel.decrementCurrentIndex()
+                        event.accepted = true
+                        return
+                    }
+
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        root.activateCurrent()
+                        event.accepted = true
+                        return
+                    }
+
+                    if (event.key === Qt.Key_Escape) {
+                        if (text.length > 0) {
+                            text = ""
+                        } else if (viewMode === "wallpapers") {
+                            root.backToCategories()
+                        } else {
+                            root.requestClose()
+                        }
+                        event.accepted = true
+                    }
+                }
+
+                Text {
+                    text: root.viewMode === "categories" ? "Search categories..." : "Search wallpapers..."
+                    color: root.subtleColor
+                    font.pixelSize: 14
+                    visible: searchField.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
                 }
             }
         }
-    }
-
-    TextInput {
-        id: searchField
-        visible: searchActive
-        anchors.right: searchButton.left
-        anchors.rightMargin: 10
-        anchors.verticalCenter: searchButton.verticalCenter
-        width: 160
-        color: root.textColor
-        font.pixelSize: 14
-        text: root.searchQuery
-        clip: true
-        z: 20
-
-        onTextChanged: root.searchQuery = text
-        Keys.onEscapePressed: {
-            searchActive = false
-            searchQuery = ""
-            root.forceActiveFocus()
-        }
-        Keys.onReturnPressed: root.forceActiveFocus()
     }
 
     // ------------------------------------------------------------
@@ -427,13 +430,12 @@ Item {
     PathView {
         id: categoryCarousel
         
-        // Smooth crossfade transition
         visible: opacity > 0.01
         opacity: viewMode === "categories" ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         anchors.fill: parent
-        anchors.topMargin: 40
+        anchors.topMargin: 64 // Pushed down to clear the new search bar
         anchors.bottomMargin: 14
 
         model: categoryModel
@@ -504,7 +506,6 @@ Item {
                     border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
                     
-                    // Tactile Press & Hover Lift animation
                     scale: catMouseArea.pressed && isCurrent ? 0.95 : (isCurrent && catMouseArea.containsMouse ? 1.03 : 1.0)
                     Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
@@ -521,12 +522,10 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         color: "black"
-                        // Subtle brightness flash on hover
                         opacity: isCurrent && catMouseArea.containsMouse ? 0.35 : 0.55
                         Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
                     }
 
-                    // Drop shadow effect
                     Text {
                         anchors.centerIn: parent
                         anchors.horizontalCenterOffset: 2
@@ -570,13 +569,12 @@ Item {
     PathView {
         id: wallpaperCarousel
         
-        // Smooth crossfade transition
         visible: opacity > 0.01
         opacity: viewMode === "wallpapers" ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         anchors.fill: parent
-        anchors.topMargin: 40
+        anchors.topMargin: 64 // Pushed down to clear the new search bar
         anchors.bottomMargin: 14
 
         model: wallpaperModel
@@ -647,7 +645,6 @@ Item {
                     border.color: Qt.rgba(255, 255, 255, 0.1)
                     clip: true
                     
-                    // Tactile Press & Hover Lift animation
                     scale: wallMouseArea.pressed && isCurrent ? 0.95 : (isCurrent && wallMouseArea.containsMouse ? 1.03 : 1.0)
                     Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
 
@@ -660,7 +657,6 @@ Item {
                         sourceSize.height: 270
                     }
                     
-                    // Subtle white glow overlay on hover
                     Rectangle {
                         anchors.fill: parent
                         color: "white"
