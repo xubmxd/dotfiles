@@ -307,17 +307,55 @@ Item {
         spacing: 8
         visible: root.mode === "compact"
 
-        Text {
-            text: root.finished ? "\u23F0" : "\u23F1"
-            color: root.finished ? "#ef4444" : root.activeColor
-            font.pixelSize: 14
+        Item {
+            id: compactIcon
+            Layout.preferredWidth: 14
+            Layout.preferredHeight: 14
+            Layout.alignment: Qt.AlignVCenter
+
+            Canvas {
+                id: compactIconCanvas
+                anchors.fill: parent
+
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+
+                    var cx = width / 2
+                    var cy = height / 2
+                    var r = Math.min(width, height) / 2 - 1
+
+                    ctx.strokeStyle = root.finished ? "#ef4444" : root.activeColor
+                    ctx.lineCap = "round"
+                    ctx.lineWidth = 1.4
+
+                    ctx.beginPath()
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.moveTo(cx, cy)
+                    ctx.lineTo(cx, cy - r * 0.6)
+                    ctx.moveTo(cx, cy)
+                    ctx.lineTo(cx + r * 0.45, cy)
+                    ctx.stroke()
+                }
+
+                Component.onCompleted: requestPaint()
+            }
+
+            Connections {
+                target: root
+                function onFinishedChanged() { compactIconCanvas.requestPaint() }
+            }
         }
 
         Text {
+            Layout.alignment: Qt.AlignVCenter
             text: root.finished ? "Time's up" : root.formatTime(root.remainingSeconds)
             color: root.textColor
             font.pixelSize: 13
-            font.weight: Font.DemiBold
+            font.weight: Font.Bold
         }
     }
 

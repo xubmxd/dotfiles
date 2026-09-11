@@ -75,10 +75,32 @@ ShellRoot {
         readonly property real requestedWindowHeight:
             Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
-        // Instantly expand the Wayland surface when opening to prevent clipping,
-        // but smoothly shrink it exactly in sync with the visual animation to 
-        // completely eliminate QtWayland snapping artifacts (the "bounce").
-        implicitHeight: Math.max(requestedWindowHeight, Math.ceil(islandBackground.y + islandBackground.height + 12))
+        // Tide-style layer-surface retention:
+        // grow the Wayland surface immediately for an expansion, but keep the
+        // previous extent alive briefly while a collapse finishes. This keeps
+        // the compositor surface from racing the visual capsule animation.
+        property real retainedWindowHeight: 0
+        implicitHeight: Math.max(requestedWindowHeight, retainedWindowHeight)
+
+        function reconcileWindowHeight() {
+            if (requestedWindowHeight >= retainedWindowHeight) {
+                windowShrinkTimer.stop()
+                retainedWindowHeight = requestedWindowHeight
+                return
+            }
+
+            windowShrinkTimer.restart()
+        }
+
+        onRequestedWindowHeightChanged: reconcileWindowHeight()
+        Component.onCompleted: retainedWindowHeight = requestedWindowHeight
+
+        Timer {
+            id: windowShrinkTimer
+            interval: 1000
+            repeat: false
+            onTriggered: retainedWindowHeight = requestedWindowHeight
+        }
 
         // ============================================================
         // PYWAL COLORS
@@ -1114,9 +1136,17 @@ ShellRoot {
                 }
             }
 
-            width: targetWidth
+            // Match Tide's two-stage geometry: the visual capsule owns the
+            // animated geometry, while its content simply fills that geometry.
+            // Do not snap the content to targetWidth/targetHeight while the
+            // capsule is still morphing.
+            property real displayedWidth: targetWidth
+
+            width: displayedWidth
             height: targetHeight
             radius: targetRadius
+
+            onTargetWidthChanged: displayedWidth = targetWidth
 
             color: islandWindow.colors.color0
             opacity: 1.0
@@ -1125,7 +1155,7 @@ ShellRoot {
             border.width: 1
             clip: true
 
-            Behavior on width {
+            Behavior on displayedWidth {
                 NumberAnimation {
                     duration: 400
                     easing.type: Easing.OutQuint
@@ -1318,10 +1348,10 @@ ShellRoot {
             // ========================================================
 
             Item {
-                // Instantly snap to target sizes to prevent squishing layout during animation
-                width: islandBackground.targetWidth
-                height: islandBackground.targetHeight
-                anchors.centerIn: parent
+                // Tide keeps the content attached to the animated capsule.
+                // The content therefore follows the morph frame-by-frame instead
+                // of jumping to its final geometry before the capsule gets there.
+                anchors.fill: parent
 
                 CustomComponents.Clock {
                     anchors.fill: parent
