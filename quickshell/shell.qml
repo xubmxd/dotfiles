@@ -42,6 +42,17 @@ ShellRoot {
                 width: Math.round(islandBackground.width)
                 height: Math.round(islandBackground.height)
             }
+
+            // Timer bubble sits outside islandBackground's own bounds, so
+            // without this the layer-shell mask clips it - invisible and
+            // unclickable even though it paints fine in isolation.
+            Region {
+                intersection: Intersection.Combine
+                x: Math.round(timerBubble.x)
+                y: Math.round(timerBubble.y)
+                width: timerBubble.visible ? Math.round(timerBubble.width) : 0
+                height: timerBubble.visible ? Math.round(timerBubble.height) : 0
+            }
         }
 
         // ============================================================
@@ -1674,6 +1685,116 @@ ShellRoot {
                     }
 
                     onHasSessionChanged: timerEvictionTimer.restart()
+                }
+            }
+        }
+
+        // ============================================================
+        // FLOATING TIMER BUBBLE (tide-style)
+        // ============================================================
+        // Small badge that pops out next to the pill whenever a timer
+        // session exists, regardless of which island is currently showing.
+
+        Item {
+            id: timerBubble
+
+            readonly property int bubbleSize: 32
+
+            width: bubbleSize
+            height: bubbleSize
+            x: islandBackground.x + islandBackground.width + 10
+            y: islandBackground.y + islandBackground.height / 2 - height / 2
+            z: 60
+
+            visible: timerWidgetItem.hasSession
+                && islandBackground.islandState !== "timer-compact"
+                && islandBackground.islandState !== "timer-expanded"
+                && islandBackground.islandState !== "timer-setup"
+
+            opacity: visible ? 1 : 0
+            scale: visible ? 1.0 : 0.5
+            transformOrigin: Item.Center
+
+            Behavior on opacity {
+                NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: width / 2
+                color: islandWindow.colors.color0
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+                border.width: 1
+            }
+
+            Canvas {
+                id: timerBubbleRing
+                anchors.fill: parent
+                anchors.margins: 3
+
+                property real progress: timerWidgetItem.totalSeconds > 0
+                    ? timerWidgetItem.remainingSeconds / timerWidgetItem.totalSeconds
+                    : 0
+
+                onProgressChanged: requestPaint()
+                onWidthChanged: requestPaint()
+                onVisibleChanged: if (visible) requestPaint()
+
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+
+                    var cx = width / 2
+                    var cy = height / 2
+                    var lineWidth = 2.5
+                    var radius = Math.min(width, height) / 2 - lineWidth / 2
+                    var startAngle = -Math.PI / 2
+                    var endAngle = startAngle + Math.PI * 2 * progress
+
+                    ctx.lineCap = "round"
+                    ctx.lineWidth = lineWidth
+
+                    ctx.beginPath()
+                    ctx.strokeStyle = Qt.rgba(1, 1, 1, 0.12)
+                    ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+                    ctx.stroke()
+
+                    if (progress > 0) {
+                        ctx.beginPath()
+                        ctx.strokeStyle = timerWidgetItem.running ? "#f59e0b" : islandWindow.colors.color8
+                        ctx.arc(cx, cy, radius, startAngle, endAngle, false)
+                        ctx.stroke()
+                    }
+
+                    // Simple clock glyph drawn by hand - no icon-font dependency.
+                    var faceRadius = radius * 0.42
+                    ctx.beginPath()
+                    ctx.strokeStyle = islandWindow.colors.color15
+                    ctx.lineWidth = 1.4
+                    ctx.arc(cx, cy, faceRadius, 0, Math.PI * 2)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.moveTo(cx, cy)
+                    ctx.lineTo(cx, cy - faceRadius * 0.65)
+                    ctx.moveTo(cx, cy)
+                    ctx.lineTo(cx + faceRadius * 0.45, cy)
+                    ctx.stroke()
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    hoverExpandDelayTimer.stop()
+                    hoverCollapseDelayTimer.stop()
+                    islandWindow.hoverExpandedActive = false
+                    islandBackground.islandState = "timer-expanded"
                 }
             }
         }
