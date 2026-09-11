@@ -13,7 +13,7 @@ Item {
     property string mode: "compact"
 
     readonly property real setupWidth: 320
-    readonly property real setupHeight: 200
+    readonly property real setupHeight: 254
     readonly property real compactImplicitWidth: 150
 
     property int totalSeconds: 300
@@ -51,6 +51,16 @@ Item {
         finished = false
         remainingSeconds = totalSeconds
         requestClose()
+    }
+
+    function applyCustomDuration() {
+        var h = parseInt(customHoursInput.text) || 0
+        var m = parseInt(customMinutesInput.text) || 0
+        var total = h * 3600 + m * 60
+        if (total <= 0)
+            return
+        root.totalSeconds = total
+        root.remainingSeconds = total
     }
 
     Timer {
@@ -133,6 +143,125 @@ Item {
                             root.totalSeconds = modelData * 60
                             root.remainingSeconds = root.totalSeconds
                         }
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+
+            Text {
+                text: "Custom"
+                color: root.subtleColor
+                font.pixelSize: 12
+                font.weight: Font.Medium
+            }
+
+            Item { Layout.fillWidth: true }
+
+            Rectangle {
+                Layout.preferredWidth: 54
+                Layout.preferredHeight: 34
+                radius: 10
+                color: root.backgroundColor
+                border.width: customHoursInput.activeFocus ? 1 : 0
+                border.color: root.activeColor
+
+                RowLayout {
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    TextInput {
+                        id: customHoursInput
+                        Layout.preferredWidth: 16
+                        text: "0"
+                        color: root.textColor
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignRight
+                        selectByMouse: true
+                        clip: true
+                        validator: IntValidator { bottom: 0; top: 23 }
+                        onEditingFinished: root.applyCustomDuration()
+                    }
+
+                    Text {
+                        text: "h"
+                        color: root.subtleColor
+                        font.pixelSize: 11
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.IBeamCursor
+                    onClicked: customHoursInput.forceActiveFocus()
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 54
+                Layout.preferredHeight: 34
+                radius: 10
+                color: root.backgroundColor
+                border.width: customMinutesInput.activeFocus ? 1 : 0
+                border.color: root.activeColor
+
+                RowLayout {
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    TextInput {
+                        id: customMinutesInput
+                        Layout.preferredWidth: 16
+                        text: "5"
+                        color: root.textColor
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignRight
+                        selectByMouse: true
+                        clip: true
+                        validator: IntValidator { bottom: 0; top: 59 }
+                        onEditingFinished: root.applyCustomDuration()
+                    }
+
+                    Text {
+                        text: "m"
+                        color: root.subtleColor
+                        font.pixelSize: 11
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.IBeamCursor
+                    onClicked: customMinutesInput.forceActiveFocus()
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 46
+                Layout.preferredHeight: 34
+                radius: 10
+                color: root.activeColor
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "Set"
+                    color: "black"
+                    font.pixelSize: 12
+                    font.weight: Font.DemiBold
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        customHoursInput.focus = false
+                        customMinutesInput.focus = false
+                        root.applyCustomDuration()
                     }
                 }
             }

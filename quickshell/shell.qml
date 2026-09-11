@@ -30,7 +30,7 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker") 
+        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker" || islandBackground.islandState === "timer-setup") 
                                      ? WlrKeyboardFocus.Exclusive 
                                      : WlrKeyboardFocus.None
 
