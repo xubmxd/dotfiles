@@ -92,9 +92,10 @@ Item {
             case "2d":      return "◇  2D"
             case "lofi":    return "☾  Lofi"
             case "space":   return "✧  Space"
+            case "retro":   return "▣  Retro"
             case "gaming":  return "󰊗  Gaming"
             case "rice":    return "󰣇  Rice"
-            case "cars":    return "󰭮  Cars"
+            case "jet":    return "✈  Jet"
             case "pixel":   return "▦  Pixel"
             case "minimal": return "□  Minimal"
             case "nature":  return "♧  Nature"
@@ -265,6 +266,7 @@ Item {
             } else if (mode === "delete") {
                 scanWallpapersProc.running = false
                 scanWallpapersProc.running = true
+                root.refresh()
             }
         }
     }
@@ -543,6 +545,7 @@ Item {
                         source: model.sample.length > 0 ? root.toFileUrl(model.sample) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
+                        cache: false
                         sourceSize.width: 440
                         sourceSize.height: 270
                         visible: model.sample.length > 0
@@ -682,6 +685,7 @@ Item {
                         source: root.toFileUrl(model.path)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
+                        cache: false
                         sourceSize.width: 440
                         sourceSize.height: 270
                     }

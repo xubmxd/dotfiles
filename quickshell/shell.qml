@@ -121,6 +121,9 @@ ShellRoot {
             if (musicData.hasTrack && (lyricsService.hasLyrics || lyricsService.loading))
                 islands.push("lyrics")
 
+            if (timerWidgetItem.hasSession)
+                islands.push("timer")
+
             if (NotificationService.notifications.length > 0)
                 islands.push("notifications")
 
@@ -212,6 +215,9 @@ ShellRoot {
 
             if (selectedIsland === "omni")
                 return "omni"
+
+            if (selectedIsland === "timer" && timerWidgetItem.hasSession)
+                return "timer-compact"
 
             return "idle"
         }
@@ -312,6 +318,22 @@ ShellRoot {
 
                 if (islandBackground.islandState === "lyrics")
                     islandBackground.islandState = islandWindow.restingState
+            }
+        }
+
+        Timer {
+            id: timerEvictionTimer
+            interval: 150
+            onTriggered: {
+                if (timerWidgetItem.hasSession) return;
+
+                if (islandWindow.selectedIsland === "timer")
+                    islandWindow.selectedIslandIndex = 0
+
+                const current = islandBackground.islandState
+                if (current === "timer-compact" || current === "timer-expanded" || current === "timer-setup") {
+                    islandBackground.islandState = islandWindow.restingState
+                }
             }
         }
 
@@ -637,6 +659,42 @@ ShellRoot {
                 }
             }
 
+            function toggleTimerSetup(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "timer-setup") {
+                    islandBackground.islandState = islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "timer-setup"
+                }
+            }
+
+            function openTimerSetup(): void {
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+                islandBackground.islandState = "timer-setup"
+            }
+
+            function toggleTimer(): void {
+                if (!timerWidgetItem.hasSession) return
+                hoverExpandDelayTimer.stop()
+                hoverCollapseDelayTimer.stop()
+                islandWindow.hoverExpandedActive = false
+
+                if (islandBackground.islandState === "timer-expanded") {
+                    islandBackground.islandState = islandWindow.restingState
+                } else {
+                    islandBackground.islandState = "timer-expanded"
+                }
+            }
+
+            function cancelTimer(): void {
+                timerWidgetItem.cancel()
+            }
+
         }
 
         // ============================================================
@@ -927,6 +985,12 @@ ShellRoot {
                     return appLauncherItem.launcherWidth
                 case "gif-picker":
                     return gifPickerItem.pickerWidth
+                case "timer-setup":
+                    return timerWidgetItem.setupWidth
+                case "timer-compact":
+                    return timerWidgetItem.compactImplicitWidth
+                case "timer-expanded":
+                    return 380
                 default:
                     return 120
                 }
@@ -968,6 +1032,12 @@ ShellRoot {
                     return appLauncherItem.launcherHeight
                 case "gif-picker":
                     return gifPickerItem.pickerHeight
+                case "timer-setup":
+                    return timerWidgetItem.setupHeight
+                case "timer-compact":
+                    return 40
+                case "timer-expanded":
+                    return 210
                 default:
                     return 40
                 }
@@ -1008,6 +1078,12 @@ ShellRoot {
                 case "app-launcher":
                     return 24
                 case "gif-picker":
+                    return 28
+                case "timer-setup":
+                    return 26
+                case "timer-compact":
+                    return 20
+                case "timer-expanded":
                     return 28
                 default:
                     return 20
@@ -1082,8 +1158,10 @@ ShellRoot {
 
                     swipeEligible =
                         islandBackground.islandState === "idle"
+                        || islandBackground.islandState === "omni"
                         || islandBackground.islandState === "music-compact"
                         || islandBackground.islandState === "lyrics"
+                        || islandBackground.islandState === "timer-compact"
                         || islandBackground.islandState === "notification-pill"
                 }
 
@@ -1094,7 +1172,10 @@ ShellRoot {
                     const dx = mouse.x - pressX
                     const dy = mouse.y - pressY
 
-                    if (Math.abs(dy) > verticalTolerance)
+                    // Proportional check instead of a fixed cap: tolerates the
+                    // natural arc of a real mouse swipe instead of rejecting it
+                    // outright once vertical drift crosses a hard pixel line.
+                    if (Math.abs(dy) > Math.abs(dx) * 0.6 + verticalTolerance)
                         return
 
                     if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
@@ -1109,9 +1190,12 @@ ShellRoot {
                         return
 
                     const dx = mouse.x - pressX
-                    const dy = mouse.y - pressY
 
-                    if (Math.abs(dy) <= verticalTolerance && Math.abs(dx) >= swipeThreshold) {
+                    // Direction was already confirmed while dragging — don't
+                    // re-check vertical drift here, it only punishes longer
+                    // swipes for natural arc that already passed the proportional
+                    // check above.
+                    if (Math.abs(dx) >= swipeThreshold) {
                         if (dx < 0)
                             islandWindow.nextIsland()
                         else
@@ -1153,6 +1237,55 @@ ShellRoot {
                 onCanceled: {
                     horizontalSwipe = false
                     swipeEligible = false
+                }
+
+                property bool wheelLocked: false
+
+                Timer {
+                    id: wheelUnlockTimer
+                    interval: 350
+                    onTriggered: islandMouseArea.wheelLocked = false
+                }
+
+                onWheel: function(wheel) {
+                    const eligible =
+                        islandBackground.islandState === "idle"
+                        || islandBackground.islandState === "omni"
+                        || islandBackground.islandState === "music-compact"
+                        || islandBackground.islandState === "lyrics"
+                        || islandBackground.islandState === "timer-compact"
+                        || islandBackground.islandState === "notification-pill"
+
+                    if (!eligible)
+                        return
+
+                    // A single physical two-finger swipe on a touchpad emits a
+                    // whole burst of wheel events, not one. Only act on the
+                    // first tick of a burst, and keep re-arming the unlock
+                    // timer while the burst continues so the whole gesture -
+                    // no matter how long it drags on - only moves one pill.
+                    if (wheelLocked) {
+                        wheelUnlockTimer.restart()
+                        return
+                    }
+
+                    const delta = Math.abs(wheel.angleDelta.x) > Math.abs(wheel.angleDelta.y)
+                        ? wheel.angleDelta.x
+                        : wheel.angleDelta.y
+
+                    // Leading zero-magnitude ticks are common on touchpad
+                    // drivers as a gesture starts - ignore them entirely
+                    // instead of locking out the real ticks that follow.
+                    if (delta === 0)
+                        return
+
+                    if (delta < 0)
+                        islandWindow.nextIsland()
+                    else
+                        islandWindow.previousIsland()
+
+                    wheelLocked = true
+                    wheelUnlockTimer.restart()
                 }
             }
 
@@ -1498,6 +1631,49 @@ ShellRoot {
                     Behavior on scale {
                         NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
+                }
+
+                CustomComponents.TimerWidget {
+                    id: timerWidgetItem
+                    anchors.fill: parent
+
+                    textColor: islandWindow.colors.color15
+                    activeColor: islandWindow.colors.color4
+                    subtleColor: islandWindow.colors.color8
+                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                    mode: islandBackground.islandState === "timer-setup" ? "setup"
+                        : islandBackground.islandState === "timer-expanded" ? "expanded"
+                        : "compact"
+
+                    opacity: (islandBackground.islandState === "timer-setup"
+                              || islandBackground.islandState === "timer-compact"
+                              || islandBackground.islandState === "timer-expanded") ? 1 : 0
+                    scale: opacity > 0.01 ? 1.0 : 0.45
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Center
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+
+                    onRequestClose: {
+                        islandBackground.islandState = islandWindow.restingState
+                    }
+
+                    onRequestExpand: {
+                        islandBackground.islandState = "timer-expanded"
+                    }
+
+                    onTimerFinished: {
+                        islandBackground.islandState = "timer-expanded"
+                        timerEvictionTimer.stop()
+                    }
+
+                    onHasSessionChanged: timerEvictionTimer.restart()
                 }
             }
         }
