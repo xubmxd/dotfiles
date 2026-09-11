@@ -20,7 +20,12 @@ Item {
     property int remainingSeconds: 300
     property bool running: false
     property bool finished: false
-    readonly property bool hasSession: running || finished
+    // Tracks "a session exists" independent of running/paused - hasSession
+    // used to be running||finished, so pausing (running:false) dropped
+    // hasSession to false and the shell's eviction timer treated that as
+    // "no timer" and booted the pill, looking exactly like a cancel.
+    property bool started: false
+    readonly property bool hasSession: started || finished
 
     signal requestClose()
     signal requestExpand()
@@ -35,6 +40,7 @@ Item {
     function start() {
         remainingSeconds = totalSeconds
         running = true
+        started = true
         finished = false
     }
 
@@ -49,6 +55,7 @@ Item {
     function cancel() {
         running = false
         finished = false
+        started = false
         remainingSeconds = totalSeconds
         requestClose()
     }
@@ -286,7 +293,10 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.start()
+                onClicked: {
+                    root.start()
+                    root.requestClose()
+                }
             }
         }
     }
@@ -344,7 +354,7 @@ Item {
                     anchors.fill: parent
                     anchors.margins: -8
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.cancel()
+                    onClicked: root.requestClose()
                 }
             }
         }
