@@ -16,7 +16,7 @@ Item {
         id: lyricMeasure
         visible: false
         text: root.lyricsService ? root.lyricsService.currentLine : ""
-        font.family: "sans-serif"
+        font.family: "Inter"
         font.pixelSize: 15
         font.weight: Font.Medium
     }
@@ -149,7 +149,7 @@ Item {
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 15
             font.weight: Font.Medium
             elide: Text.ElideRight
@@ -175,7 +175,7 @@ Item {
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 15
             font.weight: Font.Medium
             elide: Text.ElideRight

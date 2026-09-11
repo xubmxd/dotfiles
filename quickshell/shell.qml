@@ -9,6 +9,19 @@ import "components" as CustomComponents
 import "services"
 
 ShellRoot {
+    // ============================================================
+    // GLOBAL FONT
+    // ============================================================
+    // Any Text/control across all components that doesn't hardcode its
+    // own font.family will fall back to this. Components that already
+    // set font.family explicitly (e.g. font.family: "monospace") won't
+    // be touched by this - those need editing individually.
+    Component.onCompleted: {
+        var f = Qt.application.font
+        f.family = "Inter"
+        Qt.application.font = f
+    }
+
     PanelWindow {
         id: islandWindow
 

@@ -25,7 +25,7 @@ Item {
         id: titleMeasure
         visible: false
         text: root.playerData ? root.playerData.trackTitle : ""
-        font.family: "sans-serif"
+        font.family: "Inter"
         font.pixelSize: 11
         font.weight: Font.DemiBold
     }
@@ -34,7 +34,7 @@ Item {
         id: artistMeasure
         visible: false
         text: root.playerData ? root.playerData.trackArtist : ""
-        font.family: "sans-serif"
+        font.family: "Inter"
         font.pixelSize: 9
         font.weight: Font.Medium
     }
@@ -123,7 +123,7 @@ Item {
                 width: parent.width
                 text: root.playerData ? root.playerData.trackTitle : ""
                 color: root.textColor
-                font.family: "sans-serif"
+                font.family: "Inter"
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -134,7 +134,7 @@ Item {
                 width: parent.width
                 text: root.playerData ? root.playerData.trackArtist : ""
                 color: root.subtleColor
-                font.family: "sans-serif"
+                font.family: "Inter"
                 font.pixelSize: 9
                 font.weight: Font.Medium
                 elide: Text.ElideRight
@@ -256,7 +256,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.playerData ? root.playerData.trackTitle : ""
                         color: root.textColor
-                        font.family: "sans-serif"
+                        font.family: "Inter"
                         font.pixelSize: 16
                         font.weight: Font.Bold
                         horizontalAlignment: Text.AlignLeft
@@ -268,7 +268,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.playerData ? root.playerData.trackArtist : ""
                         color: root.subtleColor
-                        font.family: "sans-serif"
+                        font.family: "Inter"
                         font.pixelSize: 13
                         font.weight: Font.Medium
                         horizontalAlignment: Text.AlignLeft
@@ -326,7 +326,7 @@ Item {
                         ? progressTrack.seekOverrideTimeText
                         : (root.playerData ? root.playerData.timePlayed : "0:00")
                     color: root.subtleColor
-                    font.family: "sans-serif"
+                    font.family: "Inter"
                     font.pixelSize: 11
                     font.weight: Font.Medium
                 }
@@ -471,7 +471,7 @@ Item {
                 Text {
                     text: root.playerData ? root.playerData.timeTotal : "0:00"
                     color: root.subtleColor
-                    font.family: "sans-serif"
+                    font.family: "Inter"
                     font.pixelSize: 11
                     font.weight: Font.Medium
                 }

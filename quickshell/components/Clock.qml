@@ -10,7 +10,7 @@ Item {
         id: timeText
         anchors.centerIn: parent
         
-        font.family: "JetBrainsMono Nerd Font"
+        font.family: "Inter"
         font.pixelSize: 16
         font.bold: true
         color: clockRoot.textColor

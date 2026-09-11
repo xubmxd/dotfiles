@@ -76,7 +76,7 @@ Rectangle {
                 Layout.fillWidth: true
                 text: root.device ? root.device.name : ""
                 color: (root.device && root.device.connected) ? root.accentColor : root.textColor
-                font.family: "sans-serif"; font.pixelSize: 13
+                font.family: "Inter"; font.pixelSize: 13
                 font.weight: (root.device && root.device.connected) ? Font.Bold : Font.Medium
                 elide: Text.ElideRight
             }
@@ -91,7 +91,7 @@ Rectangle {
                     return BluetoothService.statusFor(root.device)
                 }
                 color: root.subtleColor
-                font.family: "sans-serif"; font.pixelSize: 10
+                font.family: "Inter"; font.pixelSize: 10
                 elide: Text.ElideRight
             }
         }

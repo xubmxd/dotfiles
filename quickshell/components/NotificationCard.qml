@@ -75,7 +75,7 @@ Rectangle {
 
                 color: "#ffffff"
 
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: "Inter"
 
                 font.pixelSize: 13
 
@@ -128,7 +128,7 @@ Rectangle {
 
             color: "#ffffff"
 
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
 
             font.pixelSize: 14
 
@@ -154,7 +154,7 @@ Rectangle {
 
             color: "#b8b8b8"
 
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
 
             font.pixelSize: 12
 

@@ -100,7 +100,7 @@ Item {
         Text {
             text: "Workspace " + root.workspaceName
             color: root.textColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 13
             font.weight: Font.Bold
         }
@@ -142,7 +142,7 @@ Item {
             Layout.maximumWidth: 150
             text: (root.playerData && root.playerData.hasTrack) ? root.playerData.trackTitle : "No Media"
             color: root.textColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 13
             font.weight: Font.Medium
             elide: Text.ElideRight
@@ -188,7 +188,7 @@ Item {
         Text {
             text: root.dateText + " • " + root.timeText
             color: root.subtleColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 13
             font.weight: Font.Medium
         }
@@ -198,7 +198,7 @@ Item {
             text: root.getBatteryIcon(root.batteryPercent, root.batteryStatus) + " " + root.batteryPercent + "%"
             // Warn in red if battery is 20% or lower and not charging
             color: root.batteryPercent <= 20 && root.batteryStatus !== "Charging" ? "#ef4444" : root.textColor
-            font.family: "sans-serif"
+            font.family: "Inter"
             font.pixelSize: 13
             font.weight: Font.Bold
             

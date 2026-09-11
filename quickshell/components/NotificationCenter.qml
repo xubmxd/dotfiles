@@ -40,7 +40,7 @@ Item {
                 color: "#ffffff"
 
                 font.family:
-                    "JetBrainsMono Nerd Font"
+                    "Inter"
 
                 font.pixelSize: 18
 
@@ -58,7 +58,7 @@ Item {
                 color: "#ffffff"
 
                 font.family:
-                    "JetBrainsMono Nerd Font"
+                    "Inter"
 
                 font.pixelSize: 12
 
@@ -135,7 +135,7 @@ Item {
                         "#ffffff"
 
                     font.family:
-                        "JetBrainsMono Nerd Font"
+                        "Inter"
 
                     font.pixelSize: 16
 
@@ -154,7 +154,7 @@ Item {
                         "#888888"
 
                     font.family:
-                        "JetBrainsMono Nerd Font"
+                        "Inter"
 
                     font.pixelSize: 12
                 }
@@ -306,7 +306,7 @@ Item {
                                         "#aaaaaa"
 
                                     font.family:
-                                        "JetBrainsMono Nerd Font"
+                                        "Inter"
 
                                     font.pixelSize: 11
 
@@ -332,7 +332,7 @@ Item {
                                         "#ffffff"
 
                                     font.family:
-                                        "JetBrainsMono Nerd Font"
+                                        "Inter"
 
                                     font.pixelSize: 14
 
@@ -363,7 +363,7 @@ Item {
                                         "#b0b0b0"
 
                                     font.family:
-                                        "JetBrainsMono Nerd Font"
+                                        "Inter"
 
                                     font.pixelSize: 12
 
@@ -397,7 +397,7 @@ Item {
                                         "#ffffff"
 
                                     font.family:
-                                        "JetBrainsMono Nerd Font"
+                                        "Inter"
 
                                     font.pixelSize: 13
 
@@ -423,7 +423,7 @@ Item {
                                     "#999999"
 
                                 font.family:
-                                    "JetBrainsMono Nerd Font"
+                                    "Inter"
 
                                 font.pixelSize: 20
 

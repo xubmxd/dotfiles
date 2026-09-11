@@ -341,8 +341,8 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true; Layout.preferredHeight: 26
-                    Text { id: timeText; font.family: "sans-serif"; font.pixelSize: 22; font.weight: Font.Bold; color: dashboardRoot.textColor }
-                    Text { id: dateText; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium; color: dashboardRoot.subtleColor; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: 2; Layout.leftMargin: 4 }
+                    Text { id: timeText; font.family: "Inter"; font.pixelSize: 22; font.weight: Font.Bold; color: dashboardRoot.textColor }
+                    Text { id: dateText; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.Medium; color: dashboardRoot.subtleColor; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: 2; Layout.leftMargin: 4 }
                     Timer {
                         interval: 1000; running: true; repeat: true
                         onTriggered: {
@@ -355,7 +355,7 @@ Item {
                     Row {
                         spacing: 4; Layout.alignment: Qt.AlignVCenter
                         Text { text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter; visible: dashboardRoot.isCharging }
-                        Text { text: dashboardRoot.batteryPercent; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: dashboardRoot.batteryPercent; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
                         Text { text: dashboardRoot.isCharging ? "󰂄" : "󰁹"; color: "#22c55e"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; anchors.verticalCenter: parent.verticalCenter }
                     }
                 }
@@ -404,8 +404,8 @@ Item {
                                 anchors.fill: parent; spacing: 8
                                 ColumnLayout {
                                     Layout.fillWidth: true; spacing: 2
-                                    Text { text: "Wi-Fi"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: dashboardRoot.wifiEnabled ? dashboardRoot.wifiSsid : "Off"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: "Wi-Fi"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: dashboardRoot.wifiEnabled ? dashboardRoot.wifiSsid : "Off"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
                                 }
                                 Text { text: "󰅂"; color: dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; Layout.alignment: Qt.AlignVCenter }
                             }
@@ -447,8 +447,8 @@ Item {
                                 anchors.fill: parent; spacing: 8
                                 ColumnLayout {
                                     Layout.fillWidth: true; spacing: 2
-                                    Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: dashboardRoot.btEnabled ? dashboardRoot.btDevice : "Off"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: dashboardRoot.btEnabled ? dashboardRoot.btDevice : "Off"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
                                 }
                                 Text { text: "󰅂"; color: dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; Layout.alignment: Qt.AlignVCenter }
                             }
@@ -463,7 +463,7 @@ Item {
                 // Display Slider
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 68; radius: 18; color: Qt.rgba(1, 1, 1, 0.08)
-                    Text { text: "Display"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.top: parent.top; anchors.left: parent.left; anchors.topMargin: 10; anchors.leftMargin: 14 }
+                    Text { text: "Display"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.top: parent.top; anchors.left: parent.left; anchors.topMargin: 10; anchors.leftMargin: 14 }
                     Rectangle {
                         id: brightnessTrack; anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: 12; anchors.bottomMargin: 10; height: 28; radius: 14; color: Qt.rgba(1, 1, 1, 0.1)
                         property real dragBrightness: dashboardRoot.displayBrightness
@@ -486,7 +486,7 @@ Item {
                 // Sound Slider
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 68; radius: 18; color: Qt.rgba(1, 1, 1, 0.08)
-                    Text { text: "Sound"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.top: parent.top; anchors.left: parent.left; anchors.topMargin: 10; anchors.leftMargin: 14 }
+                    Text { text: "Sound"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.top: parent.top; anchors.left: parent.left; anchors.topMargin: 10; anchors.leftMargin: 14 }
                     Rectangle {
                         id: volumeTrack; anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: 12; anchors.bottomMargin: 10; height: 28; radius: 14; color: Qt.rgba(1, 1, 1, 0.1)
                         property real backendVol: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio && Pipewire.defaultAudioSink.audio.volume !== undefined ? Pipewire.defaultAudioSink.audio.volume : 0
@@ -548,7 +548,7 @@ Item {
                         Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
-                    Text { text: "Wi-Fi Networks"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                    Text { text: "Wi-Fi Networks"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
 
                     Rectangle {
                         width: 14; height: 14; radius: 7; color: "transparent"
@@ -579,7 +579,7 @@ Item {
                         Layout.alignment: Qt.AlignHCenter
                         text: !dashboardRoot.wifiEnabled ? "Wi-Fi is Off" : "No Networks Found"
                         color: dashboardRoot.subtleColor
-                        font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                        font.family: "Inter"; font.pixelSize: 13; font.weight: Font.Medium
                     }
                     Item { Layout.fillHeight: true }
                 }
@@ -613,7 +613,7 @@ Item {
                         RowLayout {
                             anchors.fill: parent; anchors.margins: 12; spacing: 10
                             Text { text: dashboardRoot.wifiGlyph; opacity: dashboardRoot.wifiSignalOpacity(signal); color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 15 }
-                            Text { text: ssid; color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: inUse ? Font.Bold : Font.Medium; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Text { text: ssid; color: inUse ? "#3b82f6" : dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: inUse ? Font.Bold : Font.Medium; Layout.fillWidth: true; elide: Text.ElideRight }
                             Text { text: "\u{f033e}"; color: dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 11; visible: secured && !inUse }
                             Text { text: inUse ? "\uf00c" : "\u{f0142}"; color: inUse ? "#3b82f6" : dashboardRoot.subtleColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: inUse ? 14 : 12 }
                         }
@@ -663,7 +663,7 @@ Item {
                         Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
                     }
-                    Text { text: "Network Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                    Text { text: "Network Info"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 }
 
                 ColumnLayout {
@@ -671,8 +671,8 @@ Item {
                     Layout.topMargin: 12
                     spacing: 6
                     Text { Layout.alignment: Qt.AlignHCenter; text: "\u{f1eb}"; color: "#3b82f6"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 34 }
-                    Text { Layout.alignment: Qt.AlignHCenter; text: dashboardRoot.targetWifiSsid; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold }
-                    Text { Layout.alignment: Qt.AlignHCenter; text: "Connected"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 12 }
+                    Text { Layout.alignment: Qt.AlignHCenter; text: dashboardRoot.targetWifiSsid; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold }
+                    Text { Layout.alignment: Qt.AlignHCenter; text: "Connected"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 12 }
                 }
 
                 Item { Layout.fillHeight: true }
@@ -680,7 +680,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
                     color: Qt.rgba(1, 1, 1, 0.08)
-                    Text { anchors.centerIn: parent; text: "Disconnect"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    Text { anchors.centerIn: parent; text: "Disconnect"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 14; font.weight: Font.Medium }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                         onClicked: {
@@ -693,7 +693,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
                     color: Qt.rgba(0.94, 0.27, 0.27, 0.15)
-                    Text { anchors.centerIn: parent; text: "Forget This Network"; color: "#ef4444"; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    Text { anchors.centerIn: parent; text: "Forget This Network"; color: "#ef4444"; font.family: "Inter"; font.pixelSize: 14; font.weight: Font.Medium }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                         onClicked: {
@@ -767,13 +767,13 @@ Item {
                                 Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "wifi" }
                             }
-                            Text { text: "Enter Password"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                            Text { text: "Enter Password"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
                         }
 
                         Text {
                             text: "Network: " + dashboardRoot.targetWifiSsid
                             color: dashboardRoot.subtleColor
-                            font.family: "sans-serif"; font.pixelSize: 13
+                            font.family: "Inter"; font.pixelSize: 13
                         }
 
                         Rectangle {
@@ -791,7 +791,7 @@ Item {
                                 id: passwordInput
                                 anchors.fill: parent; anchors.margins: 12
                                 color: dashboardRoot.textColor
-                                font.family: "sans-serif"; font.pixelSize: 14
+                                font.family: "Inter"; font.pixelSize: 14
                                 echoMode: TextInput.Password
                                 focus: dashboardRoot.wifiConnectionState === "password"
 
@@ -802,7 +802,7 @@ Item {
                                 Text {
                                     text: "Enter network password..."
                                     color: dashboardRoot.subtleColor
-                                    font.family: "sans-serif"; font.pixelSize: 14
+                                    font.family: "Inter"; font.pixelSize: 14
                                     visible: !passwordInput.text && !passwordInput.activeFocus
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -819,7 +819,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "Connect"
                                 color: "white"
-                                font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Bold
+                                font.family: "Inter"; font.pixelSize: 14; font.weight: Font.Bold
                             }
 
                             MouseArea {
@@ -901,14 +901,14 @@ Item {
                                 return "";
                             }
                             color: dashboardRoot.textColor
-                            font.family: "sans-serif"; font.pixelSize: 15; font.weight: Font.Bold
+                            font.family: "Inter"; font.pixelSize: 15; font.weight: Font.Bold
                         }
 
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: dashboardRoot.targetWifiSsid
                             color: dashboardRoot.subtleColor
-                            font.family: "sans-serif"; font.pixelSize: 12
+                            font.family: "Inter"; font.pixelSize: 12
                         }
 
                         // Try Again Action on Error
@@ -923,7 +923,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "Try Again"
                                 color: dashboardRoot.textColor
-                                font.family: "sans-serif"; font.pixelSize: 12; font.weight: Font.Medium
+                                font.family: "Inter"; font.pixelSize: 12; font.weight: Font.Medium
                             }
 
                             MouseArea {
@@ -982,7 +982,7 @@ Item {
                         Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "main" }
                     }
-                    Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                    Text { text: "Bluetooth"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
 
                     // "Now Discovering" indicator — same visual language
                     // as the Wi-Fi scanning spinner, mirroring macOS/iOS'
@@ -1025,7 +1025,7 @@ Item {
                             return "No Devices Found"
                         }
                         color: dashboardRoot.subtleColor
-                        font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                        font.family: "Inter"; font.pixelSize: 13; font.weight: Font.Medium
                     }
                     Item { Layout.fillHeight: true }
                 }
@@ -1050,7 +1050,7 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true; spacing: 8
                             visible: BluetoothService.connectedDevices.length > 0
-                            Text { text: "CONNECTED"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Text { text: "CONNECTED"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
                             Repeater {
                                 model: BluetoothService.connectedDevices
                                 delegate: BluetoothDeviceRow {
@@ -1071,7 +1071,7 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true; spacing: 8
                             visible: BluetoothService.myDevices.length > 0
-                            Text { text: "MY DEVICES"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Text { text: "MY DEVICES"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
                             Repeater {
                                 model: BluetoothService.myDevices
                                 delegate: BluetoothDeviceRow {
@@ -1092,7 +1092,7 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true; spacing: 8
                             visible: BluetoothService.otherDevices.length > 0
-                            Text { text: "OTHER DEVICES"; color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
+                            Text { text: "OTHER DEVICES"; color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 10; font.weight: Font.Bold; Layout.leftMargin: 4 }
                             Repeater {
                                 model: BluetoothService.otherDevices
                                 delegate: BluetoothDeviceRow {
@@ -1159,7 +1159,7 @@ Item {
                         Text { anchors.centerIn: parent; text: ""; color: dashboardRoot.textColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; anchors.horizontalCenterOffset: -2 }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dashboardRoot.currentSubView = "bt" }
                     }
-                    Text { text: "Device Info"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
+                    Text { text: "Device Info"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 }
 
                 ColumnLayout {
@@ -1175,12 +1175,12 @@ Item {
                     Text {
                         Layout.alignment: Qt.AlignHCenter
                         text: btDetailView.device ? btDetailView.device.name : ""
-                        color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 16; font.weight: Font.Bold
+                        color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 16; font.weight: Font.Bold
                     }
                     Text {
                         Layout.alignment: Qt.AlignHCenter
                         text: btDetailView.device ? BluetoothService.statusFor(btDetailView.device) : ""
-                        color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 12
+                        color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 12
                     }
                 }
 
@@ -1192,10 +1192,10 @@ Item {
                     RowLayout {
                         anchors.fill: parent; anchors.margins: 14; spacing: 10
                         Text { text: "\u{f00af}"; color: dashboardRoot.activeColor; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 15 }
-                        Text { text: "Battery"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                        Text { text: "Battery"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
                         Text {
                             text: btDetailView.device ? Math.round(btDetailView.device.battery * 100) + "%" : ""
-                            color: dashboardRoot.subtleColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.Medium
+                            color: dashboardRoot.subtleColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.Medium
                         }
                     }
                 }
@@ -1208,7 +1208,7 @@ Item {
                     visible: btDetailView.device && btDetailView.device.paired
                     RowLayout {
                         anchors.fill: parent; anchors.margins: 14
-                        Text { text: "Trusted"; color: dashboardRoot.textColor; font.family: "sans-serif"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                        Text { text: "Trusted"; color: dashboardRoot.textColor; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true }
                         Rectangle {
                             Layout.preferredWidth: 38; Layout.preferredHeight: 22; radius: 11
                             color: (btDetailView.device && btDetailView.device.trusted) ? "#34c759" : Qt.rgba(1, 1, 1, 0.2)
@@ -1239,7 +1239,7 @@ Item {
                         anchors.centerIn: parent
                         text: (btDetailView.device && btDetailView.device.connected) ? "Disconnect" : "Connect"
                         color: (btDetailView.device && btDetailView.device.connected) ? dashboardRoot.textColor : "white"
-                        font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Bold
+                        font.family: "Inter"; font.pixelSize: 14; font.weight: Font.Bold
                     }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -1255,7 +1255,7 @@ Item {
                     Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 12
                     color: Qt.rgba(0.94, 0.27, 0.27, 0.15)
                     visible: btDetailView.device && btDetailView.device.paired
-                    Text { anchors.centerIn: parent; text: "Forget This Device"; color: "#ef4444"; font.family: "sans-serif"; font.pixelSize: 14; font.weight: Font.Medium }
+                    Text { anchors.centerIn: parent; text: "Forget This Device"; color: "#ef4444"; font.family: "Inter"; font.pixelSize: 14; font.weight: Font.Medium }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                         onClicked: {

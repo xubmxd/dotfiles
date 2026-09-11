@@ -49,7 +49,7 @@ Item {
         Text {
             text: Math.round(osdRoot.osdValue * 100) + "%"
             color: osdRoot.activeColor
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
             font.pixelSize: 14
             font.bold: true
             Layout.minimumWidth: 40

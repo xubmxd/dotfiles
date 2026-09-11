@@ -43,7 +43,7 @@ Item {
         id: appNameMeasure
         visible: false
         text: root.appName.length > 0 ? root.appName : "Notification"
-        font.family: "JetBrainsMono Nerd Font"
+        font.family: "Inter"
         font.pixelSize: 11
         font.bold: true
     }
@@ -52,7 +52,7 @@ Item {
         id: primaryTextMeasure
         visible: false
         text: root.primaryText
-        font.family: "JetBrainsMono Nerd Font"
+        font.family: "Inter"
         font.pixelSize: 14
         font.bold: true
     }
@@ -123,7 +123,7 @@ Item {
                 width: parent.width
                 text: root.appName.length > 0 ? root.appName : "Notification"
                 color: root.subtleColor
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: "Inter"
                 font.pixelSize: 11
                 font.bold: true
                 elide: Text.ElideRight
@@ -133,7 +133,7 @@ Item {
                 width: parent.width
                 text: root.primaryText
                 color: root.textColor
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: "Inter"
                 font.pixelSize: 14
                 font.bold: true
                 elide: Text.ElideRight
@@ -182,7 +182,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.appName.length > 0 ? root.appName : "Notification"
                 color: root.subtleColor
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: "Inter"
                 font.pixelSize: 12
                 font.bold: true
                 elide: Text.ElideRight
@@ -193,7 +193,7 @@ Item {
             width: parent.width
             text: root.primaryText
             color: root.textColor
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
             font.pixelSize: 16
             font.bold: true
             wrapMode: Text.WordWrap
@@ -206,7 +206,7 @@ Item {
             visible: root.hasSeparateBody
             text: root.body
             color: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 0.78)
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
             font.pixelSize: 13
             wrapMode: Text.WordWrap
             maximumLineCount: 4

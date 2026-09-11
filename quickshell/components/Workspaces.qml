@@ -58,7 +58,7 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             text: workspacesRoot.wsLabel(workspacesRoot.focusedWorkspace)
             color: workspacesRoot.textColor
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: "Inter"
             font.pixelSize: 14
             font.bold: true
         }
