@@ -147,6 +147,8 @@ Item {
             id: labelA
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
+            anchors.horizontalCenter: parent.horizontalCenter
+            horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "Inter"
@@ -173,6 +175,8 @@ Item {
             id: labelB
             width: Math.min(lyricMeasure.implicitWidth, root.maxWidth - root.fixedHorizontalSpace)
             height: parent.height
+            anchors.horizontalCenter: parent.horizontalCenter
+            horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: root.textColor
             font.family: "Inter"
