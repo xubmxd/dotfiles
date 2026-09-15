@@ -168,11 +168,10 @@ Item {
     Process {
         id: reindexAllProc
 
-        // Re-index wallpaper folders before scanning them.  The old inline
-        // converter could fail on animated GIFs because ffmpeg was asked to
-        // write multiple GIF frames into a single PNG filename.  Taking only
-        // the first frame makes the conversion deterministic, after which the
-        // normal temporary-name pass safely renames every PNG sequentially.
+        // Keep reindexing local to the picker so newly downloaded GIF/JPG/WebP
+        // files are always converted and renamed before the UI scans them.
+        // We use temporary names first to avoid collisions such as anime01.png
+        // already existing when the new file is inserted into the sequence.
         command: [
             "bash", "-c",
             "set -e; " +
@@ -180,16 +179,20 @@ Item {
             "for dir in \"$WALL_ROOT\"/*/; do " +
             "  [ -d \"$dir\" ] || continue; " +
             "  cd \"$dir\" || continue; " +
-            "  shopt -s nullglob nocaseglob; " +
-            "  for f in *.jpg *.jpeg *.gif *.webp; do " +
-            "    [ -f \"$f\" ] || continue; " +
-            "    out=\"${f%.*}.png\"; " +
-            "    if ffmpeg -y -loglevel error -i \"$f\" -frames:v 1 \"$out\"; then rm -- \"$f\"; fi; " +
+            "  for f in *.{jpg,jpeg,JPG,JPEG,gif,GIF,webp,WEBP}; do " +
+            "    [ -e \"$f\" ] || continue; " +
+            "    ext=\"${f##*.}\"; out=\"${f%.$ext}.png\"; " +
+            "    if ffmpeg -y -i \"$f\" \"$out\" >/dev/null 2>&1; then rm -- \"$f\"; fi; " +
             "  done; " +
             "  prefix=$(basename \"$dir\" | tr ' ' '_'); " +
-            "  files=(); while IFS= read -r file; do [ -n \"$file\" ] && files+=(\"$file\"); done < <(find . -maxdepth 1 -type f -iname '*.png' -printf '%T@ %f\\n' | sort -n | cut -d' ' -f2-); " +
-            "  tmp_files=(); i=1; for f in \"${files[@]}\"; do tmp=$(printf '.reindex_tmp_%s_%04d.png' \"$$\" \"$i\"); mv -- \"$f\" \"$tmp\"; tmp_files+=(\"$tmp\"); i=$((i+1)); done; " +
-            "  count=1; for tmp in \"${tmp_files[@]}\"; do mv -- \"$tmp\" \"$(printf '%s%02d.png' \"$prefix\" \"$count\")\"; count=$((count+1)); done; " +
+            "  mapfile -t files < <(find . -maxdepth 1 -type f -name '*.png' -printf '%T@ %f\\n' | sort -n | cut -d' ' -f2-); " +
+            "  i=1; for f in \"${files[@]}\"; do " +
+            "    [ -z \"$f\" ] && continue; " +
+            "    tmp=$(printf '.reindex_tmp_%04d.png' \"$i\"); mv -- \"$f\" \"$tmp\"; tmp_files+=(\"$tmp\"); i=$((i+1)); " +
+            "  done; " +
+            "  count=1; for tmp in \"${tmp_files[@]}\"; do " +
+            "    mv -- \"$tmp\" \"$(printf '%s%02d.png' \"$prefix\" \"$count\")\"; count=$((count+1)); " +
+            "  done; unset tmp_files; " +
             "done"
         ]
 

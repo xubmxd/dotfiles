@@ -29,17 +29,8 @@ Item {
             searchActive = false
             searchQuery = ""
             deletePromptActive = false
-
-            // Re-index first, then scan the final names.
-            reindexGifsProc.running = false
-            reindexGifsProc.running = true
-
-            // Keyboard focus can race the Loader/layer-shell transition, so
-            // defer only the focus here.
-            Qt.callLater(function() {
-                if (root.visible)
-                    root.forceActiveFocus()
-            })
+            forceActiveFocus()
+            root.refresh()
         }
     }
 
@@ -81,30 +72,10 @@ Item {
     }
 
     Process {
-        id: reindexGifsProc
-
-        // Keep the GIF collection sequentially named without converting the
-        // files. New downloads are ordered by modification time and renamed
-        // as gif01.gif, gif02.gif, ... . Temporary names prevent collisions.
-        command: [
-            "bash", "-c",
-            "set -e; " +
-            "ROOT=\"$HOME/Pictures/gifs\"; mkdir -p \"$ROOT\"; cd \"$ROOT\"; " +
-            "shopt -s nullglob nocaseglob; files=(); while IFS= read -r file; do [ -n \"$file\" ] && files+=(\"$file\"); done < <(find . -maxdepth 1 -type f -iname '*.gif' -printf '%T@ %f\\n' | sort -n | cut -d' ' -f2-); " +
-            "tmp_files=(); i=1; for f in \"${files[@]}\"; do tmp=$(printf '.gif_reindex_tmp_%s_%04d.gif' \"$$\" \"$i\"); mv -- \"$f\" \"$tmp\"; tmp_files+=(\"$tmp\"); i=$((i+1)); done; " +
-            "count=1; for tmp in \"${tmp_files[@]}\"; do mv -- \"$tmp\" \"$(printf 'gif%02d.gif' \"$count\")\"; count=$((count+1)); done"
-        ]
-
-        onExited: {
-            root.refresh()
-        }
-    }
-
-    Process {
         id: scanGifsProc
         command: [
             "sh", "-c",
-            "find " + Quickshell.env("HOME") + "/Pictures/gifs -type f -iname '*.gif' | sort"
+            "find " + Quickshell.env("HOME") + "/Pictures/gifs -maxdepth 1 -type f -iname '*.gif' | sort"
         ]
 
         stdout: StdioCollector {
@@ -133,8 +104,7 @@ Item {
         property string targetPath: ""
         command: ["rm", "-f", targetPath]
         onExited: {
-            reindexGifsProc.running = false
-            reindexGifsProc.running = true
+            root.refresh()
         }
     }
 

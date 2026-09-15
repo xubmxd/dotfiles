@@ -1,301 +1,303 @@
 @import url("/home/xubm/.cache/wal/colors-waybar.css");
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RESET & FOUNDATIONS
-   ───────────────────────────────────────────────────────────────────────────── */
+@define-color glass_bg alpha(@background, 0.72);
+@define-color glass_hover alpha(@foreground, 0.07);
+
+@define-color workspace_bg alpha(@foreground, 0.10);
+@define-color workspace_hover alpha(@color4, 0.20);
+@define-color workspace_active @color4;
+
+@define-color tooltip_bg alpha(@background, 0.92);
 
 * {
-  border-radius: 15px;
-  border: none;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
-  font-weight: 600;
-  font-size: 17px;
+    font-family:
+        "JetBrainsMono Nerd Font",
+        "Symbols Nerd Font",
+        "Noto Sans",
+        sans-serif;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    min-height: 0;
+
+    border: none;
+    border-radius: 0;
 }
 
 window#waybar {
-  background: transparent;
+    background: @glass_bg;
+    color: @foreground;
+
+    border: 1px solid alpha(@color4, 0.30);
+    border-radius: 28px;
+
+    margin: 8px 4px;
+
+    box-shadow: none;
+    background-image: none;
 }
 
-window#waybar > box {
-  background-color: alpha(@background, 0.6);
-  padding: 3px 0;
-  transition: all 0.3s ease;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   SHARED MODULE STYLES (Added #bluetooth here)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#clock,
-#custom-notification,
-#custom-cava,
-#backlight,
-#pulseaudio,
-#network,
-#bluetooth,
-#battery,
-#custom-net-speed,
-#custom-launcher,
-#custom-mpris-placeholder,
-#mpris,
-#custom-lyrics,
-#custom-spotify-cat,
-#tray,
-#custom-spotify {
-  margin: 1px 6px;
-  padding: 0 10px;
-  border-radius: 10px;
-  background: transparent;
-  color: @foreground;
-  font-size: 12px;
-  border: 1px solid alpha(@color4, 0.2);
-  transition: all 0.2s ease-in-out;
-}
-
-#clock:hover,
-#custom-notification:hover,
-#custom-cava:hover,
-#backlight:hover,
-#pulseaudio:hover,
-#network:hover,
-#bluetooth:hover,
-#battery:hover,
-#custom-net-speed:hover,
-#custom-launcher:hover,
-#custom-mpris-placeholder:hover,
-#mpris:hover,
-#custom-spotify-cat:hover,
-#tray:hover,
-#custom-spotify:hover {
-  border: 1px solid @color4;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   LEFT MODULES OVERRIDE (Reduced Gaps)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#custom-notification,
-#mpris,
-#custom-spotify-cat {
-  margin: 1px 2px;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   MODULE OVERRIDES & ALIGNMENT FIXES
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#custom-notification {
-  padding: 0;
-  min-width: 40px;
-}
-
-#custom-spotify-cat {
-  font-size: 15px;
-}
-
+#workspaces,
+.system-pill,
 #clock {
-  padding: 0 5px;
-  font-weight: 700;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
+    background-image: none;
 }
-
-#custom-launcher {
-  min-height: 24px;
-  min-width: 24px;
-  font-size: 16px;
-  color: @foreground;
-  transition: all 0.2s ease;
-}
-
-#custom-net-speed {
-  font-size: 10px;
-  border-color: alpha(@foreground, 0.2);
-}
-
-#network.disconnected,
-#bluetooth.disabled {
-  color: @foreground;
-}
-
-#network.linked,
-#network.ethernet,
-#bluetooth.connected {
-  color: @color6;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   WORKSPACES
-   ───────────────────────────────────────────────────────────────────────────── */
 
 #workspaces {
-  margin: 1px 2px;
-  margin-left: 10px;
+    padding: 7px 0;
 }
 
 #workspaces button {
-  padding: 0 8px;
-  margin: 1px 2px;
-  min-width: 12px;
-  border-radius: 6px;
-  background-color: alpha(@color0, 0.4);
-  color: @foreground;
-  font-size: 12px;
-  border: 1px solid alpha(@color4, 0.2);
-  transition: all 0.2s ease-in-out;
+    min-width: 38px;
+    min-height: 38px;
+
+    margin: 3px 4px;
+    padding: 0;
+
+    border-radius: 50%;
+
+    color: alpha(@foreground, 0.48);
+    background: @workspace_bg;
+
+    box-shadow: none;
+
+    transition:
+        background-color 0.20s ease,
+        color 0.20s ease;
 }
 
-#workspaces button.empty {
-  min-width: 20px;
-  background-color: alpha(@color0, 0.2);
-  color: alpha(@foreground_variant, 0.4);
-}
-
-#workspaces button.visible {
-  background-color: alpha(@color0, 0.6);
+#workspaces button:hover {
+    background: @workspace_hover;
+    color: @foreground;
 }
 
 #workspaces button.active {
-  min-width: 28px;
-  padding: 0 1px;
-  background-color: alpha(@color4_container, 0.6);
-  font-weight: 700;
-  border: 1px solid @color4;
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 2px 3px;
+    padding: 0;
+
+    background: @workspace_active;
+    color: @background;
+
+    border-radius: 50%;
+
+    box-shadow: none;
 }
 
 #workspaces button.urgent {
-  background-color: alpha(@color1_container, 0.6);
-  border: 1px solid @color1;
-  animation: pulse 1.5s ease-in-out infinite;
+    background: @color1;
+    color: @background;
 }
 
-#custom-cava {
-  color: @color4;
+#workspaces button label {
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   STATE INDICATORS
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#pulseaudio.muted,
-#custom-cava.silent {
-  color: alpha(@color8, 0.4);
+.system-pill {
+    padding: 8px 0;
 }
 
-#battery.good {
-  color: @color6;
+#network,
+#backlight,
+#pulseaudio,
+#battery,
+#tray {
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 3px 0;
+    padding: 0;
+
+    background: transparent;
+
+    border: none;
+    border-radius: 50%;
+
+    box-shadow: none;
+
+    font-family:
+        "Symbols Nerd Font",
+        "JetBrainsMono Nerd Font",
+        sans-serif;
+
+    font-size: 17px;
+
+    transition:
+        background-color 0.20s ease,
+        color 0.20s ease;
 }
 
-#battery.charging,
-#battery.plugged,
-#battery.full {
-  color: @color6;
-  background-color: alpha(@color4, 0.25);
-  border: 1px solid alpha(@color4, 0.15);
+#network label,
+#backlight label,
+#pulseaudio label,
+#battery label {
+    padding: 0;
+    margin: 0;
+    font-size: 17px;
+}
+
+#network {
+    color: @color4;
+}
+
+#backlight {
+    color: @color3;
+}
+
+#pulseaudio {
+    color: @color5;
+}
+
+#battery {
+    color: @color6;
+}
+
+#tray {
+    color: @foreground;
+}
+
+#network:hover,
+#backlight:hover,
+#pulseaudio:hover,
+#battery:hover,
+#tray:hover {
+    background: @glass_hover;
+    color: @foreground;
+    border-radius: 50%;
+}
+
+#pulseaudio.muted {
+    color: alpha(@foreground, 0.30);
+}
+
+#network.disconnected {
+    color: @color1;
+}
+
+#battery.charging {
+    color: @color2;
 }
 
 #battery.warning:not(.charging) {
-  color: @color4_fixed;
-  background-color: alpha(@color4_container, 0.3);
+    color: @color3;
 }
 
 #battery.critical:not(.charging) {
-  background-image: linear-gradient(135deg, @color1_container 0%, @color1 100%);
-  animation: critical-blink 1s ease-in-out infinite;
-  box-shadow: 0 2px 8px alpha(@color1, 0.4);
+    color: @color1;
+    animation: battery-critical 1s ease-in-out infinite;
 }
 
-#mpris.paused {
-  color: alpha(@foreground, 0.5);
-  min-width: 10px;
+#tray {
+    min-width: 40px;
+    min-height: 40px;
+
+    margin: 3px 0;
+    padding: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LYRICS
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#custom-lyrics {
-  color: @color6;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0 12px;
-  min-width: 180px;
-  transition:
-    color 0.3s ease,
-    border-color 0.3s ease,
-    background-color 0.3s ease;
+#tray > .passive {
+    opacity: 0.55;
 }
 
-#custom-lyrics:hover {
-  color: @foreground;
+#tray > .needs-attention {
+    color: @color1;
 }
 
-#custom-lyrics.paused {
-  color: alpha(@foreground, 0.45);
-}
+#custom-cava {
+    min-width: 40px;
 
-#custom-lyrics.no-lyrics {
-  color: alpha(@foreground, 0.35);
-  font-style: italic;
-}
+    margin: 2px 0;
+    padding: 4px 0;
 
-#custom-lyrics.playing {
-  color: @color6;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   ANIMATIONS
-   ───────────────────────────────────────────────────────────────────────────── */
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes critical-blink {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.8;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT MODULES (Remove Spaces)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-#backlight,
-#pulseaudio,
-#network,
-#bluetooth,
-#clock,
-#battery {
-  margin-left: 4px;
-  margin-right: 4px;
-}
-#clock{
-    margin-right: 10px;
-}
-
-
-#cavaGLSL{
     background: transparent;
+    color: @color4;
 
-    border-radius: 50%;
+    font-size: 13px;
+
+    box-shadow: none;
+}
+
+#clock {
+    padding: 10px 0;
+
+    background: transparent;
+    color: @foreground;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+
+    border: none;
+    box-shadow: none;
+}
+
+/* --- Added Calendar Styling --- */
+#clock.calendar {
+    color: @color4;
+    margin-top: -15px;
+    transition: all 0.20s ease;
+}
+
+#clock.calendar:hover,
+#clock:hover{
+    color: @color6;
+    text-shadow: 0px 0px 5px alpha(@color6, 0.5);
+}
+/* ----------------------------- */
+
+tooltip decoration {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+tooltip,
+tooltip.background,
+.tooltip {
+    background: @tooltip_bg;
+
+    border: 1px solid alpha(@color4, 0.45);
+    border-radius: 12px;
+
+    box-shadow: none;
+    background-image: none;
+}
+
+tooltip label,
+.tooltip label {
+    color: @foreground;
+
+    padding: 8px 12px;
+
+    font-family:
+        "JetBrainsMono Nerd Font",
+        monospace;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@keyframes battery-critical {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.40;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }

@@ -32,23 +32,16 @@ Item {
 
     property int displayCount: 0
 
-    // Let the launcher size itself from the visible row.
-    // The search field is 360px wide, so keep enough room for it plus
-    // the 20px horizontal margins on each side. There is no arbitrary
-    // 560px minimum anymore.
-    implicitWidth: {
-        const baseUIWidth = 40
-        const visibleApps = Math.max(1, Math.min(displayCount, maxVisibleApps))
-        const listWidth = (visibleApps * itemWidth) +
-                          (Math.max(0, visibleApps - 1) * itemSpacing)
-        const contentWidth = baseUIWidth + listWidth
-        const searchWidth = 360 + baseUIWidth
-        return Math.max(searchWidth, contentWidth)
+    // Dynamically scale width, but enforce a minimum of 560px 
+    readonly property real launcherWidth: {
+        let baseUIWidth = 40 
+        let visibleApps = Math.max(1, Math.min(displayCount, maxVisibleApps))
+        let listWidth = (visibleApps * itemWidth) + (Math.max(0, visibleApps - 1) * itemSpacing)
+        
+        return Math.max(560, baseUIWidth + listWidth) 
     }
-
-    readonly property real launcherWidth: implicitWidth
-
-    readonly property real launcherHeight: 220
+    
+    readonly property real launcherHeight: 220 
 
     readonly property bool isSearching: searchField.text.trim().length > 0
 
@@ -226,21 +219,8 @@ Item {
 
     function rebuildResults() {
         const q = searchField.text.toLowerCase().trim()
-
-        // Idle launcher: keep only starred applications in memory and in the
-        // visible carousel. The full desktop-entry index is loaded lazily
-        // only after the user actually starts searching.
-        if (q.length === 0 && root.fullApplicationsLoaded) {
-            const favSet = {}
-            for (const name of root.favoriteApps)
-                favSet[name] = true
-
-            root.allApps = root.allApps.filter(app => !!favSet[app.name])
-            root.fullApplicationsLoaded = false
-            root.fullScanRequested = false
-        } else if (q.length > 0) {
+        if (q.length > 0)
             root.ensureFullApplicationsLoaded()
-        }
 
         resultModel.clear()
 

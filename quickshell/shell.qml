@@ -12,10 +12,6 @@ ShellRoot {
     // ============================================================
     // GLOBAL FONT
     // ============================================================
-    // Any Text/control across all components that doesn't hardcode its
-    // own font.family will fall back to this. Components that already
-    // set font.family explicitly (e.g. font.family: "monospace") won't
-    // be touched by this - those need editing individually.
     Component.onCompleted: {
         var f = Qt.application.font
         f.family = "Inter"
@@ -30,7 +26,7 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: (dashboardComponent.currentSubView === "wifi-password" || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker" || islandBackground.islandState === "timer-setup") 
+        WlrLayershell.keyboardFocus: ((dashboardLoader.item && dashboardLoader.item.currentSubView === "wifi-password") || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker" || islandBackground.islandState === "timer-setup") 
                                      ? WlrKeyboardFocus.Exclusive 
                                      : WlrKeyboardFocus.None
 
@@ -56,9 +52,6 @@ ShellRoot {
                 height: Math.round(islandBackground.height)
             }
 
-            // Timer bubble sits outside islandBackground's own bounds, so
-            // without this the layer-shell mask clips it - invisible and
-            // unclickable even though it paints fine in isolation.
             Region {
                 intersection: Intersection.Combine
                 x: Math.round(timerBubble.x)
@@ -75,10 +68,6 @@ ShellRoot {
         readonly property real requestedWindowHeight:
             Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
-        // Tide-style layer-surface retention:
-        // grow the Wayland surface immediately for an expansion, but keep the
-        // previous extent alive briefly while a collapse finishes. This keeps
-        // the compositor surface from racing the visual capsule animation.
         property real retainedWindowHeight: 0
         implicitHeight: Math.max(requestedWindowHeight, retainedWindowHeight)
 
@@ -155,6 +144,107 @@ ShellRoot {
         }
 
         // ============================================================
+        // PERSISTENT LAZY-LOAD STATE
+        // ============================================================
+
+        property bool dashboardLoaded: false
+        property bool notificationCenterLoaded: false
+        property bool musicPlayerLoaded: false
+        property bool lyricsLoaded: true
+        property bool wallpaperPickerLoaded: false
+        property bool powerMenuLoaded: false
+        property bool appLauncherLoaded: false
+        property bool gifPickerLoaded: false
+
+        readonly property int panelUnloadDelay: 60 * 1000
+        property string lastPanelState: ""
+
+        function cancelPanelUnload(state) {
+            switch (state) {
+            case "hover": panelUnloadDashboard.stop(); break
+            case "notifications": panelUnloadNotifications.stop(); break
+            case "music-compact":
+            case "music-expanded": panelUnloadMusic.stop(); break
+            case "wallpaper": panelUnloadWallpaper.stop(); break
+            case "power": panelUnloadPower.stop(); break
+            case "gif-picker": panelUnloadGif.stop(); break
+            }
+        }
+
+        function schedulePanelUnload(state) {
+            switch (state) {
+            case "hover": panelUnloadDashboard.restart(); break
+            case "notifications": panelUnloadNotifications.restart(); break
+            case "music-compact":
+            case "music-expanded": panelUnloadMusic.restart(); break
+            case "wallpaper": panelUnloadWallpaper.restart(); break
+            case "power": panelUnloadPower.restart(); break
+            case "gif-picker": panelUnloadGif.restart(); break
+            }
+        }
+
+        Timer {
+            id: panelUnloadDashboard
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "hover")
+                    islandWindow.dashboardLoaded = false
+            }
+        }
+
+        Timer {
+            id: panelUnloadNotifications
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "notifications")
+                    islandWindow.notificationCenterLoaded = false
+            }
+        }
+
+        Timer {
+            id: panelUnloadMusic
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "music-compact"
+                    && islandBackground.islandState !== "music-expanded")
+                    islandWindow.musicPlayerLoaded = false
+            }
+        }
+
+        Timer {
+            id: panelUnloadWallpaper
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "wallpaper")
+                    islandWindow.wallpaperPickerLoaded = false
+            }
+        }
+
+        Timer {
+            id: panelUnloadPower
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "power")
+                    islandWindow.powerMenuLoaded = false
+            }
+        }
+
+        Timer {
+            id: panelUnloadGif
+            interval: islandWindow.panelUnloadDelay
+            repeat: false
+            onTriggered: {
+                if (islandBackground.islandState !== "gif-picker")
+                    islandWindow.gifPickerLoaded = false
+            }
+        }
+
+        // ============================================================
         // ISLAND NAVIGATOR
         // ============================================================
 
@@ -169,9 +259,6 @@ ShellRoot {
 
             if (timerWidgetItem.hasSession)
                 islands.push("timer")
-
-            if (NotificationService.notifications.length > 0)
-                islands.push("notifications")
 
             return islands
         }
@@ -252,13 +339,6 @@ ShellRoot {
             if (selectedIsland === "lyrics" && musicData.hasTrack && (lyricsService.hasLyrics || lyricsService.loading))
                 return "lyrics"
 
-            if (selectedIsland === "notifications") {
-                if (NotificationService.latestNotification)
-                    return "notification-pill"
-
-                return "idle"
-            }
-
             if (selectedIsland === "omni")
                 return "omni"
 
@@ -325,6 +405,48 @@ ShellRoot {
             showSelectedIsland()
         }
 
+        function ensurePanelForState(state) {
+            switch (state) {
+            case "hover":
+                dashboardLoaded = true
+                break
+            case "notifications":
+                notificationCenterLoaded = true
+                break
+            case "music-compact":
+            case "music-expanded":
+                musicPlayerLoaded = true
+                break
+            case "wallpaper":
+                wallpaperPickerLoaded = true
+                break
+            case "power":
+                powerMenuLoaded = true
+                break
+            case "app-launcher":
+                appLauncherLoaded = true
+                break
+            case "gif-picker":
+                gifPickerLoaded = true
+                break
+            }
+        }
+
+        Connections {
+            target: islandBackground
+            function onIslandStateChanged() {
+                const nextState = islandBackground.islandState
+                const previousState = islandWindow.lastPanelState
+
+                if (previousState !== nextState)
+                    islandWindow.schedulePanelUnload(previousState)
+
+                islandWindow.cancelPanelUnload(nextState)
+                islandWindow.ensurePanelForState(nextState)
+                islandWindow.lastPanelState = nextState
+            }
+        }
+
         // ============================================================
         // ANTI-JITTER EVICTION TIMERS
         // ============================================================
@@ -388,15 +510,10 @@ ShellRoot {
 
             function onNotificationsChanged() {
                 if (NotificationService.notifications.length === 0) {
-
-                    const notificationIndex =
-                        islandWindow.islandOrder.indexOf("notifications")
-
-                    if (islandWindow.selectedIsland === "notifications") {
-                        islandWindow.selectedIslandIndex = 0
-
-                        if (islandBackground.islandState === "notification-pill")
-                            islandBackground.islandState = "idle"
+                    // Only collapse the transient pill when empty.
+                    // Do NOT auto-close the Notification Center if the user clears the last notification!
+                    if (islandBackground.islandState === "notification-pill") {
+                        islandBackground.islandState = "idle"
                     }
                 }
             }
@@ -464,7 +581,7 @@ ShellRoot {
         Timer {
             id: notificationAutoHideTimer
 
-            interval: 5000
+            interval: 2500
             repeat: false
 
             onTriggered: {
@@ -528,10 +645,7 @@ ShellRoot {
             }
 
             function openNotifications(): void {
-                if (!NotificationService.latestNotification
-                    && NotificationService.notifications.length === 0)
-                    return
-
+                // The lockout logic preventing the center from opening when empty has been removed
                 notificationAutoHideTimer.stop()
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
@@ -1010,7 +1124,7 @@ ShellRoot {
                 case "workspace-osd":
                     return 260
                 case "music-compact":
-                    return musicPlayerItem.compactImplicitWidth
+                    return (musicPlayerLoader.item ? musicPlayerLoader.item.compactImplicitWidth : 180)
                 case "music-expanded":
                     return 380
                 case "lyrics":
@@ -1024,13 +1138,13 @@ ShellRoot {
                 case "omni":
                     return omniPillItem.compactImplicitWidth
                 case "wallpaper":
-                    return wallpaperPickerItem.pickerWidth
+                    return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerWidth : 700)
                 case "power":
-                    return powerMenuItem.menuWidth
+                    return (powerMenuLoader.item ? powerMenuLoader.item.menuWidth : 360)
                 case "app-launcher":
-                    return appLauncherItem.launcherWidth
+                    return (appLauncherLoader.item ? appLauncherLoader.item.implicitWidth : 400)
                 case "gif-picker":
-                    return gifPickerItem.pickerWidth
+                    return (gifPickerLoader.item ? gifPickerLoader.item.pickerWidth : 700)
                 case "timer-setup":
                     return timerWidgetItem.setupWidth
                 case "timer-compact":
@@ -1063,7 +1177,9 @@ ShellRoot {
                 case "lyrics":
                     return 40
                 case "notifications":
-                    return 500
+                    // Dynamically binds to the Notification Center's implicit height,
+                    // enforcing a minimum of 120px and a maximum of 650px.
+                    return (notificationCenterLoader.item ? Math.min(650, Math.max(120, notificationCenterLoader.item.implicitHeight + 20)) : 120)
                 case "notification-pill":
                     return notificationPill.implicitHeight
                 case "notification-expanded":
@@ -1071,13 +1187,13 @@ ShellRoot {
                 case "omni":
                     return 40
                 case "wallpaper":
-                    return wallpaperPickerItem.pickerHeight
+                    return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerHeight : 500)
                 case "power":
-                    return powerMenuItem.menuHeight
+                    return (powerMenuLoader.item ? powerMenuLoader.item.menuHeight : 300)
                 case "app-launcher":
-                    return appLauncherItem.launcherHeight
+                    return (appLauncherLoader.item ? appLauncherLoader.item.launcherHeight : 500)
                 case "gif-picker":
-                    return gifPickerItem.pickerHeight
+                    return (gifPickerLoader.item ? gifPickerLoader.item.pickerHeight : 500)
                 case "timer-setup":
                     return timerWidgetItem.setupHeight
                 case "timer-compact":
@@ -1136,10 +1252,6 @@ ShellRoot {
                 }
             }
 
-            // Match Tide's two-stage geometry: the visual capsule owns the
-            // animated geometry, while its content simply fills that geometry.
-            // Do not snap the content to targetWidth/targetHeight while the
-            // capsule is still morphing.
             property real displayedWidth: targetWidth
 
             width: displayedWidth
@@ -1226,9 +1338,6 @@ ShellRoot {
                     const dx = mouse.x - pressX
                     const dy = mouse.y - pressY
 
-                    // Proportional check instead of a fixed cap: tolerates the
-                    // natural arc of a real mouse swipe instead of rejecting it
-                    // outright once vertical drift crosses a hard pixel line.
                     if (Math.abs(dy) > Math.abs(dx) * 0.6 + verticalTolerance)
                         return
 
@@ -1245,10 +1354,6 @@ ShellRoot {
 
                     const dx = mouse.x - pressX
 
-                    // Direction was already confirmed while dragging — don't
-                    // re-check vertical drift here, it only punishes longer
-                    // swipes for natural arc that already passed the proportional
-                    // check above.
                     if (Math.abs(dx) >= swipeThreshold) {
                         if (dx < 0)
                             islandWindow.nextIsland()
@@ -1313,11 +1418,6 @@ ShellRoot {
                     if (!eligible)
                         return
 
-                    // A single physical two-finger swipe on a touchpad emits a
-                    // whole burst of wheel events, not one. Only act on the
-                    // first tick of a burst, and keep re-arming the unlock
-                    // timer while the burst continues so the whole gesture -
-                    // no matter how long it drags on - only moves one pill.
                     if (wheelLocked) {
                         wheelUnlockTimer.restart()
                         return
@@ -1327,9 +1427,6 @@ ShellRoot {
                         ? wheel.angleDelta.x
                         : wheel.angleDelta.y
 
-                    // Leading zero-magnitude ticks are common on touchpad
-                    // drivers as a gesture starts - ignore them entirely
-                    // instead of locking out the real ticks that follow.
                     if (delta === 0)
                         return
 
@@ -1348,9 +1445,6 @@ ShellRoot {
             // ========================================================
 
             Item {
-                // Tide keeps the content attached to the animated capsule.
-                // The content therefore follows the morph frame-by-frame instead
-                // of jumping to its final geometry before the capsule gets there.
                 anchors.fill: parent
 
                 CustomComponents.Clock {
@@ -1392,40 +1486,40 @@ ShellRoot {
                     }
                 }
 
-                CustomComponents.Dashboard {
-                    id: dashboardComponent
+                Loader {
+                    id: dashboardLoader
                     anchors.fill: parent
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    backgroundColor: islandWindow.colors.color0
-                    subtleColor: islandWindow.colors.color8
-                    
-                    opacity: islandBackground.islandState === "hover" ? 1 : 0
-                    scale: islandBackground.islandState === "hover" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
-                    
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState;
-                    }
-                    
-                    displayBrightness: islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness
-                    onBrightnessChanged: (val) => {
-                        islandWindow.trackedBrightness = val; 
-                        
-                        if (brightnessSetProc.running) {
-                            islandWindow.pendingBrightness = val; 
-                        } else {
-                            brightnessSetProc.targetValue = val;
-                            brightnessSetProc.running = true;
-                        }
-                    }
+                    active: islandWindow.dashboardLoaded
+                    asynchronous: false
+                    sourceComponent: Component {
+                        CustomComponents.Dashboard {
+                            anchors.fill: parent
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            backgroundColor: islandWindow.colors.color0
+                            subtleColor: islandWindow.colors.color8
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                            opacity: islandBackground.islandState === "hover" ? 1 : 0
+                            scale: islandBackground.islandState === "hover" ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
+
+                            onRequestClose: islandBackground.islandState = islandWindow.restingState
+
+                            displayBrightness: islandWindow.trackedBrightness === -1 ? 0 : islandWindow.trackedBrightness
+                            onBrightnessChanged: (val) => {
+                                islandWindow.trackedBrightness = val
+                                if (brightnessSetProc.running) {
+                                    islandWindow.pendingBrightness = val
+                                } else {
+                                    brightnessSetProc.targetValue = val
+                                    brightnessSetProc.running = true
+                                }
+                            }
+
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
@@ -1473,60 +1567,62 @@ ShellRoot {
                     }
                 }
 
-                CustomComponents.NotificationCenter {
+                Loader {
+                    id: notificationCenterLoader
                     anchors.fill: parent
-                    opacity: islandBackground.islandState === "notifications" ? 1 : 0
-                    scale: islandBackground.islandState === "notifications" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                    active: islandWindow.notificationCenterLoaded
+                    asynchronous: false
+                    sourceComponent: Component {
+                        CustomComponents.NotificationCenter {
+                            anchors.fill: parent
+                            opacity: islandBackground.islandState === "notifications" ? 1 : 0
+                            scale: islandBackground.islandState === "notifications" ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
-                CustomComponents.MusicPlayer {
-                    id: musicPlayerItem
-
+                Loader {
+                    id: musicPlayerLoader
                     anchors.fill: parent
-                    playerData: musicData
-                    isExpanded: islandBackground.islandState === "music-expanded"
+                    active: islandWindow.musicPlayerLoaded
+                    asynchronous: false
+                    sourceComponent: Component {
+                        CustomComponents.MusicPlayer {
+                            anchors.fill: parent
+                            playerData: musicData
+                            isExpanded: islandBackground.islandState === "music-expanded"
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            accentColor: islandWindow.colors.color5
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    
-                    accentColor: islandWindow.colors.color5 
-                    
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                            opacity: (islandBackground.islandState === "music-compact" || islandBackground.islandState === "music-expanded") ? 1 : 0
+                            scale: opacity > 0.01 ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
 
-                    opacity: (islandBackground.islandState === "music-compact"
-                              || islandBackground.islandState === "music-expanded") ? 1 : 0
-                    scale: (islandBackground.islandState === "music-compact" || islandBackground.islandState === "music-expanded") ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
+                            onRequestExpand: {
+                                hoverExpandDelayTimer.stop()
+                                hoverCollapseDelayTimer.stop()
+                                islandWindow.hoverExpandedActive = false
+                                islandBackground.islandState = "music-expanded"
+                            }
 
-                    onRequestExpand: {
-                        hoverExpandDelayTimer.stop()
-                        hoverCollapseDelayTimer.stop()
-                        islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = "music-expanded"
-                    }
-
-                    onRequestCompact: {
-                        hoverExpandDelayTimer.stop()
-                        islandWindow.hoverExpandedActive = false
-                        islandBackground.islandState = islandWindow.restingState
+                            onRequestCompact: {
+                                hoverExpandDelayTimer.stop()
+                                islandWindow.hoverExpandedActive = false
+                                islandBackground.islandState = islandWindow.restingState
+                            }
+                        }
                     }
                 }
 
@@ -1568,7 +1664,7 @@ ShellRoot {
                     subtleColor: islandWindow.colors.color8
                     accentColor: islandWindow.colors.color5
                     
-                    // Setup time strings (you can bind these to your existing clock logic)
+                    // Setup time strings
                     timeText: Qt.formatDateTime(new Date(), "hh:mm ap")
                     dateText: Qt.formatDate(new Date(), "MMM d")
 
@@ -1582,108 +1678,141 @@ ShellRoot {
                     Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
                 }
 
-                CustomComponents.WallpaperPicker {
-                    id: wallpaperPickerItem
+                Loader {
+                    id: wallpaperPickerLoader
                     anchors.fill: parent
+                    active: islandWindow.wallpaperPickerLoaded
+                    asynchronous: false
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                    onLoaded: Qt.callLater(function() {
+                        if (item)
+                            item.focusSearch()
+                    })
 
-                    opacity: islandBackground.islandState === "wallpaper" ? 1 : 0
-                    scale: islandBackground.islandState === "wallpaper" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                    sourceComponent: Component {
+                        CustomComponents.WallpaperPicker {
+                            anchors.fill: parent
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState
-                    }
+                            opacity: islandBackground.islandState === "wallpaper" ? 1 : 0
+                            scale: opacity > 0.01 ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                            onRequestClose: islandBackground.islandState = islandWindow.restingState
+
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
-                CustomComponents.PowerMenu {
-                    id: powerMenuItem
+                Loader {
+                    id: powerMenuLoader
                     anchors.fill: parent
+                    active: islandWindow.powerMenuLoaded
+                    asynchronous: false
+                    onLoaded: Qt.callLater(function() {
+                        if (item)
+                            item.focusMenu()
+                    })
+                    sourceComponent: Component {
+                        CustomComponents.PowerMenu {
+                            anchors.fill: parent
+                            onVisibleChanged: {
+                                if (visible)
+                                    Qt.callLater(focusMenu)
+                            }
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            dangerColor: islandWindow.colors.color1
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    dangerColor: islandWindow.colors.color1
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                            opacity: islandBackground.islandState === "power" ? 1 : 0
+                            scale: opacity > 0.01 ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
 
-                    opacity: islandBackground.islandState === "power" ? 1 : 0
-                    scale: islandBackground.islandState === "power" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                            onRequestClose: islandBackground.islandState = islandWindow.restingState
 
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
-                CustomComponents.AppLauncher {
-                    id: appLauncherItem
+                Loader {
+                    id: appLauncherLoader
                     anchors.fill: parent
+                    active: islandWindow.appLauncherLoaded
+                    asynchronous: false
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                    onLoaded: Qt.callLater(function() {
+                        if (item)
+                            item.focusSearch()
+                    })
 
-                    opacity: islandBackground.islandState === "app-launcher" ? 1 : 0
-                    scale: islandBackground.islandState === "app-launcher" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                    sourceComponent: Component {
+                        CustomComponents.AppLauncher {
+                            anchors.fill: parent
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState
-                    }
+                            opacity: islandBackground.islandState === "app-launcher" ? 1 : 0
+                            scale: opacity > 0.01 ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                            onRequestClose: islandBackground.islandState = islandWindow.restingState
+
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
-                CustomComponents.GifPicker {
-                    id: gifPickerItem
+                Loader {
+                    id: gifPickerLoader
                     anchors.fill: parent
+                    active: islandWindow.gifPickerLoaded
+                    asynchronous: false
 
-                    textColor: islandWindow.colors.color15
-                    activeColor: islandWindow.colors.color4
-                    subtleColor: islandWindow.colors.color8
-                    backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+                    onLoaded: {
+                        if (!item)
+                            return
 
-                    opacity: islandBackground.islandState === "gif-picker" ? 1 : 0
-                    scale: islandBackground.islandState === "gif-picker" ? 1.0 : 0.45
-                    visible: opacity > 0.01
-                    transformOrigin: Item.Center
+                        item.refresh()
 
-                    onRequestClose: {
-                        islandBackground.islandState = islandWindow.restingState
+                        Qt.callLater(function() {
+                            if (item)
+                                item.forceActiveFocus()
+                        })
                     }
 
-                    Behavior on opacity {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
-                    }
-                    Behavior on scale {
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    sourceComponent: Component {
+                        CustomComponents.GifPicker {
+                            anchors.fill: parent
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                            opacity: islandBackground.islandState === "gif-picker" ? 1 : 0
+                            scale: opacity > 0.01 ? 1.0 : 0.45
+                            visible: opacity > 0.01
+                            transformOrigin: Item.Center
+
+                            onRequestClose: islandBackground.islandState = islandWindow.restingState
+
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                        }
                     }
                 }
 
@@ -1735,9 +1864,6 @@ ShellRoot {
         // ============================================================
         // FLOATING TIMER BUBBLE (tide-style)
         // ============================================================
-        // Small badge that pops out next to the pill whenever a timer
-        // session exists, regardless of which island is currently showing.
-
         Item {
             id: timerBubble
 
@@ -1812,7 +1938,6 @@ ShellRoot {
                         ctx.stroke()
                     }
 
-                    // Simple clock glyph drawn by hand - no icon-font dependency.
                     var faceRadius = radius * 0.42
                     ctx.beginPath()
                     ctx.strokeStyle = islandWindow.colors.color15
