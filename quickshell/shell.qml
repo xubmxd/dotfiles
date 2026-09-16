@@ -12,6 +12,10 @@ ShellRoot {
     // ============================================================
     // GLOBAL FONT
     // ============================================================
+    // Any Text/control across all components that doesn't hardcode its
+    // own font.family will fall back to this. Components that already
+    // set font.family explicitly (e.g. font.family: "monospace") won't
+    // be touched by this - those need editing individually.
     Component.onCompleted: {
         var f = Qt.application.font
         f.family = "Inter"
@@ -52,6 +56,9 @@ ShellRoot {
                 height: Math.round(islandBackground.height)
             }
 
+            // Timer bubble sits outside islandBackground's own bounds, so
+            // without this the layer-shell mask clips it - invisible and
+            // unclickable even though it paints fine in isolation.
             Region {
                 intersection: Intersection.Combine
                 x: Math.round(timerBubble.x)
@@ -68,6 +75,10 @@ ShellRoot {
         readonly property real requestedWindowHeight:
             Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
 
+        // Tide-style layer-surface retention:
+        // grow the Wayland surface immediately for an expansion, but keep the
+        // previous extent alive briefly while a collapse finishes. This keeps
+        // the compositor surface from racing the visual capsule animation.
         property real retainedWindowHeight: 0
         implicitHeight: Math.max(requestedWindowHeight, retainedWindowHeight)
 
@@ -145,6 +156,9 @@ ShellRoot {
 
         // ============================================================
         // PERSISTENT LAZY-LOAD STATE
+        // Heavy visual panels are created only on first use and then kept
+        // alive so their existing state/UX is preserved across openings.
+        // Shared data services above remain resident.
         // ============================================================
 
         property bool dashboardLoaded: false
@@ -156,6 +170,9 @@ ShellRoot {
         property bool appLauncherLoaded: false
         property bool gifPickerLoaded: false
 
+        // Unload inactive heavy panels after a period of inactivity.
+        // The panel is destroyed from its Loader and recreated on next use,
+        // while shared data services above remain alive.
         readonly property int panelUnloadDelay: 60 * 1000
         property string lastPanelState: ""
 
@@ -260,6 +277,9 @@ ShellRoot {
             if (timerWidgetItem.hasSession)
                 islands.push("timer")
 
+            if (NotificationService.notifications.length > 0)
+                islands.push("notifications")
+
             return islands
         }
         property int selectedIslandIndex: 0
@@ -338,6 +358,13 @@ ShellRoot {
 
             if (selectedIsland === "lyrics" && musicData.hasTrack && (lyricsService.hasLyrics || lyricsService.loading))
                 return "lyrics"
+
+            if (selectedIsland === "notifications") {
+                if (NotificationService.latestNotification)
+                    return "notification-pill"
+
+                return "idle"
+            }
 
             if (selectedIsland === "omni")
                 return "omni"
@@ -432,6 +459,8 @@ ShellRoot {
             }
         }
 
+        // Activate a heavy panel as soon as a state transition selects it.
+        // This also covers mouse/IPC paths that change islandState directly.
         Connections {
             target: islandBackground
             function onIslandStateChanged() {
@@ -510,10 +539,15 @@ ShellRoot {
 
             function onNotificationsChanged() {
                 if (NotificationService.notifications.length === 0) {
-                    // Only collapse the transient pill when empty.
-                    // Do NOT auto-close the Notification Center if the user clears the last notification!
-                    if (islandBackground.islandState === "notification-pill") {
-                        islandBackground.islandState = "idle"
+
+                    const notificationIndex =
+                        islandWindow.islandOrder.indexOf("notifications")
+
+                    if (islandWindow.selectedIsland === "notifications") {
+                        islandWindow.selectedIslandIndex = 0
+
+                        if (islandBackground.islandState === "notification-pill")
+                            islandBackground.islandState = "idle"
                     }
                 }
             }
@@ -555,6 +589,9 @@ ShellRoot {
             function onLoadingChanged() { lyricsEvictionTimer.restart() }
         }
 
+        // Recover from players that publish metadata in stages.
+        // Retry only while a real track exists and lyrics have not arrived.
+
         // ============================================================
         // NOTIFICATIONS SERVER
         // ============================================================
@@ -581,7 +618,7 @@ ShellRoot {
         Timer {
             id: notificationAutoHideTimer
 
-            interval: 2500
+            interval: 5000
             repeat: false
 
             onTriggered: {
@@ -645,7 +682,10 @@ ShellRoot {
             }
 
             function openNotifications(): void {
-                // The lockout logic preventing the center from opening when empty has been removed
+                if (!NotificationService.latestNotification
+                    && NotificationService.notifications.length === 0)
+                    return
+
                 notificationAutoHideTimer.stop()
                 hoverExpandDelayTimer.stop()
                 hoverCollapseDelayTimer.stop()
@@ -1177,9 +1217,7 @@ ShellRoot {
                 case "lyrics":
                     return 40
                 case "notifications":
-                    // Dynamically binds to the Notification Center's implicit height,
-                    // enforcing a minimum of 120px and a maximum of 650px.
-                    return (notificationCenterLoader.item ? Math.min(650, Math.max(120, notificationCenterLoader.item.implicitHeight + 20)) : 120)
+                    return 500
                 case "notification-pill":
                     return notificationPill.implicitHeight
                 case "notification-expanded":
@@ -1252,6 +1290,10 @@ ShellRoot {
                 }
             }
 
+            // Match Tide's two-stage geometry: the visual capsule owns the
+            // animated geometry, while its content simply fills that geometry.
+            // Do not snap the content to targetWidth/targetHeight while the
+            // capsule is still morphing.
             property real displayedWidth: targetWidth
 
             width: displayedWidth
@@ -1338,6 +1380,9 @@ ShellRoot {
                     const dx = mouse.x - pressX
                     const dy = mouse.y - pressY
 
+                    // Proportional check instead of a fixed cap: tolerates the
+                    // natural arc of a real mouse swipe instead of rejecting it
+                    // outright once vertical drift crosses a hard pixel line.
                     if (Math.abs(dy) > Math.abs(dx) * 0.6 + verticalTolerance)
                         return
 
@@ -1354,6 +1399,10 @@ ShellRoot {
 
                     const dx = mouse.x - pressX
 
+                    // Direction was already confirmed while dragging — don't
+                    // re-check vertical drift here, it only punishes longer
+                    // swipes for natural arc that already passed the proportional
+                    // check above.
                     if (Math.abs(dx) >= swipeThreshold) {
                         if (dx < 0)
                             islandWindow.nextIsland()
@@ -1418,6 +1467,11 @@ ShellRoot {
                     if (!eligible)
                         return
 
+                    // A single physical two-finger swipe on a touchpad emits a
+                    // whole burst of wheel events, not one. Only act on the
+                    // first tick of a burst, and keep re-arming the unlock
+                    // timer while the burst continues so the whole gesture -
+                    // no matter how long it drags on - only moves one pill.
                     if (wheelLocked) {
                         wheelUnlockTimer.restart()
                         return
@@ -1427,6 +1481,9 @@ ShellRoot {
                         ? wheel.angleDelta.x
                         : wheel.angleDelta.y
 
+                    // Leading zero-magnitude ticks are common on touchpad
+                    // drivers as a gesture starts - ignore them entirely
+                    // instead of locking out the real ticks that follow.
                     if (delta === 0)
                         return
 
@@ -1445,6 +1502,9 @@ ShellRoot {
             // ========================================================
 
             Item {
+                // Tide keeps the content attached to the animated capsule.
+                // The content therefore follows the morph frame-by-frame instead
+                // of jumping to its final geometry before the capsule gets there.
                 anchors.fill: parent
 
                 CustomComponents.Clock {
@@ -1664,7 +1724,7 @@ ShellRoot {
                     subtleColor: islandWindow.colors.color8
                     accentColor: islandWindow.colors.color5
                     
-                    // Setup time strings
+                    // Setup time strings (you can bind these to your existing clock logic)
                     timeText: Qt.formatDateTime(new Date(), "hh:mm ap")
                     dateText: Qt.formatDate(new Date(), "MMM d")
 
@@ -1684,6 +1744,9 @@ ShellRoot {
                     active: islandWindow.wallpaperPickerLoaded
                     asynchronous: false
 
+                    // The picker may be created during the same state transition
+                    // that grants Exclusive keyboard focus to the layer-shell.
+                    // Defer the initial focus until the item is fully loaded.
                     onLoaded: Qt.callLater(function() {
                         if (item)
                             item.focusSearch()
@@ -1751,6 +1814,10 @@ ShellRoot {
                     active: islandWindow.appLauncherLoaded
                     asynchronous: false
 
+                    // Restore the original first-open keyboard behavior.
+                    // The Loader is the reliable point at which the launcher
+                    // exists; defer focus one event turn so the layer-shell
+                    // keyboard-focus handoff has completed.
                     onLoaded: Qt.callLater(function() {
                         if (item)
                             item.focusSearch()
@@ -1783,10 +1850,17 @@ ShellRoot {
                     active: islandWindow.gifPickerLoaded
                     asynchronous: false
 
+                    // The Loader is the reliable point at which the picker
+                    // definitely exists. Start its filesystem scan here so the
+                    // first open cannot miss initialization due to a transient
+                    // visible=false state. Focus remains deferred one event turn
+                    // to avoid racing layer-shell keyboard focus.
                     onLoaded: {
                         if (!item)
                             return
 
+                        // Initial load scan. Re-opening an already-loaded
+                        // picker is handled by GifPicker.onVisibleChanged.
                         item.refresh()
 
                         Qt.callLater(function() {
@@ -1864,6 +1938,9 @@ ShellRoot {
         // ============================================================
         // FLOATING TIMER BUBBLE (tide-style)
         // ============================================================
+        // Small badge that pops out next to the pill whenever a timer
+        // session exists, regardless of which island is currently showing.
+
         Item {
             id: timerBubble
 
@@ -1938,6 +2015,7 @@ ShellRoot {
                         ctx.stroke()
                     }
 
+                    // Simple clock glyph drawn by hand - no icon-font dependency.
                     var faceRadius = radius * 0.42
                     ctx.beginPath()
                     ctx.strokeStyle = islandWindow.colors.color15

@@ -230,15 +230,19 @@ Item {
         // Idle launcher: keep only starred applications in memory and in the
         // visible carousel. The full desktop-entry index is loaded lazily
         // only after the user actually starts searching.
-        if (q.length === 0 && root.fullApplicationsLoaded) {
+        if (q.length === 0) {
+            // The idle/front face must always reflect the current favourite
+            // list immediately. This also removes an app from the visible
+            // row as soon as it is unstarred, without requiring a restart.
             const favSet = {}
             for (const name of root.favoriteApps)
                 favSet[name] = true
 
             root.allApps = root.allApps.filter(app => !!favSet[app.name])
+            root.applicationsLoaded = true
             root.fullApplicationsLoaded = false
             root.fullScanRequested = false
-        } else if (q.length > 0) {
+        } else {
             root.ensureFullApplicationsLoaded()
         }
 
