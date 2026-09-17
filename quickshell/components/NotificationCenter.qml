@@ -8,7 +8,10 @@ Item {
     id: root
 
     implicitWidth: 430
-    implicitHeight: 500
+    
+    // Dynamically request height based on content.
+    // The shell.qml will automatically clamp this to a max of 650px.
+    implicitHeight: NotificationService.count === 0 ? 180 : notificationColumn.height + 80
 
 
     ColumnLayout {
@@ -467,11 +470,11 @@ Item {
                         }
                     }
                 }
+
+
+                ScrollBar.vertical:
+                    ScrollBar {}
             }
-
-
-            ScrollBar.vertical:
-                ScrollBar {}
         }
     }
 }
