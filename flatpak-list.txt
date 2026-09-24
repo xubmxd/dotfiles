@@ -1,0 +1,5 @@
+com.github.tchx84.Flatseal
+com.heroicgameslauncher.hgl
+com.vysp3r.ProtonPlus
+net.lutris.Lutris
+org.jellyfin.JellyfinDesktop
