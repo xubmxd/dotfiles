@@ -65,6 +65,11 @@ require("source-configs.dynamic_keybinds")
 --##############################
 require("source-configs.window-rules")
 
+--############
+--### Misc ###
+--############
+require("source-configs.misc")
+
 --###################
 --### Layer rules ###
 --###################

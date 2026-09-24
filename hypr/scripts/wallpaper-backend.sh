@@ -74,6 +74,7 @@ case "$MODE" in
             --transition-type any \
             --transition-step 90 \
             --transition-fps 60
+        notify-send "Wallpaper Changed"
 
         cp "$WALL" "$CACHE_FILE"
         cp "$WALL" "$BRAVE_FILE"

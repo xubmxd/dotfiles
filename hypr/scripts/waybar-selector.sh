@@ -86,9 +86,6 @@ hl.bind(mainMod .. " + space", hl.dsp.exec_cmd("qs ipc call island toggleAppLaun
 
 EOF
 
-
-    notify-send "Status Bar" "Quickshell selected"
-
     exit 0
 fi
 
@@ -114,9 +111,6 @@ if [[ "$bar_choice" == "Waybar" ]]; then
 
 
     if [[ -z "$themes" ]]; then
-        notify-send "Waybar Selector" \
-            "No themes found in $THEMES_DIR"
-
         exit 1
     fi
 
@@ -147,10 +141,6 @@ if [[ "$bar_choice" == "Waybar" ]]; then
     # ========================================================
 
     if [[ ! -f "$CONFIG_FILE" ]] || [[ ! -f "$STYLE_FILE" ]]; then
-
-        notify-send "Waybar Selector" \
-            "Missing config.jsonc or style.css in $choice"
-
         exit 1
     fi
 
@@ -220,10 +210,6 @@ EOF
         hyprctl eval \
             'hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth", style = "slide" })'
     fi
-
-
-    notify-send "Status Bar" \
-        "Waybar selected: $choice"
 
     exit 0
 fi

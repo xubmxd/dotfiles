@@ -36,6 +36,8 @@ fi
 # Setting wallpaper
 awww img "$wall" --transition-type any --transition-step 90 --transition-fps 60
 
+notify-send "Wallpaper Changed"
+
 # Copying Selected wallpaper to .cache as current wallpaper
 cp "$wall" "$CACHE_FILE"
 cp "$wall" "$BRAVE_FILE"

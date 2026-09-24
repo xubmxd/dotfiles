@@ -33,6 +33,7 @@ fi
 
 # Setting wallpaper
 awww img "$gif" --transition-type any --transition-step 90 --transition-fps 60
+notify-send "Wallpaper Changed"
 
 # Copying Selected wallpaper to .cache as current wallpaper
 cp "$gif" "$CACHE_FILE"

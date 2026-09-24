@@ -4,7 +4,7 @@ local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind("CTRL + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
+hl.bind("ALT + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind("CTRL + SHIFT + RETURN", hl.dsp.exec_cmd("env -u QT_STYLE_OVERRIDE -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=xcb cool-retro-term"))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
@@ -15,7 +15,7 @@ hl.bind("CTRL + W", hl.dsp.exec_cmd("~/.config/hypr/scripts/waybar-selector.sh")
 hl.bind(mainMod .. " + CTRL + A", hl.dsp.exec_cmd("~/.config/hypr/scripts/animation_selector.sh"))
 
 -- wallpaper - scripts
-hl.bind(mainMod .. " + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-gf.sh")) hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
+hl.bind(mainMod .. " + semicolon", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-gif.sh")) hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
 hl.bind(mainMod .. " + apostrophe", hl.dsp.exec_cmd("~/.config/hypr/scripts/random-wallpaper.sh")) hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("~/.config/hypr/scripts/regenerate-colors.sh"))
 
 -- Emoji
@@ -28,14 +28,18 @@ hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/hypr/scripts/mewsi
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("sudo /usr/local/bin/fix-mouse"))
 
 -- wayclick
-hl.bind(mainMod .. " + F9", hl.dsp.exec_cmd("~/.scripts/wayclick/wayclick.sh"))
+hl.bind(mainMod .. " + F12", hl.dsp.exec_cmd("sh /home/xubm/.scripts/wayclick/wayclick.sh"))
 
 -- Screenshot
-hl.bind("Print", hl.dsp.exec_cmd("grim ~/Pictures/Screenshots/screenshot_$(date +%s).png"))
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd("grim -g \"$(slurp)\" ~/Pictures/Screenshots/screenshot_$(date +%s).png"))
-hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd("grim - | wl-copy"))
-hl.bind("CTRL + SHIFT + Print", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | wl-copy"))
-hl.bind("ALT + Print", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | swappy -f -"))
+hl.bind("Print", hl.dsp.exec_cmd("grim ~/Pictures/Screenshots/screenshot_$(date +%s).png && notify-send 'Screenshot saved!'"))
+
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd("sh -c 'geom=$(slurp) && sleep 0.2 && grim -g \"$geom\" ~/Pictures/Screenshots/screenshot_$(date +%s).png && notify-send \"Region saved!\"'"))
+
+hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd("grim - | wl-copy && notify-send 'Screenshot copied!'"))
+
+hl.bind("CTRL + SHIFT + Print", hl.dsp.exec_cmd("sh -c 'geom=$(slurp) && sleep 0.2 && grim -g \"$geom\" - | wl-copy && notify-send \"Region copied!\"'"))
+
+hl.bind("ALT + Print", hl.dsp.exec_cmd("sh -c 'geom=$(slurp) && sleep 0.2 && grim -g \"$geom\" - | swappy -f - && notify-send \"Opened in Swappy!\"'"))
 
 -- Move focus
 hl.bind(mainMod .. " + j", hl.dsp.focus({ direction = "left" }))
@@ -136,3 +140,7 @@ hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("quickshell ipc call island clos
 hl.bind(mainMod .. " + DOWN", hl.dsp.exec_cmd("quickshell ipc call island nextIsland"), { locked = true })
 hl.bind(mainMod .. " + UP", hl.dsp.exec_cmd("quickshell ipc call island previousIsland"), { locked = true })
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("quickshell ipc call island toggleNotifications"), { locked = true })
+hl.bind("ALT + C", hl.dsp.exec_cmd("quickshell ipc call island clearNotifications"), { locked = true })
+hl.bind("ALT + SHIFT + C", hl.dsp.exec_cmd("quickshell ipc call island toggleTimerSetup"), { locked = true })
+hl.bind("ALT + CTRL + C", hl.dsp.exec_cmd("quickshell ipc call island toggleTimer"), { locked = true })
+

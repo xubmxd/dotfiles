@@ -81,7 +81,7 @@ display_name() {
     space)   echo "✧  Space" ;;
     gaming)  echo "󰊗  Gaming" ;;
     rice)    echo "󰣇  Rice" ;;
-    cars)    echo "󰭮  Cars" ;;
+    jet)    echo "✈  Jet" ;;
     pixel)   echo "▦  Pixel" ;;
     minimal) echo "□  Minimal" ;;
     nature)  echo "♧  Nature" ;;

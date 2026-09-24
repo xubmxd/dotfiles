@@ -80,7 +80,7 @@ hl.window_rule({
     match = {
         class = "brave-browser",
     },
-    opacity = 0.95,
+    opacity = 0.85,
 })
 
 
@@ -137,7 +137,7 @@ hl.window_rule({
     match = {
         class = "org.pwmt.zathura",
     },
-    opacity = 0.6,
+    opacity = 0.8,
 })
 
 --### zed ####
