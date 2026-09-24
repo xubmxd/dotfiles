@@ -4,6 +4,9 @@ Daily-driver config for `sphynx`: Arch Linux (systemd-boot, btrfs on NVMe),
 Hyprland compositor, Intel TigerLake graphics. Shell is zsh
 (oh-my-zsh, `bureau` theme) with fish also installed.
 
+![clean desktop](screenshots/desktop.png)
+![foot + fastfetch](screenshots/terminal.png)
+
 > **This repo IS `~/.config`.** It is cloned directly to `$HOME/.config`,
 > not symlinked with stow.
 
