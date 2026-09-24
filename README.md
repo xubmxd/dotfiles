@@ -70,6 +70,28 @@ flatpak list --app --columns=application > flatpak-list.txt
 Display manager: boots to TTY, `ly@tty2` enabled; Hyprland starts from
 there (uwsm available). `sddm` is installed as an alternative.
 
+## Bootloader (systemd-boot or GRUB)
+
+`install.sh` auto-detects the bootloader (`BOOTLOADER=` overrides) and ports
+the laptop's kernel quirks either way:
+
+- **GRUB** (`/etc/default/grub` exists): installs `grub efibootmgr os-prober`,
+  merges the quirks into `GRUB_CMDLINE_LINUX_DEFAULT`, sets
+  `GRUB_DISABLE_OS_PROBER=false` so Windows is detected, regenerates
+  `/boot/grub/grub.cfg`.
+- **systemd-boot**: appends any missing quirk params to
+  `/boot/loader/entries/*.conf` (root=/PARTUUID lines untouched).
+
+### Dual-boot notes (GRUB + Windows)
+
+- In archinstall choose GRUB; **do not format** the existing EFI partition —
+  mount it at `/boot`.
+- Disable Windows **Fast Startup** (breaks mounts and the clock).
+- Clock fights: Windows uses localtime — either set Windows to UTC or run
+  `timedatectl set-local-rtc 1` on Arch.
+- **BitLocker** may demand its recovery key after boot-entry changes.
+- Verify after boot: `cat /proc/cmdline` should show the quirk params.
+
 ## Manual checklist (not scriptable)
 
 Printed by `install.sh` at the end of every run:
