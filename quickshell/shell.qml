@@ -356,6 +356,39 @@ ShellRoot {
             return ((index % count) + count) % count
         }
 
+        // Click toggle for the media overlay: expand from omni,
+        // collapse back from omni-expanded. Immediate, no timers.
+        // Cross-switches with the calendar (one click swaps views).
+        function toggleOmniExpanded() {
+            if (islandBackground.islandState === "omni-expanded") {
+                islandBackground.islandState = "omni"
+            } else if ((islandBackground.islandState === "omni" || islandBackground.islandState === "omni-calendar") && musicData.hasTrack) {
+                islandBackground.islandState = "omni-expanded"
+            }
+        }
+
+        // Click toggle for the clock: attached month calendar.
+        // Independent of music; cross-switches with the player.
+        function toggleOmniCalendar() {
+            if (islandBackground.islandState === "omni-calendar") {
+                islandBackground.islandState = "omni"
+            } else if (islandBackground.islandState === "omni" || islandBackground.islandState === "omni-expanded") {
+                islandBackground.islandState = "omni-calendar"
+            }
+        }
+
+        // Scroll-over-player volume: adjusts the default sink in place
+        // (no island switch, no collapse) and flashes the mini readout.
+        function adjustOmniVolume(delta) {
+            var sink = Pipewire.defaultAudioSink
+
+            if (!sink || !sink.audio || sink.audio.volume === undefined)
+                return
+
+            sink.audio.volume = Math.max(0, Math.min(1, (Number(sink.audio.volume) || 0) + delta))
+            omniVolumeFeedback.poke()
+        }
+
         function showSelectedIsland() {
             if (selectedIsland === "music" && !musicData.hasTrack)
                 selectedIslandIndex = 0
@@ -469,7 +502,7 @@ ShellRoot {
                     islandWindow.selectedIslandIndex = 0
                 }
 
-                if (current === "idle" || current === "music-compact" || current === "music-expanded" || current === "lyrics") {
+                if (current === "idle" || current === "music-compact" || current === "music-expanded" || current === "lyrics" || current === "omni-expanded") {
                     islandBackground.islandState = islandWindow.restingState
                 }
             }
@@ -619,6 +652,62 @@ ShellRoot {
                 } else {
                     islandBackground.islandState = "music-expanded"
                 }
+            }
+
+            function openOmniMedia(): void {
+                if (!musicData.hasTrack)
+                    return
+
+                islandBackground.islandState = "omni-expanded"
+            }
+
+            function closeOmniMedia(): void {
+                if (islandBackground.islandState === "omni-expanded")
+                    islandBackground.islandState = "omni"
+            }
+
+            function toggleOmniMedia(): void {
+                if (islandBackground.islandState === "omni-expanded") {
+                    closeOmniMedia()
+                } else {
+                    openOmniMedia()
+                }
+            }
+
+            function openOmniCalendar(): void {
+                islandBackground.islandState = "omni-calendar"
+            }
+
+            function closeOmniCalendar(): void {
+                if (islandBackground.islandState === "omni-calendar")
+                    islandBackground.islandState = "omni"
+            }
+
+            function toggleOmniCalendar(): void {
+                if (islandBackground.islandState === "omni-calendar") {
+                    closeOmniCalendar()
+                } else {
+                    openOmniCalendar()
+                }
+            }
+
+            // Remote diagnosis: state + hover links in one line.
+            function omniDebug(): string {
+                var scopeOrigin = omniPillItem.mediaScope.mapToItem(islandBackground, 0, 0)
+                var cursorX = scopeOrigin.x + omniPillItem.mediaArea.mouseX
+                var cursorY = scopeOrigin.y + omniPillItem.mediaArea.mouseY
+
+                return "state=" + islandBackground.islandState
+                    + " hasTrack=" + musicData.hasTrack
+                    + " mediaHovered=" + omniPillItem.mediaHovered
+                    + " bodyHovered=" + omniBodyHoverArea.containsMouse
+                    + " islandHovered=" + islandMouseArea.containsMouse
+                    + " islandWH=" + Math.round(islandBackground.width) + "x" + Math.round(islandBackground.height)
+                    + " scopeAt=" + Math.round(scopeOrigin.x) + "," + Math.round(scopeOrigin.y)
+                    + " scopeWH=" + Math.round(omniPillItem.mediaScope.width) + "x" + Math.round(omniPillItem.mediaScope.height)
+                    + " cursorInIsland=" + Math.round(cursorX) + "," + Math.round(cursorY)
+                    + " evict=" + musicEvictionTimer.running
+                    + " track=" + musicData.trackTitle
             }
 
             function openMusic(): void {
@@ -933,7 +1022,9 @@ ShellRoot {
 
             currentOsd = "volume"
 
-            if (!islandMouseArea.containsMouse) {
+            // Never yank the attached player into the OSD pill on an
+            // external volume change (containsMouse is unreliable here).
+            if (!islandMouseArea.containsMouse && islandBackground.islandState !== "omni-expanded") {
                 islandBackground.islandState = "osd"
                 osdTimer.restart()
             }
@@ -945,7 +1036,7 @@ ShellRoot {
 
             currentOsd = "volume"
 
-            if (!islandMouseArea.containsMouse) {
+            if (!islandMouseArea.containsMouse && islandBackground.islandState !== "omni-expanded") {
                 islandBackground.islandState = "osd"
                 osdTimer.restart()
             }
@@ -1098,6 +1189,13 @@ ShellRoot {
         }
 
         // ============================================================
+        // OMNI MEDIA TOGGLE — click the media section and the island
+        // morphs into omni-expanded (ONE rect, grows downward, no gap).
+        // Click the media section again to collapse. No hover timers:
+        // clicks use the proven overlay delivery path.
+        // ============================================================
+
+        // ============================================================
         // DYNAMIC ISLAND
         // ============================================================
 
@@ -1137,6 +1235,13 @@ ShellRoot {
                     return notificationPill.implicitWidth
                 case "omni":
                     return omniPillItem.compactImplicitWidth
+                case "omni-expanded":
+                    // Fit the header (workspace + media + clock often
+                    // exceeds 380) instead of slicing its ends off.
+                    // Body stretches (progress fills, controls center).
+                    return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
+                case "omni-calendar":
+                    return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
                 case "wallpaper":
                     return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerWidth : 700)
                 case "power":
@@ -1186,6 +1291,10 @@ ShellRoot {
                     return notificationPill.implicitHeight
                 case "omni":
                     return 40
+                case "omni-expanded":
+                    return 240
+                case "omni-calendar":
+                    return 304
                 case "wallpaper":
                     return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerHeight : 500)
                 case "power":
@@ -1233,6 +1342,10 @@ ShellRoot {
                     return 28
                 case "omni":
                     return 20
+                case "omni-expanded":
+                    return 24
+                case "omni-calendar":
+                    return 24
                 case "wallpaper":
                     return 28
                 case "power":
@@ -1378,9 +1491,13 @@ ShellRoot {
                         return
                     }
 
-                    if (islandBackground.islandState === "idle") {
+                    if (islandBackground.islandState === "idle" || islandBackground.islandState === "omni") {
                         islandWindow.hoverExpandedActive = false
                         islandBackground.islandState = "hover"
+                    } else if (islandBackground.islandState === "omni-expanded") {
+                        islandBackground.islandState = "omni"
+                    } else if (islandBackground.islandState === "omni-calendar") {
+                        islandBackground.islandState = "omni"
                     } else if (islandBackground.islandState === "hover") {
                         islandBackground.islandState = islandWindow.restingState
                     } else if (islandBackground.islandState === "notification-pill") {
@@ -1407,6 +1524,20 @@ ShellRoot {
                 }
 
                 onWheel: function(wheel) {
+                    // Scroll over the attached player adjusts volume in
+                    // place: no island switching, no state change, no
+                    // collapse. Wheel never leaves this branch.
+                    if (islandBackground.islandState === "omni-expanded") {
+                        const wdelta = Math.abs(wheel.angleDelta.x) > Math.abs(wheel.angleDelta.y)
+                            ? wheel.angleDelta.x
+                            : wheel.angleDelta.y
+
+                        if (wdelta !== 0)
+                            islandWindow.adjustOmniVolume(wdelta > 0 ? 0.03 : -0.03)
+
+                        return
+                    }
+
                     const eligible =
                         islandBackground.islandState === "idle"
                         || islandBackground.islandState === "omni"
@@ -1663,19 +1794,247 @@ ShellRoot {
                     textColor: islandWindow.colors.color15
                     subtleColor: islandWindow.colors.color8
                     accentColor: islandWindow.colors.color5
-                    
-                    // Setup time strings
-                    timeText: Qt.formatDateTime(new Date(), "hh:mm ap")
-                    dateText: Qt.formatDate(new Date(), "MMM d")
+                    dangerColor: islandWindow.colors.color1
 
                     // Animations
-                    opacity: islandBackground.islandState === "omni" ? 1 : 0
-                    scale: islandBackground.islandState === "omni" ? 1.0 : 0.45
+                    opacity: (islandBackground.islandState === "omni" || islandBackground.islandState === "omni-expanded" || islandBackground.islandState === "omni-calendar") ? 1 : 0
+                    scale: (islandBackground.islandState === "omni" || islandBackground.islandState === "omni-expanded" || islandBackground.islandState === "omni-calendar") ? 1.0 : 0.45
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
                     Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+
+                    onRequestMediaExpand: {
+                        islandWindow.toggleOmniExpanded()
+                    }
+
+                    onRequestCalendarToggle: {
+                        islandWindow.toggleOmniCalendar()
+                    }
+                }
+
+                // ========================================================
+                // OMNI-EXPANDED BODY — same island rect, divider at the
+                // 40px header seam, reused MusicPlayer expanded UI below.
+                // Unfolds downward: island is top-anchored, body slides
+                // in from the top edge while the rect morphs.
+                // ========================================================
+
+                Item {
+                    id: omniExpandedView
+
+                    anchors.fill: parent
+
+                    opacity: islandBackground.islandState === "omni-expanded" ? 1 : 0
+                    scale: islandBackground.islandState === "omni-expanded" ? 1.0 : 0.92
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Top
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+
+                    // Body presence for the collapse check. NoButton:
+                    // never steals clicks from the player controls above.
+                    MouseArea {
+                        id: omniBodyHoverArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                    }
+
+                    Rectangle {
+                        x: 20
+                        y: 40
+                        width: parent.width - 40
+                        height: 1
+                        color: Qt.rgba(1, 1, 1, 0.08)
+                    }
+
+                    Item {
+                        id: omniExpandedBody
+                        anchors.fill: parent
+                        anchors.topMargin: 41
+
+                        // Slide-in so the body reads as unfolding from
+                        // under the header rather than fading in place.
+                        y: islandBackground.islandState === "omni-expanded" ? 0 : -10
+                        opacity: islandBackground.islandState === "omni-expanded" ? 1 : 0
+                        visible: opacity > 0.01
+
+                        Behavior on y {
+                            NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                        }
+                        Behavior on opacity {
+                            NumberAnimation { duration: 300; easing.type: Easing.OutQuad }
+                        }
+
+                        CustomComponents.MusicPlayer {
+                            id: omniExpandedPlayer
+                            anchors.fill: parent
+                            playerData: musicData
+                            isExpanded: islandBackground.islandState === "omni-expanded"
+                            textColor: islandWindow.colors.color15
+                            activeColor: islandWindow.colors.color4
+                            accentColor: islandWindow.colors.color5
+                            subtleColor: islandWindow.colors.color8
+                            backgroundColor: Qt.rgba(1, 1, 1, 0.05)
+
+                            onRequestCompact: {
+                                // Background taps inside the ATTACHED player
+                                // must not collapse: clicks pass through
+                                // disabled controls (dimmed 0.3, e.g. prev/
+                                // next on players that can't seek) and land
+                                // here. Collapse stays owned by hover-out
+                                // (checker above) + IPC.
+                            }
+
+                            onRequestExpand: {
+                                // Already expanded — ignore.
+                            }
+                        }
+                    }
+
+                    // Transient volume readout for scroll-to-volume.
+                    // Bottom-left corner (controls stay centered, progress
+                    // sits higher). No MouseArea: fully transparent to
+                    // hover/clicks so presence checks are unaffected.
+                    Item {
+                        id: omniVolumeFeedback
+                        x: 16
+                        y: parent.height - 30
+                        width: volLabel.implicitWidth + 24
+                        height: 24
+                        opacity: 0
+                        visible: opacity > 0.01
+
+                        function poke() {
+                            hideTimer.restart()
+                            opacity = 1
+                        }
+
+                        Timer {
+                            id: hideTimer
+                            interval: 1200
+                            onTriggered: omniVolumeFeedback.opacity = 0
+                        }
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: 250; easing.type: Easing.OutQuad }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 12
+                            color: Qt.rgba(0, 0, 0, 0.55)
+                            border.color: Qt.rgba(1, 1, 1, 0.12)
+                            border.width: 1
+                        }
+
+                        Text {
+                            id: volLabel
+                            anchors.centerIn: parent
+                            text: {
+                                if (islandWindow.isMuted)
+                                    return "Muted"
+
+                                var sink = Pipewire.defaultAudioSink
+
+                                if (!sink || !sink.audio)
+                                    return "--"
+
+                                return Math.round(Number(sink.audio.volume) * 100) + "%"
+                            }
+                            color: islandWindow.colors.color15
+                            font.family: "Inter"
+                            font.pixelSize: 11
+                            font.weight: Font.Bold
+                        }
+                    }
+                }
+
+                // ========================================================
+                // OMNI-CALENDAR BODY — same island rect, divider at the
+                // 40px header seam, month grid below. Mirrors the player
+                // attach pattern (unfolds downward, no gap).
+                // ========================================================
+
+                Item {
+                    id: omniCalendarView
+
+                    anchors.fill: parent
+
+                    opacity: islandBackground.islandState === "omni-calendar" ? 1 : 0
+                    scale: islandBackground.islandState === "omni-calendar" ? 1.0 : 0.92
+                    visible: opacity > 0.01
+                    transformOrigin: Item.Top
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+                    }
+                    Behavior on scale {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
+                    }
+
+                    Rectangle {
+                        x: 20
+                        y: 40
+                        width: parent.width - 40
+                        height: 1
+                        color: Qt.rgba(1, 1, 1, 0.08)
+                    }
+
+                    Item {
+                        anchors.fill: parent
+                        anchors.topMargin: 41
+
+                        y: islandBackground.islandState === "omni-calendar" ? 0 : -10
+                        opacity: islandBackground.islandState === "omni-calendar" ? 1 : 0
+                        visible: opacity > 0.01
+
+                        Behavior on y {
+                            NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                        }
+                        Behavior on opacity {
+                            NumberAnimation { duration: 300; easing.type: Easing.OutQuad }
+                        }
+
+                        // Explicit island-matched backdrop so the body can
+                        // never read as a separate/translucent surface.
+                        // Same corner radius as the island: if this rect
+                        // ever forms the visible bottom edge, it stays
+                        // rounded (its top corners hide under the header,
+                        // same color, seamless).
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 24
+                            color: islandWindow.colors.color0
+                        }
+
+                        // Click catcher: swallows taps that pass through
+                        // disabled (adjacent-month) day cells so they reach
+                        // neither the island click handler (which would
+                        // collapse) nor anything else. Day cells above
+                        // still get their clicks first.
+                        MouseArea {
+                            anchors.fill: parent
+                        }
+
+                        CustomComponents.CalendarView {
+                            anchors.fill: parent
+                            anchors.leftMargin: 20
+                            anchors.rightMargin: 20
+                            anchors.topMargin: 12
+                            anchors.bottomMargin: 14
+                            textColor: islandWindow.colors.color15
+                            subtleColor: islandWindow.colors.color8
+                            accentColor: islandWindow.colors.color5
+                        }
+                    }
                 }
 
                 Loader {

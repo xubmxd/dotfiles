@@ -375,6 +375,7 @@ Item {
                         source: "file://" + model.path
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
+                        cache: false
                         sourceSize.width: 220
                         sourceSize.height: 135
                         playing: isCurrent 

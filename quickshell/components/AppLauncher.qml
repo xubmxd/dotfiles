@@ -639,9 +639,10 @@ Item {
                                     return Quickshell.iconPath(model.icon, "application-x-executable")
                                 }
                                 
-                                sourceSize: Qt.size(128, 128)
+                                sourceSize: Qt.size(64, 64)
                                 fillMode: Image.PreserveAspectFit
                                 asynchronous: true
+                                cache: false
                                 smooth: true
                                 visible: false 
                             }

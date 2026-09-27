@@ -236,16 +236,31 @@ Item {
 
     Connections {
         target: root.lyricsService
-        
+
         function onCurrentLineChanged() {
             const text = root.lyricsService ? root.lyricsService.currentLine : ""
             stack.showLyric(text)
         }
-        
+
         function onHasLyricsChanged() {
             if (!root.lyricsService || !root.lyricsService.hasLyrics) {
                 stack.instantClear()
+            } else if (root.lyricsService.currentLine) {
+                stack.showLyric(root.lyricsService.currentLine)
             }
         }
+    }
+
+    // If the service already has a line before this component is
+    // created (e.g. quickshell reload mid-track), onCurrentLineChanged
+    // never fires and the pill stays empty. Sync on startup.
+    Component.onCompleted: {
+        if (root.lyricsService && root.lyricsService.currentLine)
+            stack.showLyric(root.lyricsService.currentLine)
+    }
+
+    onLyricsServiceChanged: {
+        if (root.lyricsService && root.lyricsService.currentLine)
+            stack.showLyric(root.lyricsService.currentLine)
     }
 }

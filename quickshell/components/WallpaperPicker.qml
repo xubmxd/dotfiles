@@ -51,6 +51,20 @@ Item {
     property bool deletePromptActive: false
     property string pendingDeletePath: ""
 
+    // Deterministic entry point: Component.onCompleted covers the first
+    // open after the Loader creates us (visible is true from birth, so
+    // onVisibleChanged does NOT fire then); onVisibleChanged covers
+    // re-opens while the Loader keeps us alive. Guarded: never stack
+    // two renames on top of each other.
+    function startReindex() {
+        if (reindexAllProc.running)
+            return
+        reindexAllProc.running = false
+        reindexAllProc.running = true
+    }
+
+    Component.onCompleted: root.startReindex()
+
     function focusSearch() {
         Qt.callLater(function() {
             if (root.visible && searchField) {
@@ -66,10 +80,9 @@ Item {
             searchQuery = ""
             if (searchField) searchField.text = ""
             deletePromptActive = false
-            
-            reindexAllProc.running = false
-            reindexAllProc.running = true
-            
+
+            root.startReindex()
+
             focusSearch()
         }
     }
@@ -83,6 +96,33 @@ Item {
     function fileName(path) {
         const parts = path.split("/")
         return parts[parts.length - 1]
+    }
+
+    // Natural order so prefix02 sorts before prefix10 (and prefix100
+    // still lands after prefix99): split into digit/non-digit chunks,
+    // compare digit chunks numerically, others lexically.
+    function naturalCompare(a, b) {
+        const ra = String(a).match(/\d+|\D+/g) || []
+        const rb = String(b).match(/\d+|\D+/g) || []
+        const n = Math.max(ra.length, rb.length)
+
+        for (let i = 0; i < n; i++) {
+            const x = i < ra.length ? ra[i] : ""
+            const y = i < rb.length ? rb[i] : ""
+
+            if (x === y)
+                continue
+
+            const xNum = /^\d+$/.test(x)
+            const yNum = /^\d+$/.test(y)
+
+            if (xNum && yNum)
+                return parseInt(x, 10) - parseInt(y, 10)
+
+            return x < y ? -1 : 1
+        }
+
+        return 0
     }
 
     // Raw "file://" + path breaks the moment a filename has a space,
@@ -168,30 +208,11 @@ Item {
     Process {
         id: reindexAllProc
 
-        // Re-index wallpaper folders before scanning them.  The old inline
-        // converter could fail on animated GIFs because ffmpeg was asked to
-        // write multiple GIF frames into a single PNG filename.  Taking only
-        // the first frame makes the conversion deterministic, after which the
-        // normal temporary-name pass safely renames every PNG sequentially.
-        command: [
-            "bash", "-c",
-            "set -e; " +
-            "WALL_ROOT=\"$HOME/Pictures/wallpapers\"; " +
-            "for dir in \"$WALL_ROOT\"/*/; do " +
-            "  [ -d \"$dir\" ] || continue; " +
-            "  cd \"$dir\" || continue; " +
-            "  shopt -s nullglob nocaseglob; " +
-            "  for f in *.jpg *.jpeg *.gif *.webp; do " +
-            "    [ -f \"$f\" ] || continue; " +
-            "    out=\"${f%.*}.png\"; " +
-            "    if ffmpeg -y -loglevel error -i \"$f\" -frames:v 1 \"$out\"; then rm -- \"$f\"; fi; " +
-            "  done; " +
-            "  prefix=$(basename \"$dir\" | tr ' ' '_'); " +
-            "  files=(); while IFS= read -r file; do [ -n \"$file\" ] && files+=(\"$file\"); done < <(find . -maxdepth 1 -type f -iname '*.png' -printf '%T@ %f\\n' | sort -n | cut -d' ' -f2-); " +
-            "  tmp_files=(); i=1; for f in \"${files[@]}\"; do tmp=$(printf '.reindex_tmp_%s_%04d.png' \"$$\" \"$i\"); mv -- \"$f\" \"$tmp\"; tmp_files+=(\"$tmp\"); i=$((i+1)); done; " +
-            "  count=1; for tmp in \"${tmp_files[@]}\"; do mv -- \"$tmp\" \"$(printf '%s%02d.png' \"$prefix\" \"$count\")\"; count=$((count+1)); done; " +
-            "done"
-        ]
+        // Single source of truth lives in wallpaper-backend.sh
+        // (reindex_all): convert (first frame only, never overwrite,
+        // partials cleaned) + oldest-first two-phase rename with
+        // order-stamping, so reruns are byte-stable no-ops.
+        command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-backend.sh", "reindex_all"]
 
         onExited: root.refresh()
     }
@@ -242,7 +263,7 @@ Item {
                 "  for d in \"$root\"/*/; do " +
                 "    [ -d \"$d\" ] || continue; " +
                 "    name=$(basename \"$d\"); " +
-                "    sample=$(find -L \"$d\" -maxdepth 2 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | head -1); " +
+                "    sample=$(find -L \"$d\" -maxdepth 2 -type f -not -name '.*' \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | head -1); " +
                 "    echo \"$d|$name|$sample\"; " +
                 "  done; " +
                 "done"
@@ -271,14 +292,16 @@ Item {
         id: scanWallpapersProc
         command: [
             "find", "-L", root.selectedCategoryPath,
-            "-maxdepth", "2", "-type", "f", "(",
+            "-maxdepth", "2", "-type", "f", "-not", "-name", ".*", "(",
             "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o",
             "-iname", "*.png", "-o", "-iname", "*.webp", ")"
         ]
 
         stdout: StdioCollector {
             onStreamFinished: {
-                root.allWallpapers = String(text).split("\n").filter(l => l.trim().length > 0)
+                const paths = String(text).split("\n").filter(l => l.trim().length > 0)
+                paths.sort(root.naturalCompare)
+                root.allWallpapers = paths
                 root.rebuildWallpaperModel()
             }
         }

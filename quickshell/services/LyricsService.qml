@@ -49,7 +49,24 @@ Item {
     Process {
         id: lyricsBackend
 
-        command: ["lyricsmpris", "--pipe"]
+        // NOTE: quickshell inherits a minimal PATH from Hyprland/login
+        // (no ~/.local/bin), while lyricsmpris lives in ~/.local/bin.
+        // A bare "lyricsmpris" lookup fails with exit 127, so the lyrics
+        // pill never gets hasLyrics/loading and never appears.
+        // Use an absolute path resolved via $HOME.
+        //
+        // The pkill first reaps orphaned backends from previous
+        // quickshell generations: on restart the old backend (idle, so
+        // almost never writing) never sees SIGPIPE and lives on as a
+        // ~24MB orphan per restart. The anchored pattern only matches
+        // real backend processes — never this wrapper (its cmdline
+        // starts with "sh") and never terminal invocations (which lack
+        // the absolute-path prefix).
+        command: [
+            "sh", "-c",
+            "pkill -f '^" + Quickshell.env("HOME") + "/.local/bin/lyricsmpris --pipe' 2>/dev/null; " +
+            "exec \"" + Quickshell.env("HOME") + "/.local/bin/lyricsmpris\" --pipe"
+        ]
 
         running: true
 
@@ -90,6 +107,20 @@ Item {
             root.hasLyrics = false
             root.loading = false
             root.currentLine = ""
+
+            // Auto-restart so a crash (or a first-run PATH failure)
+            // doesn't permanently kill lyrics until next reload.
+            backendRestart.restart()
+        }
+    }
+
+    Timer {
+        id: backendRestart
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            if (!lyricsBackend.running)
+                lyricsBackend.running = true
         }
     }
 }
