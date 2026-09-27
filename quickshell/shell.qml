@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -59,6 +60,14 @@ ShellRoot {
                 width: timerBubble.visible ? Math.round(timerBubble.width) : 0
                 height: timerBubble.visible ? Math.round(timerBubble.height) : 0
             }
+
+            Region {
+                intersection: Intersection.Combine
+                x: Math.round(trayBar.x)
+                y: Math.round(trayBar.y)
+                width: trayBar.hasItems ? Math.round(trayBar.width) : 0
+                height: trayBar.hasItems ? Math.round(trayBar.height) : 0
+            }
         }
 
         // ============================================================
@@ -66,7 +75,7 @@ ShellRoot {
         // ============================================================
 
         readonly property real requestedWindowHeight:
-            Math.ceil(islandBackground.y + islandBackground.targetHeight + 12)
+            Math.ceil(islandBackground.y + islandBackground.targetHeight + 12 + (trayBar.anyTooltipVisible ? 64 : 0))
 
         property real retainedWindowHeight: 0
         implicitHeight: Math.max(requestedWindowHeight, retainedWindowHeight)
@@ -2324,6 +2333,29 @@ ShellRoot {
                     islandBackground.islandState = "timer-expanded"
                 }
             }
+        }
+
+        // ============================================================
+        // SYSTEM TRAY BUBBLES (left side, tide-style)
+        // One small circular widget per StatusNotifierItem, pinned to
+        // the island's LEFT edge. Independent of the island state
+        // machine: only islandBackground geometry is followed.
+        // ============================================================
+        CustomComponents.TrayBar {
+            id: trayBar
+
+            z: 60
+
+            bubbleSize: timerBubble.bubbleSize
+            panelWindow: islandWindow
+
+            x: islandBackground.x - width - 10
+            y: islandBackground.y + islandBackground.height / 2 - height / 2
+
+            bgColor: islandWindow.colors.color0
+            textColor: islandWindow.colors.color15
+            subtleColor: islandWindow.colors.color8
+            attentionColor: islandWindow.colors.color1
         }
     }
 }
