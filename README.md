@@ -1,115 +1,153 @@
-# dotfiles — sphynx (Arch + Hyprland)
+# Arch Hyprland Rice — portable dotfiles
 
-Daily-driver config for `sphynx`: Arch Linux (systemd-boot, btrfs on NVMe),
-Hyprland compositor, Intel TigerLake graphics. Shell is zsh
-(oh-my-zsh, `bureau` theme) with fish also installed.
+A complete Hyprland desktop rice for Arch Linux: dynamic-island Quickshell
+bar (with Waybar themes as an alternative), pywal/matugen theming, rofi
+launchers, foot + kitty terminals, zsh (oh-my-zsh) and a wallpaper/gif
+workflow. Works for **any username, any hostname, any hardware** — start from
+a fresh minimal Arch install and run one command.
 
 ![clean desktop](screenshots/desktop.png)
 ![foot + fastfetch](screenshots/terminal.png)
 
-> **This repo IS `~/.config`.** It is cloned directly to `$HOME/.config`,
-> not symlinked with stow.
+## Requirements
 
-## Fresh install
+- Arch Linux (or derivative with `pacman`), internet access
+- A normal user account with `sudo` (wheel) — never run the installer as pure
+  root-only; it detects your user automatically
+- ~4 GB free for packages
 
-On a fresh Arch (archinstall base, systemd-boot, one user in `wheel`, internet):
+## Installation (fresh Arch)
 
 ```bash
-git clone git@github.com:xubmxd/dotfiles.git ~/.config
-cd ~/.config
-chmod +x install.sh
-./install.sh            # or: USERNAME=someuser ./install.sh
+sudo pacman -S --needed git base-devel
+git clone https://github.com/xubmxd/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./install.sh
 ```
 
-`install.sh` (tested in a clean `archlinux` container, idempotent, exits 0
-on re-run) does:
+This installs the Hyprland + Hyprlock + Quickshell environment only.
+Waybar is explicitly out of scope for this installer iteration.
 
-1. Enables `multilib` + adds the **Chaotic-AUR** repo (keyring included)
-2. Bootstraps `yay-bin`, installs `pkglist-desktop.txt` (repo packages)
-   and `pkglist-aur.txt` (AUR packages)
-3. Sets locale `en_US.UTF-8`, `KEYMAP=us`, hostname `sphynx`, NTP
-4. Applies the touchpad fix to mkinitcpio
-   (`MODULES=(i2c_hid i2c_hid_acpi hid_multitouch)`) and rebuilds initramfs
-5. Enables the exact service set: NetworkManager, bluetooth, resolved,
-   timesyncd, `paccache.timer`, `cups-lpd.socket`, `ly@tty2`, pipewire user units
-6. Adds the user to `wheel,input,docker,video,…`, sets zsh as login shell,
-   installs oh-my-zsh, enables docker, installs Flatpaks from `flatpak-list.txt`
+Useful options (`./install.sh --help` for all):
 
-Scope is the **desktop only** — no BlackArch pentest tools.
+| Flag | Effect |
+| --- | --- |
+| `--yes` | Non-interactive |
+| `--no-aur` | Skip AUR packages (pywal, lyricsmpris source, emoji modi) |
+| `--deploy-only` | Only deploy configs + theming + verification (no packages/services) |
+| `--display-manager=ly\|none` | Enable the `ly` login manager (default: none — TTY login, then `uwsm start hyprland-uwsm.desktop`) |
 
-### Package lists
+What the installer does:
+
+1. Verifies Arch + privileges, detects the current user (`USERNAME=` overrides,
+   never configures `root`)
+2. Installs the minimal Hyprland environment set
+   (`installer/packages-hyprland.txt` — every entry names the config that
+   requires it) and AUR complements (`installer/packages-hyprland-aur.txt`)
+   via `yay`, bootstrapped **as your user** (never builds AUR packages as root)
+3. Deploys `hypr/ quickshell/ wal/ rofi/ foot/ xdg-desktop-portal/ uwsm/
+   matugen/` into `~/.config` with **timestamped backups**
+   (`~/.local/share/dotfiles-backups/…`) — safe to re-run (idempotent)
+4. Writes portable monitor defaults (no forced modes) for copied installs,
+   links the `lyricsmpris` backend, makes helper scripts executable
+5. Bootstraps wallpaper + pywal/matugen colors so `hyprland.conf`'s
+   `colors-hyprland.conf` source and quickshell's `colors.json` always exist
+6. Enables NetworkManager/Bluetooth system units and PipeWire user units
+7. Verifies every required binary + config file and runs
+   `Hyprland --verify-config` before declaring success
+
+> The repo does **not** need to live at `~/.config`: cloning anywhere and
+> running `./install.sh` copies the rice into place. Cloning directly to
+> `~/.config` also works (in-place mode).
+
+## First boot
+
+1. Log in on TTY, then run: `uwsm start hyprland-uwsm.desktop` (or `Hyprland`)
+2. Put wallpapers in `~/Pictures/wallpapers/` (and GIFs in `~/Pictures/gifs/`)
+3. `Super + apostrophe` opens the wallpaper picker, `Super + ;` a random one
+
+Hardware notes:
+
+- **Monitors**: copied installs default to no forced modes (Hyprland
+  auto-configures every output). Run `hyprctl monitors`, then pin a specific
+  output in `~/.config/hypr/source-configs/monitors.lua` if desired.
+- **Laptops vs desktops**: battery/backlight modules degrade gracefully when
+  the hardware is absent. Bluetooth UI does nothing harmful without a radio.
+
+## Updating
+
+```bash
+cd ~/rice && git pull && ./install.sh
+```
+
+## Uninstallation
+
+```bash
+./uninstall.sh        # removes deployed files, restores latest backup
+```
+
+Packages, services, hostname and bootloader changes are intentionally left
+alone (see script output for details).
+
+## Package lists
 
 | File | Contents |
 | --- | --- |
-| `pkglist-desktop.txt` | 242 repo/chaotic packages (Hyprland stack, pipewire, browsers, editors, docker, …) |
-| `pkglist-aur.txt` | 24 AUR packages (librewolf, matugen, waypaper, windscribe, …) |
-| `flatpak-list.txt` | 5 Flatpak apps (Flatseal, Heroic, ProtonPlus, Lutris, Jellyfin) |
-
-Regenerate from a live system with:
-
-```bash
-pacman -Qqe > pkglist-desktop.txt   # then drop AUR + pentest entries
-pacman -Qqm > pkglist-aur.txt
-flatpak list --app --columns=application > flatpak-list.txt
-```
+| `installer/packages-hyprland.txt` | Minimal Hyprland-environment set (always installed) |
+| `installer/packages-hyprland-aur.txt` | AUR complements: pywal, lyricsmpris source, emoji modi (skipped with `--no-aur`) |
+| `pkglist-desktop.txt` / `pkglist-aur.txt` | Legacy full-desktop snapshots — NOT used by `install.sh` |
 
 ## What's configured
 
 | Directory | App |
 | --- | --- |
-| `hypr/` | Hyprland (Lua-based config: `hyprland.lua` + `source-configs/`, helper `scripts/`) |
-| `waybar/`, `eww/`, `hyprpanel/` | Bars / widgets |
-| `rofi/`, `wofi/` | Launchers (`rofi-emoji-git` for emoji) |
+| `hypr/` | Hyprland (Lua config + `scripts/`) |
+| `quickshell/` | Dynamic-island bar (default status bar) |
+| `waybar/` (+`themes/`) | Alternative bar, 8 themes |
+| `rofi/`, `wofi/` | Launchers |
 | `foot/`, `kitty/` | Terminals |
-| `fish/`, `zsh/` | Shells (active default: zsh + oh-my-zsh) |
+| `fish/`, `zsh/` | Shells (default: zsh + oh-my-zsh) |
 | `nvim/`, `zed/` | Editors |
 | `fastfetch/`, `btop/`, `cava/` | System info / monitors |
-| `yazi/` | File manager (plus `dolphin/`, `thunar/`) |
-| `vesktop/`, `discord/` | Chat |
-| `spicetify/` | Spotify theming (pywal) |
+| `yazi/` | File manager |
 | `swaync/`, `dunst/` | Notifications |
-| `sddm/` config via `sddm-theme-corners-git` | Alt. login manager (not enabled; `ly` is) |
+| `wal/` | pywal templates |
 
-Display manager: boots to TTY, `ly@tty2` enabled; Hyprland starts from
-there (uwsm available). `sddm` is installed as an alternative.
+## Portability check
 
-## Bootloader (systemd-boot or GRUB)
+```bash
+./tools/check-portability.sh          # or --strict in CI
+```
 
-`install.sh` auto-detects the bootloader (`BOOTLOADER=` overrides) and ports
-the laptop's kernel quirks either way:
+Scans tracked files for hardcoded `/home/*` paths, hostnames, monitor/device
+names and installer regressions.
 
-- **GRUB** (`/etc/default/grub` exists): installs `grub efibootmgr os-prober`,
-  merges the quirks into `GRUB_CMDLINE_LINUX_DEFAULT`, sets
-  `GRUB_DISABLE_OS_PROBER=false` so Windows is detected, regenerates
-  `/boot/grub/grub.cfg`.
-- **systemd-boot**: appends any missing quirk params to
-  `/boot/loader/entries/*.conf` (root=/PARTUUID lines untouched).
+## GUI testing (headless)
 
-### Dual-boot notes (GRUB + Windows)
+```bash
+Hyprland --verify-config -c ~/.config/hypr/hyprland.lua   # pure config check
+./tools/test-gui-headless.sh      # boots the real config (needs GPU/TTY/VM)
+./tools/test-gui-components.sh    # container-safe: sway headless parent +
+                                  # rice quickshell + foot + screenshots
+```
 
-- In archinstall choose GRUB; **do not format** the existing EFI partition —
-  mount it at `/boot`.
-- Disable Windows **Fast Startup** (breaks mounts and the clock).
-- Clock fights: Windows uses localtime — either set Windows to UTC or run
-  `timedatectl set-local-rtc 1` on Arch.
-- **BitLocker** may demand its recovery key after boot-entry changes.
-- Verify after boot: `cat /proc/cmdline` should show the quirk params.
+`test-gui-headless.sh` boots the actual `hyprland.lua`, opens a client and
+screenshots it. It cannot run in unprivileged containers (Hyprland's headless
+backend is mandatory and needs a GPU allocator) — there it exits 2 with an
+explanation. `test-gui-components.sh` covers that gap: it runs the rice's
+quickshell bar and terminal under a software-rendered parent compositor and
+asserts on layer surfaces, IPC and screenshot pixels. This already caught one
+real bug: quickshell needs `qt6-5compat`, now in `installer/packages-hyprland.txt`.
 
-## Manual checklist (not scriptable)
+## Troubleshooting
 
-Printed by `install.sh` at the end of every run:
-
-- btrfs subvolumes `@ @home @pkg @log` with `compress=zstd:3` (see script output for fstab lines)
-- systemd-boot kernel cmdline laptop quirks
-  (`intel_pstate=disable … pcie_aspm=off`)
-- `systemctl --user enable pipewire pipewire-pulse wireplumber` after first login
-- Secrets are **not** in git: `~/.zshrc` API keys, `~/Desktop/ctfs/*.ovpn`,
-  `~/.local/bin`, `~/.zprofile`, `~/.xprofile` — restore from backup
-
-## Notes
-
-- `.gitignore` excludes volatile app caches (vesktop GPU/blob caches, …).
-  Browser profile dirs (`BraveSoftware/`, `Caido/`, …) are untracked on purpose.
-- `pacman.conf` on the source also carries the **BlackArch** repo
-  (`blackarch-mirrorlist`); it is intentionally *not* added by `install.sh`
-  since the desktop scope excludes those tools.
+- **No theme on first boot**: pick any wallpaper (`Super + '`) — pywal +
+  matugen generate all app colors from it.
+- **PipeWire units failed during install**: log in once, then run the
+  `systemctl --user enable …` line the installer printed.
+- **No login prompt**: you chose `--display-manager=none`; log in on TTY and
+  run `uwsm start hyprland-uwsm.desktop`, or re-run with
+  `--display-manager=ly`.
+- **Full log**: every run appends to `/tmp/dotfiles-install.log`.
+- **Secrets are not in this repo** (`~/.zshrc` API keys, VPN profiles, …) —
+  restore those from your own backup.

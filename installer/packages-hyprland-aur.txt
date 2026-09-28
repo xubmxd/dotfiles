@@ -1,0 +1,7 @@
+# Minimal AUR package set for the Hyprland + Hyprlock + Quickshell environment.
+# Installed by install.sh via yay (built as the target user, never as root).
+# Format: one package per line, "<pkg>  # <required by>" (trailing comments OK).
+
+python-pywal16   # provides `wal`: wallpaper scripts + generates ~/.cache/wal/colors-hyprland.conf (sourced by hyprland.conf) and colors.json (read by quickshell/shell.qml)
+tide-island      # ships /usr/share/tide-island/bin/lyricsmpris, linked to ~/.local/bin/lyricsmpris for quickshell/services/LyricsService.qml
+rofi-emoji-git   # provides the `emoji` modi for `rofi -show emoji` in hypr/scripts/emoji-picker (SUPER+. keybind)

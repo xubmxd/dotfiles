@@ -1,0 +1,56 @@
+vesktop/sessionData/
+vesktop/Cache/
+vesktop/Code Cache/
+vesktop/GPUCache/
+vesktop/blob_storage/
+vesktop/Service Worker/
+vesktop/Partitions/
+vesktop/Dictionaries/
+vesktop/Singleton*
+vesktop/Crashpad/
+vesktop/state.json
+vesktop/*Cache*/
+
+# Installer-generated / machine-specific (never commit)
+hypr/source-configs/monitors-generated.lua
+hypr/waybar_anim.lua
+rice.conf
+waybar/colors-waybar.css
+eww/visualizer/colors.scss
+
+# Editor / tool backups
+*.bak
+*.bak.qml
+*~
+
+# App runtime state that must never be distributed
+chromium/
+chromium-headless/
+BraveSoftware/
+Google/
+mozilla/
+librewolf/
+Caido/
+obsidian/IndexedDB/
+Sejda\ PDF\ Desktop/IndexedDB/
+Sejda\ PDF\ Desktop/Local\ Storage/
+Sejda\ PDF\ Desktop/Session\ Storage/
+discord/
+storage/
+Cache/
+GPUCache/
+logs/
+*.log
+ffuf/history/
+jadx/caches.json
+leap/systray.log
+obs-studio/logs/
+wireshark/recent*
+pulse/
+mewsic_rs/
+tide-island/
+session/
+wpg/schemes/_home_*
+__pycache__/
+*.pyc
+

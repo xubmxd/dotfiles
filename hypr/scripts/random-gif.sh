@@ -4,7 +4,7 @@
 # Random Wallpaper Picker (Across All Categories)
 # ------------------------------------------------------------
 
-GIF_ROOT="/home/xubm/Pictures/gifs/"
+GIF_ROOT="$HOME/Pictures/gifs/"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 
@@ -17,11 +17,8 @@ if [ -z "$gif" ]; then
     exit 1
 fi
 
-# Generating colors
-wal -n -i "$gif" -o ~/.local/src/pywalium/generate.sh
-
-# Color for gtk using matugen
-matugen image "$gif" --source-color-index 0 --type scheme-vibrant
+# Generating colors (pywal + matugen via shared helper)
+"$(dirname "$0")/apply-theme.sh" "$gif"
 
 # ------------------------------------------------------------
 # Reload Eww (if running)

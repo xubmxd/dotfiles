@@ -4,7 +4,7 @@
 # Random Wallpaper Picker (Across All Categories)
 # ------------------------------------------------------------
 
-WALL_ROOT="/home/xubm/Pictures/wallpapers/"
+WALL_ROOT="$HOME/Pictures/wallpapers/"
 CACHE_FILE="$HOME/.cache/current_wallpaper"
 BRAVE_FILE="$HOME/.cache/current_wallpaper.png"
 SDDM_FILE="/usr/share/sddm/themes/hyprlock-match/backgrounds/wall.png"
@@ -19,11 +19,8 @@ if [ -z "$wall" ]; then
     exit 1
 fi
 
-# Generating colors
-wal -n -i "$wall" -o ~/.local/src/pywalium/generate.sh
-
-# Color for gtk using matugen
-matugen image "$wall" --source-color-index 0 --type scheme-vibrant
+# Generating colors (pywal + matugen via shared helper)
+"$(dirname "$0")/apply-theme.sh" "$wall"
 
 # ------------------------------------------------------------
 # Reload Eww (if running)
@@ -41,7 +38,8 @@ notify-send "Wallpaper Changed"
 # Copying Selected wallpaper to .cache as current wallpaper
 cp "$wall" "$CACHE_FILE"
 cp "$wall" "$BRAVE_FILE"
-cp "$wall" "$SDDM_FILE"
+# Optional login-manager theme sync (only when that theme directory exists)
+[ -d "$(dirname "$SDDM_FILE")" ] && cp "$wall" "$SDDM_FILE" 2>/dev/null || true
 
 
 # ------Spotify--------

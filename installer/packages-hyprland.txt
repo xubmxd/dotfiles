@@ -1,0 +1,75 @@
+# Minimal official-repo package set for the Hyprland + Hyprlock + Quickshell
+# environment. Installed by install.sh on every run.
+#
+# Rule: every package here is required by a specific config/script in
+#   hypr/ quickshell/ wal/ rofi/ foot/ xdg-desktop-portal/
+# Waybar is explicitly OUT OF SCOPE and must never be added here.
+#
+# Format: "<package>  # required by: <config/script> -> <binary/feature>"
+
+# --- compositor + lock/idle -------------------------------------------------
+hyprland                # hypr/hyprland.lua -> the compositor itself
+hyprlock                # hypr/hyprlock.conf + keybinds.lua (ALT+L) + PowerMenu lock
+hypridle                # hypr/hypridle.conf (lock_cmd/on-timeout dpms)
+uwsm                    # universal wayland session manager: `uwsm start hyprland-uwsm.desktop`
+
+# --- wayland desktop integration --------------------------------------------
+xdg-desktop-portal              # screen sharing / file chooser portal stack
+xdg-desktop-portal-hyprland     # Hyprland backend (see xdg-desktop-portal/hyprland-portals.conf)
+xdg-user-dirs                   # creates ~/Pictures etc. for wallpaper dirs
+
+# --- shell / widgets ---------------------------------------------------------
+quickshell              # quickshell/shell.qml -> the entire island UI (qs == quickshell)
+rofi                    # programs.lua menu + wallpaper/gif/emoji/animation pickers
+qt6-5compat             # Qt6 QML compat modules imported by quickshell components
+kvantum                 # enviornment-variables.lua sets QT_STYLE_OVERRIDE=Kvantum
+
+# --- wallpaper + theming pipeline -------------------------------------------
+# wallpaper-backend.sh / random-wallpaper.sh / wallpaper-selector.sh:
+#   wallpaper -> wal -> matugen -> awww -> hyprland.lua appearance.lua
+awww                    # wallpaper daemon (startup.sh, wallpaper-backend.sh)
+matugen                 # gtk/kvantum/rofi theme generation from wallpaper
+imagemagick             # `magick`: pywal's palette-generation backend (degraded colors without it)
+ffmpeg                  # converts jpg/webp/gif wallpapers to png before indexing
+
+# --- preferred applications (programs.lua defaults) --------------------------
+foot                    # default terminal (keybinds SUPER+RETURN, mewsic-toggle.sh)
+thunar                  # default file manager (keybinds SUPER+E)
+gvfs                    # thunar trash / network locations support
+tumbler                 # thunar thumbnails
+
+# --- audio -------------------------------------------------------------------
+# keybinds.lua volume keys (wpctl), quickshell Pipewire.* bindings (volume OSD,
+# dashboard slider), MusicPlayerData Mpris bindings.
+pipewire                # core audio + `wpctl` used by volume keybinds
+pipewire-alsa           # alsa clients -> pipewire
+pipewire-pulse          # pulse clients -> pipewire
+wireplumber             # session manager (required by pipewire)
+
+# --- system services queried by quickshell -----------------------------------
+networkmanager          # Dashboard.qml wifi UI shells out to `nmcli`
+bluez                   # Quickshell.Bluetooth (BlueZ over DBus) in Dashboard.qml
+bluez-utils             # bluetoothctl/bluetooth agent helpers
+
+# --- keybind / screenshot / clipboard dependencies ---------------------------
+grim                    # keybinds.lua Print-screen bindings
+slurp                   # region selection for grim bindings
+swappy                  # ALT+Print "open in swappy" binding
+wl-clipboard            # `wl-copy` in screenshot-copy bindings
+brightnessctl           # brightness keys + quickshell brightness OSD polling
+playerctl               # media keys + 3-finger gesture play-pause/next/prev
+libnotify               # `notify-send` feedback in wallpaper/screenshot scripts
+xclip                   # scripts/emoji-picker presence check before rofi emoji mode
+gnome-keyring           # autostarts.lua: gnome-keyring-daemon --start (secret store)
+hyprpolkitagent         # privilege prompts for GUI apps (no agent autostarted otherwise)
+
+# --- fonts (referenced by name in configs) ------------------------------------
+inter-font              # quickshell UI font + rofi launcher.rasi ("Inter 11")
+ttf-jetbrains-mono-nerd # hyprlock.conf labels + rofi config.rasi
+noto-fonts              # fallback UI font coverage
+noto-fonts-emoji        # emoji fallback (emoji picker, notification text)
+
+# --- build tooling for the AUR bootstrap --------------------------------------
+base-devel              # makepkg (yay-bin build as the target user, never root)
+git                     # cloning dotfiles + yay-bin sources
+curl                    # oh-my-zsh/key downloads (also used by quickshell helpers)

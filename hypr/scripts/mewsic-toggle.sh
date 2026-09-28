@@ -5,11 +5,12 @@ TERMINAL="foot"
 APP_ID="mewsic"
 WINDOW_TITLE="mewsic"
 
-# Path to your compiled Rust binary (Release build recommended)
-MEWSIC_BIN="/home/xubm/.cargo/bin/mewsic_rs"
+# Path to your compiled Rust binary (Release build recommended).
+# Optional: without it the Super+Shift+M keybind has nothing to launch.
+MEWSIC_BIN="$HOME/.cargo/bin/mewsic_rs"
 
 # Fallback to the debug binary if the release one doesn't exist yet
-[ -x "$MEWSIC_BIN" ] || MEWSIC_BIN="/home/xubm/.dev/rs/mewsic_rs/target/debug/mewsic_rs"
+[ -x "$MEWSIC_BIN" ] || MEWSIC_BIN="$HOME/.dev/rs/mewsic_rs/target/debug/mewsic_rs"
 
 # ---------------------------------------------------------
 # Check if ANY mewsic instance is running

@@ -24,11 +24,12 @@ hl.bind(mainMod .. " + Period", hl.dsp.exec_cmd("~/.config/hypr/scripts/emoji-pi
 -- Spotify - scripts 
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/hypr/scripts/mewsic-toggle.sh"))
 
--- Kernel bugs - temp fix
-hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("sudo /usr/local/bin/fix-mouse"))
+-- Machine-specific temp fix (removed from the generic installer target).
+-- Re-add on affected hardware only:
+-- hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("sudo /usr/local/bin/fix-mouse"))
 
--- wayclick
-hl.bind(mainMod .. " + F12", hl.dsp.exec_cmd("sh /home/xubm/.scripts/wayclick/wayclick.sh"))
+-- wayclick (optional local helper; no-op unless the script exists)
+hl.bind(mainMod .. " + F12", hl.dsp.exec_cmd("sh ~/.scripts/wayclick/wayclick.sh"))
 
 -- Screenshot
 hl.bind("Print", hl.dsp.exec_cmd("grim ~/Pictures/Screenshots/screenshot_$(date +%s).png && notify-send 'Screenshot saved!'"))

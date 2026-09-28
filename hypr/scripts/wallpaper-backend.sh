@@ -59,11 +59,7 @@ case "$MODE" in
         
     "apply")
         WALL="$TARGET"
-        wal -n -i "$WALL" -o ~/.local/src/pywalium/generate.sh
-        
-        matugen image "$WALL" \
-            --source-color-index 0 \
-            --type scheme-vibrant
+        "$(dirname "$0")/apply-theme.sh" "$WALL"
 
         if pgrep -x "eww" > /dev/null; then
             eww -c "$HOME/.config/eww/visualizer" reload
@@ -78,7 +74,8 @@ case "$MODE" in
 
         cp "$WALL" "$CACHE_FILE"
         cp "$WALL" "$BRAVE_FILE"
-        cp "$WALL" "$SDDM_FILE"
+        # Optional login-manager theme sync (only when that theme directory exists)
+        [ -d "$(dirname "$SDDM_FILE")" ] && cp "$WALL" "$SDDM_FILE" 2>/dev/null || true
         ;;
         
     "delete")

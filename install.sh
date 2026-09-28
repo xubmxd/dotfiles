@@ -1,272 +1,443 @@
 #!/usr/bin/env bash
-# Arch Hyprland desktop — fresh-install replication script
-# Source system: sphynx (archinstall 2026-03-18, systemd-boot, btrfs, Intel TigerLake, Hyprland)
-# Scope: MINIMAL DESKTOP ONLY (no BlackArch pentest tools)
-# Dotfiles: git@github.com:xubmxd/dotfiles.git (this repo IS ~/.config)
+# Fresh Arch -> working Hyprland desktop (one-script installer).
 #
-# Usage on a FRESH Arch (archinstall base + user in wheel + internet):
-#   git clone <this-repo> ~/dotfiles-tmp
-#   cd ~/dotfiles-tmp  # or copy install.sh + pkglist-*.txt + flatpak-list.txt together
-#   chmod +x install.sh
-#   ./install.sh
+# Installs ONLY the Hyprland + Hyprlock + Quickshell environment:
+#   Hyprland, Hyprlock (+config), Quickshell (+config), the Hyprland
+#   configuration, supporting system packages/services, desktop scripts,
+#   wallpaper/theme pipeline, and Wayland portal integration.
 #
-# Expected pre-conditions (do these in archinstall):
-#   - partitions: 1G vfat /boot + btrfs rest with subvolumes @, @home, @pkg, @log
-#     (mount opts: compress=zstd:3,ssd,discard=async,space_cache=v2 — see fstab note below)
-#   - kernels: linux + linux-lts + intel-ucode, bootloader: systemd-boot
-#   - user: created in archinstall; groups + shell are set by this script
-#     (override detection with USERNAME=someuser ./install.sh)
+# Waybar is explicitly OUT OF SCOPE (not installed, not configured).
+#
+# Usage:
+#   git clone https://github.com/xubmxd/dotfiles.git ~/dotfiles
+#   cd ~/dotfiles
+#   ./install.sh [options]
+#
+#   USERNAME=myuser ./install.sh     # explicit target user (default: auto)
+#
+# Options:
+#   --yes                    non-interactive (assume yes)
+#   --no-aur                 skip AUR helper bootstrap + AUR packages
+#                            (pywal, lyricsmpris source, emoji modi)
+#   --deploy-only            skip package/service steps; only deploy configs +
+#                            theming bootstrap + verification (fast re-apply)
+#   --display-manager=DM     login manager: ly | none (default: none — TTY
+#                            login, then `uwsm start hyprland-uwsm.desktop`)
+#   -h, --help               show this help
+#
+# Idempotent: safe to re-run. Existing configs are backed up (timestamped)
+# under ~/.local/share/dotfiles-backups/ before being touched.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Target user: explicit USERNAME=foo override wins, then the sudo-invoking user,
-# then first human account (UID>=1000). Never silently configure root.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="${LOG_FILE:-/tmp/dotfiles-install.log}"
+: > "$LOG_FILE"
+
+# ------------------------------------------------------------------ flags
+ASSUME_YES=0
+WITH_AUR=1
+DEPLOY_ONLY=0
+DISPLAY_MANAGER="none"
+
+usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//'; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --yes) ASSUME_YES=1 ;;
+    --no-aur) WITH_AUR=0 ;;
+    --deploy-only) DEPLOY_ONLY=1 ;;
+    --display-manager=*) DISPLAY_MANAGER="${1#*=}" ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "[-] unknown option: $1 (see --help)" >&2; exit 1 ;;
+  esac
+  shift
+done
+
+case "$DISPLAY_MANAGER" in
+  none|ly) ;;
+  *) echo "[-] --display-manager must be ly or none" >&2; exit 1 ;;
+esac
+
+# ------------------------------------------------------------------ logging
+msg()  { printf '\033[1;32m[+] %s\033[0m\n' "$*" | tee -a "$LOG_FILE"; }
+warn() { printf '\033[1;33m[!] %s\033[0m\n' "$*" | tee -a "$LOG_FILE" >&2; }
+err()  { printf '\033[1;31m[-] %s\033[0m\n' "$*" | tee -a "$LOG_FILE" >&2; exit 1; }
+log()  { printf '%s\n' "$*" >> "$LOG_FILE"; }
+
+# ------------------------------------------------------------------ user
+# Explicit USERNAME= wins, then the sudo-invoking user, then the first human
+# account (UID 1000..59999). Never silently configure root.
 USERNAME="${USERNAME:-${SUDO_USER:-${USER:-}}}"
 if [[ -z "${USERNAME:-}" || "$USERNAME" == "root" ]]; then
   USERNAME="$(awk -F: '$3>=1000 && $3<60000 {print $1; exit}' /etc/passwd 2>/dev/null || true)"
 fi
-[[ -n "${USERNAME:-}" && "$USERNAME" != "root" ]] || { echo "[-] cannot detect non-root user; re-run as USERNAME=youruser ./install.sh" >&2; exit 1; }
-HOME_DIR="/home/$USERNAME"
+[[ -n "${USERNAME:-}" && "$USERNAME" != "root" ]] \
+  || err "cannot detect non-root user; re-run as USERNAME=youruser ./install.sh"
+id "$USERNAME" >/dev/null 2>&1 || err "user '$USERNAME' does not exist"
+# Resolve HOME from the account database — never assume /home/<name>.
+HOME_DIR="$(getent passwd "$USERNAME" | cut -d: -f6)"
+[[ -n "$HOME_DIR" && -d "$HOME_DIR" ]] || err "home directory for '$USERNAME' not found"
+USER_ID="$(id -u "$USERNAME")"
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME_DIR/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME_DIR/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME_DIR/.cache}"
+CONFIG_DIR="$HOME_DIR/.config"
 
-PACMAN_LIST="$SCRIPT_DIR/pkglist-desktop.txt"
-AUR_LIST="$SCRIPT_DIR/pkglist-aur.txt"
-FLATPAK_LIST="$SCRIPT_DIR/flatpak-list.txt"
+msg "Target user : $USERNAME"
+msg "Home        : $HOME_DIR"
+msg "Repo        : $REPO_DIR"
+log "date: $(date -u +%FT%TZ) user=$USERNAME home=$HOME_DIR repo=$REPO_DIR"
 
-msg()  { printf '\033[1;32m[+] %s\033[0m\n' "$*"; }
-warn() { printf '\033[1;33m[!] %s\033[0m\n' "$*" >&2; }
-err()  { printf '\033[1;31m[-] %s\033[0m\n' "$*" >&2; exit 1; }
-
-require_root_or_sudo() {
-  if [[ $EUID -ne 0 ]]; then
-    command -v sudo >/dev/null || err "run as root or install sudo first"
+run_as_user() {
+  # Run a command as the target user (never as root): needed for makepkg/yay
+  # and user-scoped setup. Preserves the user's HOME.
+  if [[ $EUID -eq 0 ]]; then
+    su -s /bin/bash "$USERNAME" -c "export HOME='$HOME_DIR'; $*"
+  elif [[ "$(id -un)" == "$USERNAME" ]]; then
+    bash -c "export HOME='$HOME_DIR'; $*"
+  elif command -v sudo >/dev/null; then
+    sudo -u "$USERNAME" env HOME="$HOME_DIR" bash -c "$*"
+  else
+    err "cannot run user-level commands for $USERNAME (no sudo)"
   fi
 }
+
 srun() { if [[ $EUID -eq 0 ]]; then "$@"; else sudo "$@"; fi; }
 
-# ---------------------------------------------------------------- 0. sanity
-require_root_or_sudo
-[[ -f "$PACMAN_LIST" ]] || err "missing $PACMAN_LIST"
-[[ -f "$AUR_LIST" ]] || err "missing $AUR_LIST"
-command -v pacman >/dev/null || err "not an Arch system"
-ping -c1 -W3 archlinux.org >/dev/null 2>&1 || warn "no internet? continuing anyway"
+# ------------------------------------------------------------------ helpers
+BACKUP_ROOT="$HOME_DIR/.local/share/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
+AUR_FAILED=()
 
-# ------------------------------------------------- 1. pacman conf + repos
-msg "Configuring pacman (multilib, ParallelDownloads)…"
-srun cp -n /etc/pacman.conf /etc/pacman.conf.bak 2>/dev/null || true
-if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
-  if grep -q "^#\[multilib\]" /etc/pacman.conf; then
-    # uncomment the [multilib] block shipped by archinstall/ISO
-    srun sed -i '/^#\[multilib\]/,/^#Include.*mirrorlist/{s/^#//}' /etc/pacman.conf
+# trees_match <repo-dir> <target-dir>: true when every repo file exists in the
+# target with identical content (extra target files are tolerated).
+trees_match() {
+  local src="$1" dst="$2" rel
+  [[ -d "$dst" ]] || return 1
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    [[ -f "$dst/$rel" ]] || return 1
+    cmp -s "$src/$rel" "$dst/$rel" || return 1
+  done < <(cd "$src" && find . -type f | sort)
+  return 0
+}
+
+backup_path() {
+  # backup_path <absolute-path>: move existing file/dir to the backup root.
+  local target="$1"
+  [[ -e "$target" || -L "$target" ]] || return 0
+  local rel="${target#$HOME_DIR/}"
+  local dest="$BACKUP_ROOT/$rel"
+  msg "Backing up $target -> $dest"
+  run_as_user "mkdir -p '$(dirname "$dest")' && mv '$target' '$dest'" >>"$LOG_FILE" 2>&1
+}
+
+# pkg_names <list-file>: package names only (strips trailing comments/blank lines).
+pkg_names() { sed 's/#.*//' "$1" | grep -v '^\s*$' | tr '\n' ' '; }
+
+CORE_LIST="$REPO_DIR/installer/packages-hyprland.txt"
+AUR_LIST="$REPO_DIR/installer/packages-hyprland-aur.txt"
+
+# Config trees managed by this installer (Waybar deliberately excluded).
+MANAGED_DIRS="hypr quickshell wal rofi foot xdg-desktop-portal uwsm matugen"
+
+IN_PLACE=0
+[[ "$REPO_DIR" == "$CONFIG_DIR" ]] && IN_PLACE=1
+
+# ================================================================ [1/8] system
+msg "[1/8] Checking system…"
+command -v pacman >/dev/null || err "pacman not found — this installer supports Arch Linux only"
+if [[ ! -f /etc/arch-release && ! -f /etc/artix-release ]]; then
+  warn "not visibly an Arch system; continuing anyway (pacman present)"
+fi
+if [[ $EUID -ne 0 ]] && ! command -v sudo >/dev/null; then
+  err "run as root or install sudo first"
+fi
+ping -c1 -W3 archlinux.org >/dev/null 2>&1 || warn "no network? continuing anyway (log: $LOG_FILE)"
+[[ -f "$CORE_LIST" ]] || err "missing $CORE_LIST"
+[[ -f "$AUR_LIST" ]] || warn "missing $AUR_LIST — AUR step will be skipped"
+if [[ $IN_PLACE -eq 1 ]]; then
+  msg "Repo IS ~/.config — in-place mode (no copy, machine files untouched)"
+else
+  msg "Repo will be deployed into $CONFIG_DIR"
+fi
+
+if [[ $DEPLOY_ONLY -eq 0 ]]; then
+
+# ================================================================ [2/8] packages
+msg "[2/8] Installing official packages (Hyprland environment only)…"
+# shellcheck disable=SC2046
+srun pacman -S --needed --noconfirm $(pkg_names "$CORE_LIST") >>"$LOG_FILE" 2>&1 \
+  || err "official package installation failed (see $LOG_FILE)"
+
+# ================================================================ [3/8] AUR
+if [[ $WITH_AUR -eq 1 && -f "$AUR_LIST" ]]; then
+  if ! command -v yay >/dev/null && ! run_as_user "command -v yay" >/dev/null; then
+    msg "[3/8] Bootstrapping yay-bin (built as $USERNAME, never as root)…"
+    srun pacman -S --needed --noconfirm base-devel git curl >>"$LOG_FILE" 2>&1 \
+      || err "could not install base-devel/git/curl"
+    run_as_user 'tmp="$(mktemp -d)" && git clone https://aur.archlinux.org/yay-bin.git "$tmp/yay-bin" >>"'"$LOG_FILE"'" 2>&1 && (cd "$tmp/yay-bin" && makepkg -si --noconfirm >>"'"$LOG_FILE"'" 2>&1) && rm -rf "$tmp"' \
+      || err "yay bootstrap failed (see $LOG_FILE)"
   else
-    # minimal pacman.conf (e.g. docker images) has no multilib block at all
-    printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' | srun tee -a /etc/pacman.conf >/dev/null
+    msg "[3/8] yay already available"
   fi
-fi
-srun sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf || true
-grep -q "^\[multilib\]" /etc/pacman.conf || warn "multilib not enabled — check /etc/pacman.conf manually"
-
-msg "Adding Chaotic-AUR repo (needed for: ags-hyprpanel-git, brave-bin, eww, …)…"
-if ! grep -q "^\[chaotic-aur\]" /etc/pacman.conf; then
-  srun pacman-key --init
-  srun pacman-key --recv-keys 3056513887B78AEB --keyserver keyserver.ubuntu.com
-  srun pacman-key --lsign-key 3056513887B78AEB
-  srun pacman -U --noconfirm \
-    'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
-    'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-  printf '\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist\n' | srun tee -a /etc/pacman.conf >/dev/null
-fi
-
-msg "Syncing databases + upgrading base…"
-srun pacman -Syyu --noconfirm
-
-# ------------------------------------------------- 2. yay (AUR helper)
-if ! command -v yay >/dev/null; then
-  msg "Installing yay…"
-  srun pacman -S --needed --noconfirm base-devel git curl
-  tmp="$(mktemp -d)"
-  git clone https://aur.archlinux.org/yay-bin.git "$tmp/yay-bin"
-  (cd "$tmp/yay-bin" && makepkg -si --noconfirm)
-  rm -rf "$tmp"
+  msg "Installing AUR packages (each failure is logged, install continues)…"
+  AUR_FAILED=()
+  while read -r pkg _; do
+    pkg="${pkg%%#*}"; pkg="$(echo "$pkg" | xargs)"
+    [[ -z "$pkg" ]] && continue
+    run_as_user "yay -S --needed --noconfirm '$pkg'" >>"$LOG_FILE" 2>&1 \
+      || { warn "AUR package failed: $pkg"; AUR_FAILED+=("$pkg"); }
+  done < <(grep -v '^\s*#' "$AUR_LIST" | grep -v '^\s*$')
+  [[ ${#AUR_FAILED[@]} -eq 0 ]] || warn "failed AUR packages: ${AUR_FAILED[*]}"
 else
-  msg "yay already installed"
+  msg "[3/8] Skipping AUR packages"
 fi
 
-# ------------------------------------------------- 3. desktop packages (official + chaotic)
-msg "Installing desktop packages from pkglist-desktop.txt ($(wc -l <"$PACMAN_LIST") pkgs)…"
-# shellcheck disable=SC2046
-srun pacman -S --needed --noconfirm $(grep -v '^\s*#' "$PACMAN_LIST" | grep -v '^\s*$' | tr '\n' ' ')
-
-# ------------------------------------------------- 4. AUR packages
-msg "Installing AUR packages from pkglist-aur.txt ($(wc -l <"$AUR_LIST") pkgs)…"
-# shellcheck disable=SC2046
-yay -S --needed --noconfirm $(grep -v '^\s*#' "$AUR_LIST" | grep -v '^\s*$' | tr '\n' ' ')
-
-# ------------------------------------------------- 5. locale / time / hosts
-msg "Locale, timezone, hosts…"
-grep -q "^en_US.UTF-8" /etc/locale.gen || echo "en_US.UTF-8 UTF-8" | srun tee -a /etc/locale.gen >/dev/null
-srun locale-gen
-echo "LANG=en_US.UTF-8" | srun tee /etc/locale.conf >/dev/null
-printf 'FONT=default8x16\nKEYMAP=us\n' | srun tee /etc/vconsole.conf >/dev/null
-srun timedatectl set-ntp true 2>/dev/null || srun systemctl enable --now systemd-timesyncd.service 2>/dev/null || true
-srun hostnamectl set-hostname sphynx 2>/dev/null || echo sphynx | srun tee /etc/hostname >/dev/null
-grep -q "xubm.local" /etc/hosts || echo "127.0.1.1  sphynx.localdomain sphynx xubm.local" | srun tee -a /etc/hosts >/dev/null
-
-# ------------------------------------------------- 6. mkinitcpio (touchpad modules from source)
-msg "mkinitcpio touchpad modules + hooks (source: MODULES=i2c_hid i2c_hid_acpi hid_multitouch)…"
-if [[ -f /etc/mkinitcpio.conf ]]; then
-  srun cp -n /etc/mkinitcpio.conf /etc/mkinitcpio.conf.bak 2>/dev/null || true
-  srun sed -i 's/^MODULES=.*/MODULES=( i2c_hid i2c_hid_acpi hid_multitouch )/' /etc/mkinitcpio.conf
-  srun sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block filesystems fsck)/' /etc/mkinitcpio.conf
-  srun mkinitcpio -P
-else
-  msg "no /etc/mkinitcpio.conf found — skipping initramfs config"
-fi
-
-# ------------------------------------------------- 6b. zram (source: 4G zstd, active swap)
-msg "zram config (matches source /etc/systemd/zram-generator.conf)…"
-if command -v systemd-zram-generator >/dev/null || pacman -Q zram-generator 2>/dev/null | grep -q .; then
-  printf '[zram0]\nzram-size = 4096\ncompression-algorithm = zstd\n' | srun tee /etc/systemd/zram-generator.conf >/dev/null
-else
-  warn "zram-generator not installed — skipping zram config"
-fi
-
-# ------------------------------------------------- 6c. bootloader kernel cmdline (laptop quirks)
-# Source boot options, minus install-specific root=/rootflags:
-#   zswap.enabled=0 intel_pstate=disable usbcore.autosuspend=-1 idle=nomwait
-#   processor.max_cstate=1 i2c_designware.clocks_kd=1 pcie_aspm=off
-QUIRKS="zswap.enabled=0 intel_pstate=disable usbcore.autosuspend=-1 idle=nomwait processor.max_cstate=1 i2c_designware.clocks_kd=1 pcie_aspm=off"
-BOOTLOADER="${BOOTLOADER:-auto}"
-if [[ "$BOOTLOADER" == "auto" ]]; then
-  if [[ -f /etc/default/grub ]]; then BOOTLOADER=grub
-  elif compgen -G "/boot/loader/entries/*.conf" > /dev/null; then BOOTLOADER=systemd-boot
-  else BOOTLOADER=none
-  fi
-fi
-case "$BOOTLOADER" in
-  grub)
-    msg "GRUB detected — merging laptop quirks into GRUB_CMDLINE_LINUX_DEFAULT…"
-    srun pacman -S --needed --noconfirm grub efibootmgr os-prober
-    if grep -q '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub; then
-      line="$(grep '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub)"
-      current="${line#*=}"; current="${current#\"}"; current="${current%\"}"
-      # shellcheck disable=SC2086
-      for q in $QUIRKS; do [[ "$current" == *"$q"* ]] || current="$current $q"; done
-      srun sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$current\"|" /etc/default/grub
-    else
-      echo "GRUB_CMDLINE_LINUX_DEFAULT=\"$QUIRKS\"" | srun tee -a /etc/default/grub >/dev/null
-    fi
-    # os-prober finds Windows on dual boot (disabled by default in recent GRUB)
-    if grep -q '^GRUB_DISABLE_OS_PROBER=' /etc/default/grub; then
-      srun sed -i 's|^GRUB_DISABLE_OS_PROBER=.*|GRUB_DISABLE_OS_PROBER=false|' /etc/default/grub
-    else
-      echo 'GRUB_DISABLE_OS_PROBER=false' | srun tee -a /etc/default/grub >/dev/null
-    fi
-    srun grub-mkconfig -o /boot/grub/grub.cfg || warn "grub-mkconfig failed — rerun manually: sudo grub-mkconfig -o /boot/grub/grub.cfg"
+# ------------------------------------------------- display manager (opt-in only)
+case "$DISPLAY_MANAGER" in
+  ly)
+    msg "Installing/enabling ly…"
+    srun pacman -S --needed --noconfirm ly >>"$LOG_FILE" 2>&1 || true
+    srun systemctl enable ly@tty2.service >>"$LOG_FILE" 2>&1 \
+      || warn "ly enable failed — enable a login manager manually"
     ;;
-  systemd-boot)
-    msg "systemd-boot detected — patching entry options with laptop quirks…"
-    # shellcheck disable=SC2086
-    for entry in /boot/loader/entries/*.conf; do
-      for q in $QUIRKS; do
-        grep -Fq -- "$q" "$entry" || srun sed -i "/^options / s|$| $q|" "$entry"
-      done
-    done
-    ;;
-  *)
-    warn "no bootloader config found (BOOTLOADER=$BOOTLOADER) — add kernel quirks manually (see checklist)"
-    ;;
+  none) msg "No display manager (log in on TTY, then start Hyprland via uwsm)" ;;
 esac
 
-# ------------------------------------------------- 7. services (exact enabled set from source)
-msg "Enabling system services…"
-srun systemctl enable NetworkManager.service NetworkManager-dispatcher.service bluetooth.service \
-  systemd-resolved.service systemd-timesyncd.service paccache.timer cups-lpd.socket 2>/dev/null || true
-# display manager: source boots to TTY (neither ly nor sddm was enabled).
-# Enable ly (lightweight, config lives in dotfiles-adjacent /etc/ly). Swap for sddm if you prefer it.
-srun systemctl enable ly@tty2.service 2>/dev/null || warn "ly enable failed — enable ly or sddm manually"
-#  ^ alternative: sudo systemctl enable sddm.service
-
-msg "Enabling user services (pipewire audio — exact set from source)…"
-srun -u "$USERNAME" systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service \
-  xdg-user-dirs.service pipewire.socket pipewire-pulse.socket 2>/dev/null || \
-  warn "user services need one login as $USERNAME, then re-run: systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service xdg-user-dirs.service pipewire.socket pipewire-pulse.socket"
-
-# ------------------------------------------------- 8. user groups + shell
-msg "Groups + zsh shell for $USERNAME…"
-for grp in wheel input docker video audio storage power network; do
-  if getent group "$grp" >/dev/null; then
-    srun usermod -aG "$grp" "$USERNAME"
+# ------------------------------------------------- system + user services
+msg "Enabling required services…"
+for svc in NetworkManager.service bluetooth.service; do
+  if systemctl list-unit-files --no-legend 2>/dev/null | grep -q "^${svc%%.*}"; then
+    srun systemctl enable "$svc" >>"$LOG_FILE" 2>&1 || warn "could not enable $svc"
   else
-    warn "group $grp does not exist (package not installed?) — skipping"
+    log "service unit not installed, skipping: $svc"
   fi
 done
-command -v zsh >/dev/null && srun chsh -s /usr/bin/zsh "$USERNAME" || warn "zsh missing?"
-if [[ ! -d "$HOME_DIR/.oh-my-zsh" ]]; then
-  if command -v zsh >/dev/null; then
-    msg "Installing oh-my-zsh (theme: bureau, plugin: git)…"
-    srun -u "$USERNAME" sh -c 'RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"' \
-      || warn "oh-my-zsh install failed — re-run this step manually later"
+# User services: best-effort outside a login session, with a follow-up command.
+USER_SERVICES="pipewire.service pipewire-pulse.service wireplumber.service xdg-user-dirs.service pipewire.socket pipewire-pulse.socket"
+if ! run_as_user "XDG_RUNTIME_DIR='/run/user/$USER_ID' systemctl --user enable $USER_SERVICES" >>"$LOG_FILE" 2>&1; then
+  warn "user services could not be enabled non-interactively; after first login run:"
+  warn "  systemctl --user enable $USER_SERVICES"
+fi
+
+fi # end DEPLOY_ONLY package/service skip
+
+# ================================================================ [4/8] configs
+msg "[4/8] Deploying Hyprland environment configuration…"
+run_as_user "mkdir -p '$CONFIG_DIR' '$HOME_DIR/Pictures/wallpapers' '$HOME_DIR/Pictures/gifs' '$HOME_DIR/.local/bin'" >>"$LOG_FILE" 2>&1
+
+if [[ $IN_PLACE -eq 1 ]]; then
+  msg "Repo IS ~/.config — configs already in place, skipping copy"
+else
+  for d in $MANAGED_DIRS; do
+    [[ -d "$REPO_DIR/$d" ]] || { log "not in repo, skipping: $d"; continue; }
+    if [[ -e "$CONFIG_DIR/$d" || -L "$CONFIG_DIR/$d" ]]; then
+      if trees_match "$REPO_DIR/$d" "$CONFIG_DIR/$d"; then
+        log "identical, skipping: $d"
+        continue
+      fi
+      backup_path "$CONFIG_DIR/$d"
+    fi
+    run_as_user "mkdir -p '$CONFIG_DIR/$d' && cp -a '$REPO_DIR/$d/.' '$CONFIG_DIR/$d/'" >>"$LOG_FILE" 2>&1 \
+      || warn "deploy failed for $d"
+  done
+fi
+
+# Portable monitor defaults: the repo's monitors.lua targets one specific
+# panel (eDP-1 1080p@1.25). On a fresh machine that would misconfigure (or
+# blank) other displays, so a copied install gets "no forced modes" while an
+# in-place run keeps the owner's file untouched.
+if [[ $IN_PLACE -eq 0 ]]; then
+  MON_LUA="$CONFIG_DIR/hypr/source-configs/monitors.lua"
+  PORTABLE='-- Generated by install.sh: portable default — no forced modes.
+-- Hyprland auto-configures every connected output (preferred mode).
+-- Run `hyprctl monitors`, then pin a specific output here if desired.
+
+hl.config({
+    xwayland = {
+        force_zero_scaling = true,
+    },
+    cursor = {
+        no_hardware_cursors = false,
+        no_warps = false,
+    },
+})
+'
+  if [[ -f "$MON_LUA" ]] && ! grep -q 'Generated by install.sh' "$MON_LUA" 2>/dev/null; then
+    backup_path "$MON_LUA"
+  fi
+  run_as_user "mkdir -p '$CONFIG_DIR/hypr/source-configs' && cat > '$MON_LUA' <<'EOF'
+$PORTABLE
+EOF" >>"$LOG_FILE" 2>&1
+  log "wrote portable monitors.lua"
+else
+  log "in-place mode: monitors.lua left untouched"
+fi
+
+# lyricsmpris backend for quickshell/services/LyricsService.qml, which execs
+# it via the absolute path ~/.local/bin/lyricsmpris. The binary ships with
+# the AUR `tide-island` package — link it when available.
+if [[ -x /usr/share/tide-island/bin/lyricsmpris ]]; then
+  if [[ -x "$HOME_DIR/.local/bin/lyricsmpris" && ! -L "$HOME_DIR/.local/bin/lyricsmpris" ]]; then
+    log "lyricsmpris already present (real file), leaving it"
   else
-    warn "skipping oh-my-zsh — zsh not installed yet"
+    run_as_user "ln -sfn '/usr/share/tide-island/bin/lyricsmpris' '$HOME_DIR/.local/bin/lyricsmpris'" >>"$LOG_FILE" 2>&1
+    msg "Linked ~/.local/bin/lyricsmpris (lyrics backend)"
+  fi
+else
+  warn "lyricsmpris source missing (AUR tide-island not installed?) — lyrics pill will stay idle"
+fi
+
+# Executable bits on helper scripts (idempotent; never rely on git file modes).
+run_as_user "chmod +x '$CONFIG_DIR/hypr/scripts/'*.sh '$CONFIG_DIR/hypr/scripts/emoji-picker' '$CONFIG_DIR/hypr/scripts/pywal-startup-script' 2>/dev/null" >>"$LOG_FILE" 2>&1 || true
+if [[ $IN_PLACE -eq 0 ]]; then
+  chmod +x "$REPO_DIR/install.sh" 2>/dev/null || true
+fi
+
+# ================================================================ [5/8] theming
+msg "[5/8] Bootstrapping wallpaper + pywal/matugen colors…"
+# hyprland.conf sources ~/.cache/wal/colors-hyprland.conf and quickshell reads
+# ~/.cache/wal/colors.json — both only exist after `wal` runs once. Guarantee
+# that here so a fresh install never boots unthemed.
+run_as_user "XDG_RUNTIME_DIR='/run/user/$USER_ID' xdg-user-dirs-update 2>/dev/null || true" >>"$LOG_FILE" 2>&1 || true
+SEED=""
+for cand in "$HOME_DIR/Pictures/wallpapers"/*/*.png "$HOME_DIR/Pictures/wallpapers"/*.png; do
+  [[ -f "$cand" ]] && { SEED="$cand"; break; }
+done
+if [[ -z "$SEED" ]]; then
+  SEED="$XDG_CACHE_HOME/hypr-default-wallpaper.png"
+  if [[ ! -f "$SEED" ]]; then
+    msg "No wallpapers found — generating a neutral fallback"
+    run_as_user "ffmpeg -y -loglevel error -f lavfi -i 'color=c=0x1a1b26:s=1920x1080' -frames:v 1 '$SEED'" >>"$LOG_FILE" 2>&1 \
+      || warn "fallback wallpaper generation failed"
   fi
 fi
-
-# ------------------------------------------------- 9. docker
-if command -v docker >/dev/null; then
-  msg "Enabling docker…"
-  srun systemctl enable --now docker.socket 2>/dev/null || srun systemctl enable --now docker.service 2>/dev/null || true
-fi
-
-# ------------------------------------------------- 10. flatpak apps
-if [[ -f "$FLATPAK_LIST" ]] && command -v flatpak >/dev/null; then
-  msg "Installing Flatpaks…"
-  srun flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-  while read -r app _; do
-    [[ -z "$app" || "$app" == \#* ]] && continue
-    srun flatpak install -y flathub "$app"
-  done < "$FLATPAK_LIST"
-fi
-
-# ------------------------------------------------- 11. dotfiles (this repo IS ~/.config)
-msg "Dotfiles…"
-if [[ "$SCRIPT_DIR" != "$HOME_DIR/.config" ]]; then
-  warn "script not running from ~/.config — syncing tracked files to $HOME_DIR/.config"
-  srun -u "$USERNAME" mkdir -p "$HOME_DIR/.config"
-  # copy only versioned essentials; full restore = git clone git@github.com:xubmxd/dotfiles.git ~/.config
-  echo "  Full restore: git clone git@github.com:xubmxd/dotfiles.git $HOME_DIR/.config"
+if [[ -f "$SEED" ]]; then
+  if [[ ! -f "$XDG_CACHE_HOME/wal/colors-hyprland.conf" || ! -f "$XDG_CACHE_HOME/wal/colors.json" ]]; then
+    run_as_user "'$CONFIG_DIR/hypr/scripts/apply-theme.sh' '$SEED'" >>"$LOG_FILE" 2>&1 \
+      || warn "initial theming run failed — colors generate on first wallpaper change"
+    run_as_user "cp '$SEED' '$XDG_CACHE_HOME/current_wallpaper' 2>/dev/null; cp '$SEED' '$XDG_CACHE_HOME/current_wallpaper.png' 2>/dev/null" >>"$LOG_FILE" 2>&1 || true
+  else
+    log "pywal colors already present, skipping initial theming"
+  fi
 else
-  msg "~/.config is already the dotfiles repo — pulling latest"
-  srun -u "$USERNAME" git -C "$HOME_DIR/.config" pull --ff-only 2>/dev/null || warn "git pull failed (offline or dirty tree)"
+  warn "no seed wallpaper available — add images to ~/Pictures/wallpapers/"
 fi
-# shell extras live outside ~/.config — recreate symlinks/notes:
-#   ~/.zshrc, ~/.zprofile (PATH+=~/.local/bin), ~/.xprofile (touchpad), ~/.xinitrc (dwm legacy)
-warn "~/.zshrc / ~/.zprofile / ~/.local/bin are NOT in ~/.config — copy them from backup if needed"
 
-# ------------------------------------------------- 12. leftover manual notes
-cat <<'EOF'
+# ================================================================ [6/8] login
+msg "[6/8] Login/session…"
+if [[ "$DISPLAY_MANAGER" == "ly" ]]; then
+  msg "Login manager: ly (enabled above)"
+else
+  msg "Login: TTY, then run: uwsm start hyprland-uwsm.desktop   (or: Hyprland)"
+fi
 
-================ MANUAL CHECKLIST (not scriptable) ================
-1. fstab (btrfs subvolumes, source):
-     UUID=<nvme0n1p2> /     btrfs rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@ 0 0
-     UUID=<nvme0n1p2> /home btrfs rw,relatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@home 0 0
-     UUID=<nvme0n1p2> /var/cache/pacman/pkg btrfs …subvol=/@pkg 0 0
-     UUID=<nvme0n1p2> /var/log btrfs …subvol=/@log 0 0
-     UUID=<boot>      /boot vfat defaults 0 2
-2. Kernel cmdline quirks are merged automatically (GRUB: /etc/default/grub;
-   systemd-boot: /boot/loader/entries/*.conf). Verify with: cat /proc/cmdline
-   Dual-boot notes: do NOT format the existing EFI partition (mount it at /boot),
-   disable Windows Fast Startup, and if the clock drifts set Windows to UTC
-   or run: timedatectl set-local-rtc 1. BitLocker may ask for recovery key
-   after boot-entry changes — have it ready.
-3. Login once as user, then: systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service xdg-user-dirs.service pipewire.socket pipewire-pulse.socket
-   (verify audio: wpctl status — sinks come from pipewire-audio + alsa-ucm-conf, both installed)
-4. Groups take effect after re-login. Docker without sudo needs re-login too.
-5. Interactive logins (not scriptable): sudo tailscale up, proton-vpn-gtk-app login, windscribe login.
-   ly@tty2 is enabled (ly ships only the ly@.service template — instance on tty2 is correct).
-   If no login prompt: sudo systemctl enable sddm.service instead.
-5. Secrets in ~/.zshrc (GROQ_API_KEY) and VPN profiles (~/Desktop/ctfs/*.ovpn)
-   are NOT in git — restore from backup.
-6. Full package manifests for audit: pacman -Qqe / -Qqm / flatpak list
-===================================================================
-EOF
-msg "Done. Reboot, log in, run: Hyprland (via ly/TTY/uwsm)"
+# ================================================================ [7/8] verify
+msg "[7/8] Verifying installation…"
+ERRORS=0
+check_bin() { # check_bin <binary> <required-by>
+  if command -v "$1" >/dev/null 2>&1; then log "ok: binary $1 ($2)";
+  else warn "missing: $1 (required by $2)"; ERRORS=$((ERRORS + 1)); fi
+}
+check_file() { # check_file <path> <required-by>
+  if [[ -e "$1" ]]; then log "ok: $1 ($2)";
+  else warn "missing: $1 (required by $2)"; ERRORS=$((ERRORS + 1)); fi
+}
+
+check_bin Hyprland "hypr/hyprland.lua (compositor)"
+check_bin hyprlock "hypr/hyprlock.conf, keybinds ALT+L, quickshell PowerMenu"
+check_bin hypridle "hypr/hypridle.conf, autostarts.lua"
+check_bin hyprctl "hypr scripts, keybinds, verification"
+check_bin quickshell "quickshell/shell.qml (qs == quickshell)"
+check_bin qs "hypr dynamic_keybinds.lua (qs ipc …)"
+check_bin rofi "programs.lua menu, wallpaper/gif/emoji pickers"
+check_bin foot "programs.lua terminal, mewsic-toggle.sh"
+check_bin thunar "programs.lua fileManager"
+check_bin wal "wallpaper scripts, colors-hyprland.conf/colors.json generation"
+check_bin matugen "wallpaper scripts (gtk/kvantum/rofi themes)"
+check_bin awww "startup.sh, wallpaper-backend.sh (wallpaper daemon)"
+check_bin grim "keybinds Print-screen bindings"
+check_bin slurp "keybinds region-screenshot bindings"
+check_bin swappy "keybinds ALT+Print binding"
+check_bin wl-copy "keybinds screenshot-to-clipboard bindings"
+check_bin notify-send "wallpaper/screenshot feedback (libnotify)"
+check_bin brightnessctl "brightness keys, quickshell brightness OSD"
+check_bin playerctl "media keys, gestures"
+check_bin wpctl "volume keybinds (pipewire)"
+check_bin nmcli "quickshell Dashboard wifi UI (networkmanager)"
+check_bin ffmpeg "wallpaper reindex conversion"
+check_bin gnome-keyring-daemon "autostarts.lua secret store"
+check_bin hyprpolkitagent "autostarts.lua privilege prompts"
+check_bin dbus-update-activation-environment "autostarts.lua wayland env"
+check_bin systemctl "autostarts.lua, PowerMenu actions"
+check_bin loginctl "hypridle.conf lock/sleep commands"
+
+check_file "$CONFIG_DIR/hypr/hyprland.lua" "Hyprland lua entry point"
+check_file "$CONFIG_DIR/hypr/hyprlock.conf" "hyprlock configuration"
+check_file "$CONFIG_DIR/hypr/hypridle.conf" "hypridle configuration"
+check_file "$CONFIG_DIR/hypr/source-configs/monitors.lua" "hyprland.lua monitors require"
+check_file "$CONFIG_DIR/hypr/source-configs/programs.lua" "hyprland.lua programs require"
+check_file "$CONFIG_DIR/hypr/source-configs/autostarts.lua" "hyprland.lua autostart require"
+check_file "$CONFIG_DIR/hypr/source-configs/statusbar.lua" "hyprland.lua statusbar require (launches quickshell)"
+check_file "$CONFIG_DIR/quickshell/shell.qml" "quickshell entry point"
+check_file "$CONFIG_DIR/rofi/launcher.rasi" "programs.lua menu theme"
+check_file "$CONFIG_DIR/foot/foot.ini" "foot configuration"
+check_file "$CONFIG_DIR/xdg-desktop-portal/hyprland-portals.conf" "portal backend selection"
+check_file "$XDG_CACHE_HOME/wal/colors-hyprland.conf" "sourced by hyprland.conf"
+check_file "$XDG_CACHE_HOME/wal/colors.json" "read by quickshell/shell.qml"
+
+# Optional integrations: warned about, never fatal.
+for opt in "cool-retro-term:keybind CTRL+SHIFT+RETURN" "hyprshutdown:keybind SUPER+SHIFT+Q fallback" \
+           "eww:legacy widget reload hooks in wallpaper scripts" "spicetify:commented spotify theming"; do
+  bin="${opt%%:*}"; by="${opt##*:}"
+  command -v "$bin" >/dev/null 2>&1 && log "ok (optional): $bin" || log "optional, absent: $bin ($by)"
+done
+[[ -x "$HOME_DIR/.local/bin/lyricsmpris" ]] \
+  && log "ok: ~/.local/bin/lyricsmpris (lyrics backend)" \
+  || log "optional, absent: ~/.local/bin/lyricsmpris (lyrics pill stays idle)"
+[[ -x "$HOME_DIR/.cargo/bin/mewsic_rs" ]] \
+  && log "ok: mewsic_rs (SUPER+SHIFT+M)" \
+  || log "optional, absent: mewsic_rs (SUPER+SHIFT+M has nothing to launch)"
+
+# Validate the Hyprland configuration syntax without launching the compositor.
+if run_as_user "HOME='$HOME_DIR' XDG_CONFIG_HOME='$CONFIG_DIR' timeout 60 Hyprland --verify-config" >>"$LOG_FILE" 2>&1; then
+  grep -q "config ok" "$LOG_FILE" && log "Hyprland config parses cleanly" || log "verify-config ran (see log)"
+else
+  warn "Hyprland --verify-config reported errors (see $LOG_FILE)"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# ================================================================ [8/8] summary
+msg "[8/8] Done."
+{
+echo ""
+echo "=============== HYPR INSTALL SUMMARY ==============="
+echo "User      : $USERNAME ($HOME_DIR)"
+echo "Repo      : $REPO_DIR $([[ $IN_PLACE -eq 1 ]] && echo "(live ~/.config)" || echo "(copied into ~/.config)")"
+echo "Display   : $DISPLAY_MANAGER"
+echo "Backups   : $BACKUP_ROOT (only created when files were replaced)"
+echo "Log       : $LOG_FILE"
+echo "Validation errors: $ERRORS"
+[[ ${#AUR_FAILED[@]} -gt 0 ]] && echo "Failed AUR pkgs: ${AUR_FAILED[*]}"
+echo ""
+echo "Installed: Hyprland, Hyprlock (+hypridle), Quickshell, portals,"
+echo "  PipeWire/WirePlumber, NetworkManager, BlueZ, polkit agent,"
+echo "  screenshot/clipboard tools, wallpaper pipeline (awww/wal/matugen),"
+echo "  foot, thunar, rofi, fonts."
+echo "Deployed: ~/.config/{hypr,quickshell,wal,rofi,foot,xdg-desktop-portal,uwsm,matugen}"
+echo ""
+echo "Next step:"
+if [[ "$DISPLAY_MANAGER" == "ly" ]]; then
+echo "  Reboot, log in via ly, select the Hyprland session."
+else
+echo "  Reboot, log in on TTY, then run: uwsm start hyprland-uwsm.desktop"
+fi
+echo "  (Wallpapers go in ~/Pictures/wallpapers/ — SUPER+apostrophe picks one.)"
+echo "====================================================="
+} | tee -a "$LOG_FILE"
+
+if [[ $ERRORS -eq 0 ]]; then
+  msg "Installation complete. Re-login, then start Hyprland."
+else
+  err "validation reported $ERRORS missing item(s) — see warnings above"
+fi

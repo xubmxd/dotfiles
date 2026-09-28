@@ -113,11 +113,8 @@ done
 # Generate Colors
 # ------------------------------------------------------------
 
-wal -n -i "$SELECTED_GIF" -o ~/.local/src/pywalium/generate.sh
-
-matugen image "$SELECTED_GIF" \
-    --source-color-index 0 \
-    --type scheme-vibrant
+# Generating colors (pywal + matugen via shared helper)
+"$(dirname "$0")/apply-theme.sh" "$SELECTED_GIF"
 
 # ------------------------------------------------------------
 # Reload Eww (if running)

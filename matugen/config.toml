@@ -1,0 +1,39 @@
+[config]
+
+[templates.gtk3]
+input_path = '~/.config/matugen/templates/gtk-colors.css'
+output_path = '~/.config/gtk-3.0/gtk.css'
+post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-{{mode}}'
+
+[templates.kvantum_kvconfig]
+input_path = './templates/kvantum-colors.kvconfig'
+output_path = '~/.config/Kvantum/matugen/matugen.kvconfig'
+
+[templates.kvantum_svg]
+input_path = './templates/kvantum-colors.svg'
+output_path = '~/.config/Kvantum/matugen/matugen.svg'
+
+[templates.obsidian]
+input_path = './templates/obsidian.css'
+output_path = '~/Desktop/obsidian/Notes/.obsidian/snippets/matugen.css'
+
+[templates.zathura]
+input_path = './templates/zathura-colors'
+output_path = '~/.config/zathura/zathurarc'
+
+[templates.wofi]
+input_path = "./templates/colors.css"
+output_path = "~/.config/wofi/colors.css"
+
+[templates.zed]
+input_path = '~/.config/matugen/templates/zed-colors.json'
+output_path = '~/.config/zed/themes/matugen.json'
+
+[templates.rofi]
+input_path = './templates/rofi-colors.rasi'
+output_path = '~/.config/rofi/colors.rasi'
+
+# [templates.cursor]
+# input_path = "~/.config/matugen/templates/cursors.json"
+# output_path = "~/.config/colors.json"
+# post_hook = "~/.config/matugen/post-hook-scripts/cursor_matugen.sh"
