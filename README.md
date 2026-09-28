@@ -7,7 +7,9 @@ workflow. Works for **any username, any hostname, any hardware** — start from
 a fresh minimal Arch install and run one command.
 
 ![clean desktop](screenshots/desktop.png)
-![foot + fastfetch](screenshots/terminal.png)
+![dynamic island dashboard](screenshots/island-dashboard.png)
+![wallpaper picker](screenshots/wallpaper-picker.png)
+![foot + unifetch](screenshots/terminal.png)
 
 ## Requirements
 
