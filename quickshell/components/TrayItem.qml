@@ -16,7 +16,9 @@ Item {
     property color bgColor: "#1a1a1a"
     property color textColor: "#ffffff"
     property color subtleColor: "#888888"
+    property color activeColor: "#3b82f6"
     property color attentionColor: "#ef4444"
+    property bool menuOpen: false
 
     width: bubbleSize
     height: bubbleSize
@@ -198,19 +200,31 @@ Item {
         border.width: 1
     }
 
-    // Native tray menu via the SNI display() path: opens below the
-    // bubble, positioned relative to the panel window.
+    // Pywal-styled menu via QsMenuOpener (see TrayMenu.qml). The native
+    // SNI display() path draws a stock Qt popup (white box) that cannot
+    // be themed, so we toggle our own PopupWindow instead.
     function openMenu() {
         if (!trayRoot.trayItem || !trayRoot.trayItem.hasMenu)
             return
 
-        if (!trayRoot.panelWindow || !trayRoot.trayContainer)
-            return
+        trayRoot.menuOpen = !trayRoot.menuOpen
+    }
 
-        var p = bubbleBg.mapToItem(trayRoot.trayContainer, 0, bubbleBg.height)
-        var wx = Math.round(trayRoot.trayContainer.x + p.x)
-        var wy = Math.round(trayRoot.trayContainer.y + p.y)
-        trayRoot.trayItem.display(trayRoot.panelWindow, wx, wy)
+    function closeMenu() {
+        trayRoot.menuOpen = false
+    }
+
+    TrayMenu {
+        anchorItem: bubbleBg
+        parentWindow: trayRoot.panelWindow
+        menuHandle: trayRoot.trayItem ? trayRoot.trayItem.menu : null
+        menuOpen: trayRoot.menuOpen && trayRoot.panelWindow !== null
+        bgColor: trayRoot.bgColor
+        textColor: trayRoot.textColor
+        subtleColor: trayRoot.subtleColor
+        activeColor: trayRoot.activeColor
+        attentionColor: trayRoot.attentionColor
+        onRequestClose: trayRoot.closeMenu()
     }
 
     MouseArea {

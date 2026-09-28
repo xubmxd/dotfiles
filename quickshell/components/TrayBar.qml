@@ -13,6 +13,7 @@ Item {
     property color bgColor: "#1a1a1a"
     property color textColor: "#ffffff"
     property color subtleColor: "#888888"
+    property color activeColor: "#3b82f6"
     property color attentionColor: "#ef4444"
 
     // Tray applications to hide, matched against SystemTrayItem.id.
@@ -64,6 +65,7 @@ Item {
                 bgColor: trayBar.bgColor
                 textColor: trayBar.textColor
                 subtleColor: trayBar.subtleColor
+                activeColor: trayBar.activeColor
                 attentionColor: trayBar.attentionColor
             }
         }

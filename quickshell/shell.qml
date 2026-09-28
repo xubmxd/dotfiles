@@ -2355,6 +2355,7 @@ ShellRoot {
             bgColor: islandWindow.colors.color0
             textColor: islandWindow.colors.color15
             subtleColor: islandWindow.colors.color8
+            activeColor: islandWindow.colors.color4
             attentionColor: islandWindow.colors.color1
         }
     }
