@@ -6,10 +6,16 @@ launchers, foot + kitty terminals, zsh (oh-my-zsh) and a wallpaper/gif
 workflow. Works for **any username, any hostname, any hardware** — start from
 a fresh minimal Arch install and run one command.
 
-![clean desktop](screenshots/desktop.png)
-![dynamic island dashboard](screenshots/island-dashboard.png)
-![wallpaper picker](screenshots/wallpaper-picker.png)
-![foot + unifetch](screenshots/terminal.png)
+<table>
+  <tr>
+    <td><img src="screenshots/desktop.png" width="500"></td>
+    <td><img src="screenshots/island-dashboard.png" width="500"></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/wallpaper-picker.png" width="500"></td>
+    <td><img src="screenshots/terminal.png" width="500"></td>
+  </tr>
+</table>
 
 ## Requirements
 
