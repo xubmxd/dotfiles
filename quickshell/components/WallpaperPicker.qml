@@ -134,21 +134,50 @@ Item {
         return "file://" + path.split("/").map(encodeURIComponent).join("/")
     }
 
+    function categoryIcon(rawName) {
+        switch (rawName.toLowerCase()) {
+            case "anime":   return "▷"
+            case "dinosaurs": return "E"
+            case "scenic":  return "⌇"
+            case "2d":      return "◇"
+            case "lofi":    return "☾"
+            case "space":   return "✧"
+            case "retro":   return "▣"
+            case "gaming":  return "󰊗"
+            case "rice":    return "󰣇"
+            case "jet":    return "✈"
+            case "pixel":   return "▦"
+            case "minimal": return "□"
+            case "nature":  return "♧"
+            default:        return "󰉋"
+        }
+    }
+
+    // Only dinosaurs needs a custom TTF — everything else renders
+    // in the default UI font (Inter + Nerd Font fallback).
+    // Must match `fc-list : family` exactly. Yours is "Dinosaurs".
+    function categoryIconFont(rawName) {
+        if (rawName.toLowerCase() === "dinosaurs")
+            return "Dinosaurs"
+        return ""
+    }
+
     function displayCategoryName(rawName) {
         switch (rawName.toLowerCase()) {
-            case "anime":   return "▷  Anime"
-            case "scenic":  return "⌇  Scenic"
-            case "2d":      return "◇  2D"
-            case "lofi":    return "☾  Lofi"
-            case "space":   return "✧  Space"
-            case "retro":   return "▣  Retro"
-            case "gaming":  return "󰊗  Gaming"
-            case "rice":    return "󰣇  Rice"
-            case "jet":    return "✈  Jet"
-            case "pixel":   return "▦  Pixel"
-            case "minimal": return "□  Minimal"
-            case "nature":  return "♧  Nature"
-            default:        return "󰉋  " + rawName.charAt(0).toUpperCase() + rawName.slice(1)
+            case "anime":   return "Anime"
+            case "dinosaurs": return "Dinosaur"
+            case "scenic":  return "Scenic"
+            case "2d":      return "2D"
+            case "lofi":    return "Lofi"
+            case "space":   return "Space"
+            case "retro":   return "Retro"
+            case "gaming":  return "Gaming"
+            case "rice":    return "Rice"
+            case "jet":    return "Jet"
+            case "pixel":   return "Pixel"
+            case "minimal": return "Minimal"
+            case "nature":  return "Nature"
+            default:        return rawName.charAt(0).toUpperCase() + rawName.slice(1)
         }
     }
 
@@ -276,9 +305,13 @@ Item {
                 const cats = []
                 for (const line of lines) {
                     const parts = line.split("|")
+                    const raw = parts[1] || ""
                     cats.push({
                         path: parts[0] || "",
-                        name: root.displayCategoryName(parts[1] || ""),
+                        raw: raw,
+                        name: root.displayCategoryName(raw),
+                        icon: root.categoryIcon(raw),
+                        iconFont: root.categoryIconFont(raw),
                         sample: parts[2] || ""
                     })
                 }
@@ -612,23 +645,47 @@ Item {
                         Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
                     }
 
-                    Text {
+                    // Shadow layer (offset 2px for readability over thumbnail)
+                    Row {
                         anchors.centerIn: parent
                         anchors.horizontalCenterOffset: 2
                         anchors.verticalCenterOffset: 2
-                        text: model.name
-                        color: "black"
-                        font.pixelSize: 16
-                        font.weight: Font.DemiBold
-                        opacity: 0.9
+                        spacing: 8
+                        Text {
+                            text: model.icon
+                            color: "black"
+                            font.family: model.iconFont.length > 0 ? model.iconFont : "Inter"
+                            font.pixelSize: model.iconFont.length > 0 ? 20 : 16
+                            font.weight: Font.DemiBold
+                            opacity: 0.9
+                        }
+                        Text {
+                            text: model.name
+                            color: "black"
+                            font.pixelSize: 16
+                            font.weight: Font.DemiBold
+                            opacity: 0.9
+                        }
                     }
 
-                    Text {
+                    // Foreground layer — icon can use its own TTF,
+                    // label always stays in the UI font.
+                    Row {
                         anchors.centerIn: parent
-                        text: model.name
-                        color: root.textColor
-                        font.pixelSize: 16
-                        font.weight: Font.DemiBold
+                        spacing: 8
+                        Text {
+                            text: model.icon
+                            color: root.textColor
+                            font.family: model.iconFont.length > 0 ? model.iconFont : "Inter"
+                            font.pixelSize: model.iconFont.length > 0 ? 20 : 16
+                            font.weight: Font.DemiBold
+                        }
+                        Text {
+                            text: model.name
+                            color: root.textColor
+                            font.pixelSize: 16
+                            font.weight: Font.DemiBold
+                        }
                     }
 
                     MouseArea {
