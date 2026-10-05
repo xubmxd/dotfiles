@@ -9,8 +9,11 @@ Item {
     property color activeColor: "#ffffff"
     property color subtleColor: "#888888"
 
-    width: 36
-    height: 36
+    // Tide-exact metrics: 28px button; glyph ink matched to Tide's
+    // rendered 23px glyphs (25px play) measured in Adwaita Mono Bold:
+    // prev/next/pause ink 13x12, play ink 13x15.
+    width: 28
+    height: 28
     
     // Smooth press scaling
     scale: controlArea.pressed ? 0.85 : (controlArea.containsMouse ? 1.05 : 1.0)
@@ -26,19 +29,15 @@ Item {
         Behavior on color { ColorAnimation { duration: 150 } }
     }
 
-    Text {
+    TideIcon {
         anchors.centerIn: parent
         // Optically center the play triangle which visually leans left
         anchors.horizontalCenterOffset: root.kind === "play" ? 1 : 0
-        text: {
-            if (root.kind === "prev") return "󰒮";
-            if (root.kind === "next") return "󰒭";
-            if (root.kind === "pause") return "󰏤";
-            return "󰐊";
-        }
+        width: root.kind === "play" ? 22 : 21
+        height: root.kind === "play" ? 22 : 21
+        name: root.kind
+        fill: true
         color: root.activeColor
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: root.kind === "play" || root.kind === "pause" ? 18 : 16
     }
 
     MouseArea {

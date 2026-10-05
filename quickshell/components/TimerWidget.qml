@@ -104,10 +104,16 @@ Item {
                 Layout.fillWidth: true
             }
 
-            Text {
-                text: "\u2715"
-                color: root.subtleColor
-                font.pixelSize: 14
+            Item {
+                Layout.preferredWidth: 14
+                Layout.preferredHeight: 14
+                Layout.alignment: Qt.AlignVCenter
+
+                TideIcon {
+                    anchors.fill: parent
+                    name: "close"
+                    color: root.subtleColor
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -383,10 +389,16 @@ Item {
                 Layout.fillWidth: true
             }
 
-            Text {
-                text: "\u2715"
-                color: root.subtleColor
-                font.pixelSize: 14
+            Item {
+                Layout.preferredWidth: 14
+                Layout.preferredHeight: 14
+                Layout.alignment: Qt.AlignVCenter
+
+                TideIcon {
+                    anchors.fill: parent
+                    name: "close"
+                    color: root.subtleColor
+                }
 
                 MouseArea {
                     anchors.fill: parent

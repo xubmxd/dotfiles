@@ -1,5 +1,6 @@
 //@ pragma UseQApplication
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -27,8 +28,10 @@ ShellRoot {
         WlrLayershell.exclusiveZone: 40
 
         // Force Hyprland to instantly route all keyboard input to the island
-        WlrLayershell.keyboardFocus: ((dashboardLoader.item && dashboardLoader.item.currentSubView === "wifi-password") || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker" || islandBackground.islandState === "timer-setup") 
-                                     ? WlrKeyboardFocus.Exclusive 
+        // whenever a text field may need it. The note card lives in the
+        // island's calendar row and takes focus while editing.
+        WlrLayershell.keyboardFocus: ((dashboardLoader.item && dashboardLoader.item.currentSubView === "wifi-password") || islandBackground.islandState === "wallpaper" || islandBackground.islandState === "power" || islandBackground.islandState === "app-launcher" || islandBackground.islandState === "gif-picker" || islandBackground.islandState === "timer-setup" || (islandBackground.islandState === "omni-calendar" && typeof omniCalendarInner !== "undefined" && omniCalendarInner && omniCalendarInner.editing))
+                                     ? WlrKeyboardFocus.Exclusive
                                      : WlrKeyboardFocus.None
 
         color: "transparent"
@@ -1250,6 +1253,12 @@ ShellRoot {
                     // Body stretches (progress fills, controls center).
                     return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
                 case "omni-calendar":
+                    // Fixed 972: symmetric 300px slots on both sides keep
+                    // the calendar exactly centered whether zero, one or
+                    // two sidecars show. Guards for startup before the
+                    // calendar item exists.
+                    if (typeof omniCalendarInner !== "undefined" && omniCalendarInner)
+                        return 972
                     return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
                 case "wallpaper":
                     return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerWidth : 700)
@@ -1301,9 +1310,13 @@ ShellRoot {
                 case "omni":
                     return 40
                 case "omni-expanded":
-                    return 240
+                    // Full-bleed transform: player fills the rect, no
+                    // header reservation.
+                    return 200
                 case "omni-calendar":
-                    return 304
+                    // Full-bleed transform: constant height now that the
+                    // agenda lives in the sidecar, not below the grid.
+                    return 312
                 case "wallpaper":
                     return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerHeight : 500)
                 case "power":
@@ -1382,11 +1395,13 @@ ShellRoot {
 
             onTargetWidthChanged: displayedWidth = targetWidth
 
-            color: islandWindow.colors.color0
+            // Transparent in calendar mode: the calendar + note cards
+            // draw their own detached surfaces with a real gap.
+            color: islandBackground.islandState === "omni-calendar" ? "transparent" : islandWindow.colors.color0
             opacity: 1.0
 
             border.color: Qt.rgba(1, 1, 1, 0.08)
-            border.width: 1
+            border.width: islandBackground.islandState === "omni-calendar" ? 0 : 1
             clip: true
 
             Behavior on displayedWidth {
@@ -1806,13 +1821,13 @@ ShellRoot {
                     dangerColor: islandWindow.colors.color1
 
                     // Animations
-                    opacity: (islandBackground.islandState === "omni" || islandBackground.islandState === "omni-expanded" || islandBackground.islandState === "omni-calendar") ? 1 : 0
-                    scale: (islandBackground.islandState === "omni" || islandBackground.islandState === "omni-expanded" || islandBackground.islandState === "omni-calendar") ? 1.0 : 0.45
+                    opacity: islandBackground.islandState === "omni" ? 1 : 0
+                    scale: islandBackground.islandState === "omni" ? 1.0 : 0.45
                     visible: opacity > 0.01
                     transformOrigin: Item.Center
 
-                    Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
-                    Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
 
                     onRequestMediaExpand: {
                         islandWindow.toggleOmniExpanded()
@@ -1847,27 +1862,22 @@ ShellRoot {
                         NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
 
-                    // Body presence for the collapse check. NoButton:
-                    // never steals clicks from the player controls above.
+                    // Body presence for the collapse check + background
+                    // tap-to-collapse (music-pill style: controls above
+                    // consume their clicks, empty area collapses).
                     MouseArea {
                         id: omniBodyHoverArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        acceptedButtons: Qt.NoButton
-                    }
-
-                    Rectangle {
-                        x: 20
-                        y: 40
-                        width: parent.width - 40
-                        height: 1
-                        color: Qt.rgba(1, 1, 1, 0.08)
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: islandWindow.toggleOmniExpanded()
                     }
 
                     Item {
                         id: omniExpandedBody
                         anchors.fill: parent
-                        anchors.topMargin: 41
+                        anchors.topMargin: 0
 
                         // Slide-in so the body reads as unfolding from
                         // under the header rather than fading in place.
@@ -1894,12 +1904,9 @@ ShellRoot {
                             backgroundColor: Qt.rgba(1, 1, 1, 0.05)
 
                             onRequestCompact: {
-                                // Background taps inside the ATTACHED player
-                                // must not collapse: clicks pass through
-                                // disabled controls (dimmed 0.3, e.g. prev/
-                                // next on players that can't seek) and land
-                                // here. Collapse stays owned by hover-out
-                                // (checker above) + IPC.
+                                // Full-bleed transform: background taps in
+                                // the player collapse back to the pill.
+                                islandWindow.toggleOmniExpanded()
                             }
 
                             onRequestExpand: {
@@ -1982,66 +1989,119 @@ ShellRoot {
                     visible: opacity > 0.01
                     transformOrigin: Item.Top
 
+                    // Expand like the media view; collapse is a pure
+                    // fade — scale/slide run on expand only so nothing
+                    // drifts while fading out.
                     Behavior on opacity {
-                        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+                        NumberAnimation { duration: islandBackground.islandState === "omni-calendar" ? 350 : 180; easing.type: islandBackground.islandState === "omni-calendar" ? Easing.OutQuint : Easing.InCubic }
                     }
                     Behavior on scale {
+                        enabled: islandBackground.islandState === "omni-calendar"
                         NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
 
-                    Rectangle {
-                        x: 20
-                        y: 40
-                        width: parent.width - 40
-                        height: 1
-                        color: Qt.rgba(1, 1, 1, 0.08)
-                    }
-
+                    // Full-bleed transform: no header reservation, the
+                    // calendar fills the rect like the expanded player.
                     Item {
                         anchors.fill: parent
-                        anchors.topMargin: 41
+                        anchors.topMargin: 0
 
                         y: islandBackground.islandState === "omni-calendar" ? 0 : -10
                         opacity: islandBackground.islandState === "omni-calendar" ? 1 : 0
                         visible: opacity > 0.01
 
                         Behavior on y {
+                            enabled: islandBackground.islandState === "omni-calendar"
                             NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
                         }
                         Behavior on opacity {
-                            NumberAnimation { duration: 300; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: islandBackground.islandState === "omni-calendar" ? 300 : 180; easing.type: islandBackground.islandState === "omni-calendar" ? Easing.OutQuad : Easing.InCubic }
                         }
 
-                        // Explicit island-matched backdrop so the body can
-                        // never read as a separate/translucent surface.
-                        // Same corner radius as the island: if this rect
-                        // ever forms the visible bottom edge, it stays
-                        // rounded (its top corners hide under the header,
-                        // same color, seamless).
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 24
-                            color: islandWindow.colors.color0
-                        }
-
-                        // Click catcher: swallows taps that pass through
-                        // disabled (adjacent-month) day cells so they reach
-                        // neither the island click handler (which would
-                        // collapse) nor anything else. Day cells above
-                        // still get their clicks first.
+                        // Three detached cards with real transparent gaps
+                        // (Tide-style): upcoming | calendar | note. Only
+                        // two show at a time — upcoming while browsing,
+                        // note while editing — so tops stay level by
+                        // construction, with no cross-window sync.
+                        // Background tap-to-collapse sits below the row:
+                        // day cells and the cards above consume their
+                        // clicks, empty gaps collapse back to the pill.
                         MouseArea {
                             anchors.fill: parent
+                            hoverEnabled: true
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: islandWindow.toggleOmniCalendar()
                         }
 
-                        CustomComponents.CalendarView {
+                        RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 20
-                            anchors.rightMargin: 20
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
                             anchors.topMargin: 12
-                            anchors.bottomMargin: 14
-                            textColor: islandWindow.colors.color15
-                            subtleColor: islandWindow.colors.color8
-                            accentColor: islandWindow.colors.color5
+                            anchors.bottomMargin: 12
+                            spacing: 12
+
+                            // Fixed 300px slots on both sides keep the
+                            // calendar exactly centered in 1-, 2- and
+                            // 3-card modes; empty slots collapse. The
+                            // right spacer follows the note card's mount
+                            // state (not the selection) so the close
+                            // animation never overlaps the spacer.
+                            Item {
+                                Layout.preferredWidth: 300
+                                Layout.fillHeight: true
+                                visible: !omniCalendarInner.hasUpcoming
+                            }
+
+                            // Upcoming sidecar: always present while notes
+                            // exist (even while editing, so the calendar
+                            // stays centered between two equal cards).
+                            CustomComponents.CalendarUpcomingCard {
+                                Layout.preferredWidth: 300
+                                Layout.fillHeight: true
+                                visible: omniCalendarInner.hasUpcoming
+                                textColor: islandWindow.colors.color15
+                                subtleColor: islandWindow.colors.color8
+                                accentColor: islandWindow.colors.color5
+                                surfaceColor: islandWindow.colors.color0
+                                onJumpToDate: (key) => omniCalendarInner.openKey(key)
+                            }
+
+                            CustomComponents.CalendarView {
+                                id: omniCalendarInner
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: 0
+                                textColor: islandWindow.colors.color15
+                                subtleColor: islandWindow.colors.color8
+                                accentColor: islandWindow.colors.color5
+                                surfaceColor: islandWindow.colors.color0
+                                onRequestCollapse: islandWindow.toggleOmniCalendar()
+                            }
+
+                            CustomComponents.CalendarNoteCard {
+                                id: omniNoteCard
+                                Layout.preferredWidth: 300
+                                Layout.fillHeight: true
+                                visible: omniNoteCard.cardMounted
+                                dateKey: (islandBackground.islandState === "omni-calendar" && omniCalendarInner.editing) ? omniCalendarInner.selectedKey : ""
+                                fullLabel: omniCalendarInner ? omniCalendarInner.selectedFullLabel : ""
+                                textColor: islandWindow.colors.color15
+                                subtleColor: islandWindow.colors.color8
+                                accentColor: islandWindow.colors.color5
+                                surfaceColor: islandWindow.colors.color0
+                                onRequestClose: {
+                                    if (typeof omniCalendarInner !== "undefined" && omniCalendarInner)
+                                        omniCalendarInner.selectedDay = -1
+                                }
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 300
+                                Layout.fillHeight: true
+                                visible: !omniNoteCard.cardMounted
+                            }
                         }
                     }
                 }

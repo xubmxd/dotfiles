@@ -85,20 +85,30 @@ Rectangle {
             }
 
 
-            Text {
+            Rectangle {
+                width: 26
+                height: 26
+                Layout.preferredWidth: 26
+                Layout.preferredHeight: 26
+                radius: 13
+                color: cardCloseHover.containsMouse ? Qt.rgba(1, 1, 1, 0.13) : "transparent"
 
-                text: "󰅖"
+                Behavior on color { ColorAnimation { duration: 100 } }
 
-                color: "#aaaaaa"
-
-                font.family: "JetBrainsMono Nerd Font"
-
-                font.pixelSize: 16
-
+                TideIcon {
+                    anchors.centerIn: parent
+                    width: 9
+                    height: 9
+                    name: "close"
+                    color: "#aaaaaa"
+                }
 
                 MouseArea {
+                    id: cardCloseHover
 
                     anchors.fill: parent
+
+                    hoverEnabled: true
 
                     cursorShape:
                         Qt.PointingHandCursor

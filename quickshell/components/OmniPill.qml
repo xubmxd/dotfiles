@@ -224,12 +224,14 @@ Item {
             }
 
             // Reserve space while paused so the island width doesn't jump.
+            // The bars freeze when paused (visTimer stops) but stay
+            // visible as a still visualizer, like the music card —
+            // instead of vanishing.
             Item {
                 Layout.preferredWidth: 32
                 Layout.preferredHeight: 24
                 Layout.alignment: Qt.AlignVCenter
-                opacity: root.isPlaying ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 200 } }
+                opacity: 1
 
                 Timer {
                     id: visTimer

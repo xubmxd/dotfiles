@@ -176,14 +176,13 @@ PopupWindow {
                                 elide: Text.ElideRight
                             }
 
-                            Text {
+                            TideIcon {
                                 anchors.verticalCenter: parent.verticalCenter
+                                width: 10
+                                height: 10
                                 visible: entryWrap.modelData.hasChildren
-                                text: entryWrap.expanded ? "▾" : "›"
+                                name: entryWrap.expanded ? "chevD" : "chevR"
                                 color: root.subtleColor
-                                font.family: "Inter"
-                                font.pixelSize: 13
-                                font.weight: Font.Bold
                             }
                         }
 

@@ -244,10 +244,11 @@ Item {
         color: Qt.rgba(1, 1, 1, searchActive ? 0.14 : 0.07)
         z: 20
 
-        Text {
+        TideIcon {
             anchors.centerIn: parent
-            text: "\u{1F50D}"
-            font.pixelSize: 14
+            width: 14
+            height: 14
+            name: "search"
             color: root.textColor
         }
 

@@ -140,6 +140,7 @@ Item {
             case "dinosaurs": return "E"
             case "scenic":  return "⌇"
             case "2d":      return "◇"
+            case "dreamcore": return "✦"
             case "lofi":    return "☾"
             case "space":   return "✧"
             case "retro":   return "▣"
@@ -421,15 +422,25 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
 
         MouseArea {
-            width: backLabel.implicitWidth + 8
+            width: backLabel.implicitWidth + 24
             height: 22
             cursorShape: Qt.PointingHandCursor
             onClicked: root.backToCategories()
 
+            TideIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 12
+                height: 12
+                name: "chevL"
+                color: root.subtleColor
+            }
+
             Text {
                 id: backLabel
                 anchors.verticalCenter: parent.verticalCenter
-                text: "\u2039 " + root.selectedCategoryName
+                anchors.left: parent.left
+                anchors.leftMargin: 16
+                text: root.selectedCategoryName
                 color: root.subtleColor
                 font.pixelSize: 14
             }
@@ -458,10 +469,12 @@ Item {
             anchors.rightMargin: 16
             spacing: 10
 
-            Text {
-                text: "\u{1F50D}"
-                font.pixelSize: 14
+            TideIcon {
+                name: "search"
                 color: root.subtleColor
+                Layout.preferredWidth: 14
+                Layout.preferredHeight: 14
+                Layout.alignment: Qt.AlignVCenter
             }
 
             TextInput {

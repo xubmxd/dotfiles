@@ -425,10 +425,12 @@ Item {
                 anchors.rightMargin: 16
                 spacing: 10
 
-                Text {
-                    text: "\u{1F50D}"
-                    font.pixelSize: 14
+                TideIcon {
+                    name: "search"
                     color: root.subtleColor
+                    Layout.preferredWidth: 14
+                    Layout.preferredHeight: 14
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 TextInput {

@@ -34,10 +34,10 @@ Item {
 
     ListModel {
         id: actionModel
-        ListElement { key: "lock";     label: "Lock";      glyph: "\u{1F512}"; danger: false }
-        ListElement { key: "suspend";  label: "Sleep";     glyph: "\u{1F319}"; danger: false }
-        ListElement { key: "reboot";   label: "Restart";   glyph: "\u{27F3}";  danger: true }
-        ListElement { key: "shutdown"; label: "Shut Down"; glyph: "\u{23FB}";  danger: true }
+        ListElement { key: "lock";     label: "Lock";      danger: false }
+        ListElement { key: "suspend";  label: "Sleep";     danger: false }
+        ListElement { key: "reboot";   label: "Restart";   danger: true }
+        ListElement { key: "shutdown"; label: "Shut Down"; danger: true }
     }
 
     function focusMenu() {
@@ -82,6 +82,17 @@ Item {
         case "suspend": return root.suspendCommand
         case "reboot": return root.rebootCommand
         case "shutdown": return root.shutdownCommand
+        }
+        return ""
+    }
+
+    // Monochrome Nerd Font glyphs, Tide-style (no color emoji).
+    function glyphFor(key) {
+        switch (key) {
+        case "lock": return "\uf023"
+        case "suspend": return "\uf186"
+        case "reboot": return "\uf021"
+        case "shutdown": return "\uf011"
         }
         return ""
     }
@@ -235,8 +246,9 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: model.glyph
-                            font.pixelSize: 22
+                            text: root.glyphFor(model.key)
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 20
                             color: root.textColor
                         }
 

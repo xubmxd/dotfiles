@@ -413,45 +413,28 @@ Item {
                             // DISMISS BUTTON
                             // ------------------------------------------------
 
-                            Text {
+                            Item {
                                 id: dismissButton
 
                                 width: 24
                                 height: 24
 
-                                text:
-                                    "×"
-
-                                color:
-                                    "#999999"
-
-                                font.family:
-                                    "Inter"
-
-                                font.pixelSize: 20
-
-                                horizontalAlignment:
-                                    Text.AlignHCenter
-
-                                verticalAlignment:
-                                    Text.AlignVCenter
-
+                                TideIcon {
+                                    anchors.centerIn: parent
+                                    width: 10
+                                    height: 10
+                                    name: "close"
+                                    color: dismissHover.containsMouse ? "#ffffff" : "#999999"
+                                }
 
                                 MouseArea {
+                                    id: dismissHover
                                     anchors.fill: parent
 
                                     cursorShape:
                                         Qt.PointingHandCursor
 
                                     hoverEnabled: true
-
-
-                                    onEntered:
-                                        parent.color = "#ffffff"
-
-
-                                    onExited:
-                                        parent.color = "#999999"
 
 
                                     onClicked: {
