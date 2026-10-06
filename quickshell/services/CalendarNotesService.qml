@@ -188,6 +188,13 @@ Item {
         return todoCounts(noteFor(key)).open
     }
 
+    // True when the date has at least one unchecked "- [ ]" todo.
+    // Plain notes (no todo lines) and fully-checked lists return
+    // false. Reactive: openTodoCount touches revision.
+    function hasOpenTodos(key) {
+        return openTodoCount(key) > 0
+    }
+
     function toggleTodo(key, lineIndex) {
         const raw = noteFor(key)
         if (raw === "")
@@ -206,13 +213,14 @@ Item {
         return next
     }
 
-    // Sorted keys with notes on/after todayKey, capped at limit.
+    // Sorted keys with notes strictly after todayKey, capped at limit.
+    // Today is NOT upcoming (k > t, not k >= t).
     function upcoming(limit) {
         revision
         const t = todayKey()
         const keys = []
         for (const k in notes) {
-            if (hasNote(k) && k >= t)
+            if (hasNote(k) && k > t)
                 keys.push(k)
         }
         keys.sort()

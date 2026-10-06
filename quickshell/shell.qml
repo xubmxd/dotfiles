@@ -1252,14 +1252,28 @@ ShellRoot {
                     // exceeds 380) instead of slicing its ends off.
                     // Body stretches (progress fills, controls center).
                     return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
-                case "omni-calendar":
-                    // Fixed 972: symmetric 300px slots on both sides keep
-                    // the calendar exactly centered whether zero, one or
-                    // two sidecars show. Guards for startup before the
-                    // calendar item exists.
-                    if (typeof omniCalendarInner !== "undefined" && omniCalendarInner)
-                        return 972
+                case "omni-calendar": {
+                    // Width derives from the cards actually present:
+                    // calendar 324 + side cards 300 each + 12 margins
+                    // and 12 gaps. No ghost spacers.
+                    //   calendar only -> 348
+                    //   + one sidecard -> 660
+                    //   + both sidecards -> 972
+                    // Guards for startup before the calendar item exists.
+                    // Reads only hasLeftCard/cardMounted (driven by notes
+                    // revision + selection), never displayedWidth, so no
+                    // binding loop with the layout. The left card counts
+                    // as one 300px panel whether titled Today or Upcoming.
+                    if (typeof omniCalendarInner !== "undefined" && omniCalendarInner && typeof omniNoteCard !== "undefined" && omniNoteCard) {
+                        var w = 24 + 324
+                        if (omniCalendarInner.hasLeftCard)
+                            w += 12 + 300
+                        if (omniNoteCard.cardMounted)
+                            w += 12 + 300
+                        return w
+                    }
                     return Math.max(380, Math.min(620, omniPillItem.compactImplicitWidth))
+                }
                 case "wallpaper":
                     return (wallpaperPickerLoader.item ? wallpaperPickerLoader.item.pickerWidth : 700)
                 case "power":
@@ -1394,6 +1408,48 @@ ShellRoot {
             radius: targetRadius
 
             onTargetWidthChanged: displayedWidth = targetWidth
+
+            // --------------------------------------------------------
+            // CALENDAR CENTER OFFSET
+            // --------------------------------------------------------
+            // Keeps the 324px calendar at the screen center in every
+            // sidecard state. Within the island the cards flow left to
+            // right (left-card | calendar | note), so with exactly one
+            // sidecard the calendar sits 300/2 + 12/2 = 156px off the
+            // island center; shifting the island by the opposite amount
+            // puts the calendar back on screen center:
+            //   both/none -> 0, left-only -> -156, note-only -> +156.
+            // Reads only hasLeftCard/cardMounted (notes revision +
+            // selection), never geometry, so no binding loop. Mirrors
+            // the displayedWidth pattern so the slide animates with the
+            // width morph. Unchanged by the Today/Upcoming title: the
+            // left card is one 300px panel either way.
+            readonly property real horizontalCenterOffset: {
+                if (islandState !== "omni-calendar")
+                    return 0
+                if (typeof omniCalendarInner === "undefined" || !omniCalendarInner || typeof omniNoteCard === "undefined" || !omniNoteCard)
+                    return 0
+                var hasLeft = omniCalendarInner.hasLeftCard
+                var hasNote = omniNoteCard.cardMounted
+                var singleSideShift = 300 / 2 + 12 / 2
+                if (hasLeft && !hasNote)
+                    return -singleSideShift
+                if (!hasLeft && hasNote)
+                    return singleSideShift
+                return 0
+            }
+
+            property real displayedCenterOffset: horizontalCenterOffset
+            onHorizontalCenterOffsetChanged: displayedCenterOffset = horizontalCenterOffset
+
+            anchors.horizontalCenterOffset: displayedCenterOffset
+
+            Behavior on displayedCenterOffset {
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutQuint
+                }
+            }
 
             // Transparent in calendar mode: the calendar + note cards
             // draw their own detached surfaces with a real gap.
@@ -1984,20 +2040,14 @@ ShellRoot {
 
                     anchors.fill: parent
 
+                    // Single fade: the outer island animates geometry
+                    // (displayedWidth/height). The calendar stays at
+                    // normal scale/position so the two don't fight.
                     opacity: islandBackground.islandState === "omni-calendar" ? 1 : 0
-                    scale: islandBackground.islandState === "omni-calendar" ? 1.0 : 0.92
                     visible: opacity > 0.01
-                    transformOrigin: Item.Top
 
-                    // Expand like the media view; collapse is a pure
-                    // fade — scale/slide run on expand only so nothing
-                    // drifts while fading out.
                     Behavior on opacity {
                         NumberAnimation { duration: islandBackground.islandState === "omni-calendar" ? 350 : 180; easing.type: islandBackground.islandState === "omni-calendar" ? Easing.OutQuint : Easing.InCubic }
-                    }
-                    Behavior on scale {
-                        enabled: islandBackground.islandState === "omni-calendar"
-                        NumberAnimation { duration: 400; easing.type: Easing.OutQuint }
                     }
 
                     // Full-bleed transform: no header reservation, the
@@ -2006,23 +2056,18 @@ ShellRoot {
                         anchors.fill: parent
                         anchors.topMargin: 0
 
-                        y: islandBackground.islandState === "omni-calendar" ? 0 : -10
-                        opacity: islandBackground.islandState === "omni-calendar" ? 1 : 0
-                        visible: opacity > 0.01
-
-                        Behavior on y {
-                            enabled: islandBackground.islandState === "omni-calendar"
-                            NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
-                        }
-                        Behavior on opacity {
-                            NumberAnimation { duration: islandBackground.islandState === "omni-calendar" ? 300 : 180; easing.type: islandBackground.islandState === "omni-calendar" ? Easing.OutQuad : Easing.InCubic }
-                        }
-
                         // Three detached cards with real transparent gaps
-                        // (Tide-style): upcoming | calendar | note. Only
-                        // two show at a time — upcoming while browsing,
-                        // note while editing — so tops stay level by
-                        // construction, with no cross-window sync.
+                        // (Tide-style): left-card | calendar | note, laid
+                        // out with explicit left-flow geometry (no
+                        // RowLayout, no spacers) so the calendar position
+                        // never depends on sidecard presence:
+                        //   left-card (Today/Upcoming) at the left edge
+                        //     when visible,
+                        //   calendar right after it (or at the left edge),
+                        //   note right after the calendar.
+                        // The island itself shifts via
+                        // horizontalCenterOffset so the 324px calendar
+                        // stays on screen center in all four states.
                         // Background tap-to-collapse sits below the row:
                         // day cells and the cards above consume their
                         // clicks, empty gaps collapse back to the pill.
@@ -2034,33 +2079,28 @@ ShellRoot {
                             onClicked: islandWindow.toggleOmniCalendar()
                         }
 
-                        RowLayout {
+                        Item {
+                            id: calendarRow
                             anchors.fill: parent
                             anchors.leftMargin: 12
                             anchors.rightMargin: 12
                             anchors.topMargin: 12
                             anchors.bottomMargin: 12
-                            spacing: 12
 
-                            // Fixed 300px slots on both sides keep the
-                            // calendar exactly centered in 1-, 2- and
-                            // 3-card modes; empty slots collapse. The
-                            // right spacer follows the note card's mount
-                            // state (not the selection) so the close
-                            // animation never overlaps the spacer.
-                            Item {
-                                Layout.preferredWidth: 300
-                                Layout.fillHeight: true
-                                visible: !omniCalendarInner.hasUpcoming
-                            }
-
-                            // Upcoming sidecar: always present while notes
-                            // exist (even while editing, so the calendar
-                            // stays centered between two equal cards).
+                            // Left sidecar (Today > Upcoming > nothing):
+                            // independent of editing, visible whenever
+                            // today has open todos or future notes exist.
+                            // Title/content come from the island state;
+                            // geometry stays one fixed 300px panel.
                             CustomComponents.CalendarUpcomingCard {
-                                Layout.preferredWidth: 300
-                                Layout.fillHeight: true
-                                visible: omniCalendarInner.hasUpcoming
+                                id: omniUpcomingCard
+                                width: 300
+                                height: parent.height
+                                x: 0
+                                y: 0
+                                visible: omniCalendarInner.hasLeftCard
+                                cardTitle: omniCalendarInner.leftCardTitle
+                                todayMode: omniCalendarInner.hasTodayTodos
                                 textColor: islandWindow.colors.color15
                                 subtleColor: islandWindow.colors.color8
                                 accentColor: islandWindow.colors.color5
@@ -2070,9 +2110,29 @@ ShellRoot {
 
                             CustomComponents.CalendarView {
                                 id: omniCalendarInner
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 0
+                                width: 324
+                                height: parent.height
+                                // Left-flow: after the left-card when it is
+                                // visible, else at the left edge.
+                                // Derived, no magic numbers:
+                                // left-card width + gap.
+                                x: omniUpcomingCard.visible ? omniUpcomingCard.width + 12 : 0
+                                y: 0
+                                // Same 400ms OutQuint as the island width
+                                // and center-offset morphs. Single-side
+                                // transitions move width/offset/x by
+                                // matched amounts (dW/2 == dx == doff, same
+                                // easing), so the calendar's screen center
+                                // stays invariant through the whole morph
+                                // instead of jumping then gliding back.
+                                // The note card follows via binding (no own
+                                // Behavior) so the 12px gap stays rigid.
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: 400
+                                        easing.type: Easing.OutQuint
+                                    }
+                                }
                                 textColor: islandWindow.colors.color15
                                 subtleColor: islandWindow.colors.color8
                                 accentColor: islandWindow.colors.color5
@@ -2082,8 +2142,16 @@ ShellRoot {
 
                             CustomComponents.CalendarNoteCard {
                                 id: omniNoteCard
-                                Layout.preferredWidth: 300
-                                Layout.fillHeight: true
+                                width: 300
+                                height: parent.height
+                                // Left-flow: right after the calendar with
+                                // a 12px gap. Exact fit in every state:
+                                //   both -> 300+12+324+12+300 (+24
+                                //     margins = 972 island width)
+                                //   one sidecard -> 324+12+300 (+24 = 660)
+                                //   none -> calendar alone (348).
+                                x: omniCalendarInner.x + omniCalendarInner.width + 12
+                                y: 0
                                 visible: omniNoteCard.cardMounted
                                 dateKey: (islandBackground.islandState === "omni-calendar" && omniCalendarInner.editing) ? omniCalendarInner.selectedKey : ""
                                 fullLabel: omniCalendarInner ? omniCalendarInner.selectedFullLabel : ""
@@ -2095,12 +2163,6 @@ ShellRoot {
                                     if (typeof omniCalendarInner !== "undefined" && omniCalendarInner)
                                         omniCalendarInner.selectedDay = -1
                                 }
-                            }
-
-                            Item {
-                                Layout.preferredWidth: 300
-                                Layout.fillHeight: true
-                                visible: !omniNoteCard.cardMounted
                             }
                         }
                     }

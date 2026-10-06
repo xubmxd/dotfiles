@@ -27,9 +27,21 @@ Item {
     property int selectedDay: -1
 
     // Exposed for the island (shell.qml): editing drives the note
-    // card, hasUpcoming drives the upcoming sidecar.
+    // card; hasLeftCard drives the left sidecar (Today > Upcoming).
     readonly property bool editing: selectedDay !== -1
+    // Upcoming and Note are independently controlled: selecting a
+    // date must NOT hide Upcoming, so both sidecars can coexist.
     readonly property bool hasUpcoming: upcomingKeys.length > 0
+    // Today's key from the rolling `today` prop, so the Today state
+    // re-evaluates at midnight rollover as well as on every note
+    // mutation (hasOpenTodos touches the service revision).
+    // Triggered by actual incomplete TASKS ("- [ ]"), never by a
+    // plain note with no todo lines.
+    readonly property string todayDateKey: CalendarNotesService.dateKey(today.getFullYear(), today.getMonth(), today.getDate())
+    readonly property bool hasTodayTodos: CalendarNotesService.hasOpenTodos(todayDateKey)
+    // Left-card priority: TODAY > UPCOMING > NOTHING.
+    readonly property bool hasLeftCard: hasTodayTodos || hasUpcoming
+    readonly property string leftCardTitle: hasTodayTodos ? "Today" : "Upcoming"
     property var upcomingKeys: CalendarNotesService.upcoming(3)
 
     readonly property string selectedKey: selectedDay !== -1

@@ -315,36 +315,6 @@ Item {
                             }
                         }
                     }
-
-                    // Collapse × at the end of the header row.
-                    Rectangle {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 26
-                        Layout.preferredHeight: 26
-                        radius: 13
-                        color: collapseHover.containsMouse
-                            ? Qt.rgba(1, 1, 1, 0.13)
-                            : Qt.rgba(1, 1, 1, 0.06)
-
-                        Behavior on color { ColorAnimation { duration: 100 } }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "×"
-                            color: root.subtleColor
-                            font.family: "Inter"
-                            font.pixelSize: 17
-                            font.weight: Font.Light
-                        }
-
-                        MouseArea {
-                            id: collapseHover
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.requestCompact()
-                        }
-                    }
                 }
             }
 

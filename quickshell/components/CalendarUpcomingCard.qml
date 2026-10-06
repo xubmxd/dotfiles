@@ -2,10 +2,10 @@ import QtQuick
 import QtQuick.Layouts
 import "../services"
 
-// Tide-style upcoming sidecar: every upcoming note with ALL of its
-// todos, toggleable in place, scrolling on overflow. Shown left of
-// the calendar while browsing (never while editing — the note card
-// takes the right slot then). Emits jumpToDate(key) for header taps.
+// Tide-style left sidecar: "Today" when today has incomplete todos,
+// otherwise "Upcoming" for future notes. Same surface, same rows,
+// same toggle/scroll/click behavior either way — only the title and
+// the rendered key set change. Emits jumpToDate(key) for header taps.
 Item {
     id: root
 
@@ -14,10 +14,24 @@ Item {
     property color accentColor: "#a855f7"
     property color surfaceColor: "#1a1a1a"
 
+    // Driven by the island: CalendarView.leftCardTitle ("Today" takes
+    // priority) and CalendarView.hasTodayTodos.
+    property string cardTitle: "Upcoming"
+    property bool todayMode: false
+
     signal jumpToDate(string key)
 
     // All upcoming notes (cap 14 ≈ two weeks of runway).
     property var upcomingKeys: CalendarNotesService.upcoming(14)
+
+    // Keys actually rendered: today alone in Today mode (all of its
+    // todos, open and checked, via the same row rendering), future
+    // notes otherwise. Touches revision so toggling/checking todos
+    // rebuilds the list in both modes without a manual refresh.
+    property var displayKeys: {
+        CalendarNotesService.revision
+        return todayMode ? [CalendarNotesService.todayKey()] : upcomingKeys
+    }
 
     Connections {
         target: CalendarNotesService
@@ -55,7 +69,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Upcoming"
+                text: root.cardTitle
                 color: root.subtleColor
                 font.family: "Inter"
                 font.pixelSize: 13
@@ -82,7 +96,7 @@ Item {
                     spacing: 8
 
                     Repeater {
-                        model: root.upcomingKeys
+                        model: root.displayKeys
 
                         ColumnLayout {
                             Layout.fillWidth: true
