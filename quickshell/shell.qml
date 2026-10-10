@@ -8,6 +8,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import "components" as CustomComponents
 import "services"
+import "visualizer" as Visualizer
 
 ShellRoot {
     // ============================================================
@@ -2358,5 +2359,17 @@ ShellRoot {
             activeColor: islandWindow.colors.color4
             attentionColor: islandWindow.colors.color1
         }
+    }
+
+    // ============================================================
+    // DREAMCORE SPECTRUM VISUALIZER (bottom-centred overlay)
+    // Live CAVA waveform + fine spectrum bars, pywal-coloured. The
+    // island keeps metadata/controls; this overlay is intentionally
+    // dumb about tracks (default policy reacts to any system audio).
+    // Tune via quickshell/visualizer/VisualizerConfig.qml.
+    // ============================================================
+    Visualizer.DreamcoreVisualizer {
+        id: dreamVisualizer
+        musicData: musicData
     }
 }

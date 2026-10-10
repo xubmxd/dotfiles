@@ -14,6 +14,55 @@ Item {
     property string previousLine: ""
     property real lastChangeTime: 0
 
+    // Backend lifecycle: on-demand to keep ~40 MB resident only while it
+    // can do work. Starts with the first tracked song, stops 120 s after
+    // the last one (idle delay avoids stop/start churn while skipping
+    // tracks). Crash-restart only fires while wanted, so an intentional
+    // stop never resurrects the process.
+    //
+    // backendWanted depends only on external playback state plus a manual
+    // latch — never on timer state — so no binding cycle is possible.
+    readonly property bool backendWanted: (musicData !== null && musicData !== undefined
+        && musicData.hasTrack === true) || idleHold
+
+    // Manual latch: set while a track is recent; cleared by the idle
+    // timer. Plain var, written only from the handlers below.
+    property bool idleHold: false
+
+    Timer {
+        id: backendIdleHold
+        interval: 120000
+        repeat: false
+        onTriggered: root.idleHold = false
+    }
+
+    onBackendWantedChanged: {
+        if (root.backendWanted) {
+            if (!lyricsBackend.running)
+                lyricsBackend.running = true
+        } else if (lyricsBackend.running) {
+            lyricsBackend.running = false
+        }
+    }
+
+    Connections {
+        target: musicData
+        function onHasTrackChanged() {
+            if (musicData && musicData.hasTrack) {
+                root.idleHold = false
+                backendIdleHold.stop()
+            } else {
+                root.idleHold = true
+                backendIdleHold.restart()
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.backendWanted && !lyricsBackend.running)
+            lyricsBackend.running = true
+    }
+
     function handleMessage(payload) {
         if (!payload || !payload.type) return
 
@@ -68,7 +117,9 @@ Item {
             "exec \"" + Quickshell.env("HOME") + "/.local/bin/lyricsmpris\" --pipe"
         ]
 
-        running: true
+        // Started on demand (see backendWanted above), never unconditionally:
+        // an idle desktop keeps the ~40 MB backend stopped.
+        running: false
 
         stdout: SplitParser {
             onRead: data => {
@@ -99,14 +150,17 @@ Item {
         }
 
         onExited: (exitCode, exitStatus) => {
+            root.hasLyrics = false
+            root.loading = false
+            root.currentLine = ""
+
+            if (!root.backendWanted)
+                return // intentional idle stop — stay stopped, stay quiet
+
             console.warn(
                 "[LyricsService] lyricsmpris exited:",
                 exitCode
             )
-
-            root.hasLyrics = false
-            root.loading = false
-            root.currentLine = ""
 
             // Auto-restart so a crash (or a first-run PATH failure)
             // doesn't permanently kill lyrics until next reload.
@@ -119,7 +173,7 @@ Item {
         interval: 2000
         repeat: false
         onTriggered: {
-            if (!lyricsBackend.running)
+            if (!lyricsBackend.running && root.backendWanted)
                 lyricsBackend.running = true
         }
     }
