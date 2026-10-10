@@ -29,6 +29,8 @@ Item {
     property int framerate: 30
     property real sensitivity: 1.2
     property real smoothing: 0.55
+    property int noiseReduction: 77
+    property bool autosens: true
     property string inputMethod: "auto" // auto|pipewire|pulse
     property real activityThreshold: 0.02
     property int activityHoldMs: 2500
@@ -56,7 +58,8 @@ Item {
     property double _startedAt: 0
 
     readonly property string configSignature: clampedBars + "x"
-        + clampedFramerate + ":" + inputMethod
+        + clampedFramerate + ":" + inputMethod + ":nr" + noiseReduction
+        + ":as" + (autosens ? "1" : "0")
 
     Component.onCompleted: {
         initArrays()
@@ -118,7 +121,7 @@ Item {
         return "[general]\n"
             + "framerate = " + clampedFramerate + "\n"
             + "bars = " + clampedBars + "\n"
-            + "autosens = 0\n"
+            + "autosens = " + (autosens ? "1" : "0") + "\n"
             + "sensitivity = 100\n"
             + "\n[input]\n"
             + "method = " + _effectiveMethod + "\n"
@@ -132,7 +135,7 @@ Item {
             + "bar_delimiter = 59\n"
             + "frame_delimiter = 10\n"
             + "\n[smoothing]\n"
-            + "noise_reduction = 77\n"
+            + "noise_reduction = " + Math.max(0, Math.min(100, noiseReduction)) + "\n"
     }
 
     function writeConfig() {

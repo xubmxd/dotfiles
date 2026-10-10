@@ -67,11 +67,21 @@ QtObject {
     property int repaintMaxIntervalMs: 500
 
     // Audio analysis tuning.
+    // Audio analysis tuning. The QML stage is a deliberately transparent
+    // pass-through: smoothing 0 and gamma 1.0 mean the renderer draws
+    // CAVA's values as-is (like terminal CAVA does), with only the visual
+    // trail softening the look. Raise smoothing for a dreamier float.
     property int bars: 96             // cava bands (8..256, clamped)
     property int framerate: 60       // cava frames per second (10..60)
-    property real sensitivity: 1.5   // linear amplitude multiplier
-    property real smoothing: 0.55    // 0 = raw, 0.95 = very floaty
+    property real sensitivity: 1.0   // linear amplitude multiplier
+    property real smoothing: 0       // 0 = raw CAVA output, 0.95 = very floaty
     property string inputMethod: "auto" // auto|pipewire|pulse (auto falls back)
+
+    // CAVA's own stages, mirroring terminal CAVA defaults: autosens adapts
+    // to each track's loudness (like the terminal does), noise reduction
+    // matches CAVA's stock feel. Changing these restarts the backend.
+    property bool cavaAutosens: true
+    property int cavaNoiseReduction: 77
 
     // Activity / visibility tuning.
     property real activityThreshold: 0.02 // mean level (0..1) counting as sound
@@ -80,11 +90,12 @@ QtObject {
     property int fadeOutMs: 1200
 
     // Waveform presence. The wave is the dominant element: amplitude is a
-    // large fraction of the canvas so undulations read clearly, and gamma
-    // < 1 lifts quiet mid-levels perceptually (no clipping: values stay
-    // in 0..1, loud passages simply saturate the peak gracefully).
-    property real waveAmplitudeFraction: 0.42
-    property real waveGamma: 0.7
+    // large fraction of the canvas so undulations read clearly. Gamma 0.8
+    // lifts quiet mid/high detail perceptually (linear FFT magnitudes leave
+    // everything but bass near zero); timing stays honest because smoothing
+    // is 0 — gamma reshapes amplitude only, never transient response.
+    property real waveAmplitudeFraction: 0.46
+    property real waveGamma: 0.8
 
     // Glow and stroke styling (layered strokes: broad faint halo + sharp
     // core). glowIntensity scales the halo layers; the core stays bright.
